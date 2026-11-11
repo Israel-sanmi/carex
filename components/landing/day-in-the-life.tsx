@@ -155,7 +155,7 @@ export default function DayInTheLife() {
             <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-ink/10">
               <div className="flex items-center gap-3">
                 <div
-                  className={`grid h-12 w-12 place-items-center rounded-2xl shadow-xs transition-transform duration-300 ${activeEvent.accent}`}
+                  className={`grid h-12 w-12 place-items-center rounded-md shadow-xs transition-transform duration-300 ${activeEvent.accent}`}
                 >
                   <ActiveIcon className="h-6 w-6" />
                 </div>

@@ -69,7 +69,7 @@ export default function Features() {
             <Reveal key={title}>
               <div className="group">
                 <span
-                  className={`grid h-14 w-14 place-items-center rounded-2xl transition-transform duration-300 group-hover:-rotate-6 ${tile}`}
+                  className={`grid h-14 w-14 place-items-center rounded-md transition-transform duration-300 group-hover:-rotate-6 ${tile}`}
                 >
                   <Icon />
                 </span>

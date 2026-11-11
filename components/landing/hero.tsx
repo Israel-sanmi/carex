@@ -89,7 +89,7 @@ export default function Hero({ onOpenDemo }: HeroProps) {
           </div>
 
           {/* floating card: today */}
-          <div className="absolute -left-6 bottom-16 w-56 animate-float rounded-2xl bg-white p-4 shadow-[0_20px_40px_-15px_rgba(19,48,45,0.3)] sm:-left-12">
+          <div className="absolute -left-6 bottom-16 w-56 animate-float rounded-md bg-white p-4 shadow-[0_20px_40px_-15px_rgba(19,48,45,0.3)] sm:-left-12">
             <p className="text-xs font-medium text-ink/50">
               Today at Meadow View
             </p>
@@ -112,7 +112,7 @@ export default function Hero({ onOpenDemo }: HeroProps) {
 
           {/* floating card: admission */}
           <div
-            className="absolute -right-3 top-24 flex items-center gap-3 rounded-2xl bg-white py-3 pl-3 pr-5 shadow-[0_20px_40px_-15px_rgba(19,48,45,0.3)] sm:-right-8"
+            className="absolute -right-3 top-24 flex items-center gap-3 rounded-md bg-white py-3 pl-3 pr-5 shadow-[0_20px_40px_-15px_rgba(19,48,45,0.3)] sm:-right-8"
             style={{
               animation: "var(--animate-float)",
               animationDelay: "1.5s",

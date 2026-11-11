@@ -3,15 +3,15 @@
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import AuthCard from "@/components/auth/auth-card";
-import { 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
-  Mail, 
-  ArrowRight, 
-  RotateCcw, 
+import {
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Mail,
+  ArrowRight,
+  RotateCcw,
   ShieldCheck,
-  Send
+  Send,
 } from "lucide-react";
 
 function VerifyEmailContent() {
@@ -57,7 +57,6 @@ function VerifyEmailContent() {
 
   return (
     <div className="space-y-6 text-ink">
-      
       {/* 1. VERIFYING STATE */}
       {status === "verifying" && (
         <div className="py-8 text-center space-y-4 animate-fade-in">
@@ -65,9 +64,12 @@ function VerifyEmailContent() {
             <div className="h-14 w-14 rounded-full border-4 border-teal-brand/20 border-t-teal-brand animate-spin" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-ink">Verifying Email Address</h2>
+            <h2 className="text-xl font-bold text-ink">
+              Verifying Email Address
+            </h2>
             <p className="text-xs text-ink/65 mt-1">
-              Contacting CarerLoop authentication servers to validate your cryptographic token...
+              Contacting CarerLoop authentication servers to validate your
+              cryptographic token...
             </p>
           </div>
         </div>
@@ -85,7 +87,9 @@ function VerifyEmailContent() {
               Email Verified Successfully
             </h2>
             <p className="text-xs sm:text-sm text-ink/65 mt-1.5 max-w-sm mx-auto leading-relaxed">
-              Your email ownership is confirmed. If you registered as a resident, your application is now queued for care home clinical review.
+              Your email ownership is confirmed. If you registered as a
+              resident, your application is now queued for care home clinical
+              review.
             </p>
           </div>
 
@@ -121,7 +125,8 @@ function VerifyEmailContent() {
               Verification Link Expired
             </h2>
             <p className="text-xs sm:text-sm text-ink/65 mt-1.5 max-w-sm mx-auto leading-relaxed">
-              For security, email verification links expire after 24 hours. Request a new link below to continue.
+              For security, email verification links expire after 24 hours.
+              Request a new link below to continue.
             </p>
           </div>
 
@@ -143,11 +148,10 @@ function VerifyEmailContent() {
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold text-ink">
-              Verification Failed
-            </h2>
+            <h2 className="text-2xl font-bold text-ink">Verification Failed</h2>
             <p className="text-xs sm:text-sm text-ink/65 mt-1.5 max-w-sm mx-auto leading-relaxed">
-              This verification link is invalid or has already been used. Please request a fresh link.
+              This verification link is invalid or has already been used. Please
+              request a fresh link.
             </p>
           </div>
 
@@ -164,11 +168,15 @@ function VerifyEmailContent() {
       {status === "resend_form" && (
         <div className="space-y-4 animate-fade-in">
           {resendSuccess ? (
-            <div className="p-4 rounded-2xl bg-mint/60 border border-teal-brand/30 text-center space-y-2">
+            <div className="p-4 rounded-md bg-mint/60 border border-teal-brand/30 text-center space-y-2">
               <CheckCircle2 className="h-8 w-8 text-teal-brand mx-auto" />
-              <p className="text-sm font-bold text-teal-deep">Fresh Link Dispatched</p>
+              <p className="text-sm font-bold text-teal-deep">
+                Fresh Link Dispatched
+              </p>
               <p className="text-xs text-ink/70">
-                We sent a new verification link to <span className="font-semibold text-ink">{emailInput}</span>. Please check your inbox.
+                We sent a new verification link to{" "}
+                <span className="font-semibold text-ink">{emailInput}</span>.
+                Please check your inbox.
               </p>
               <div className="pt-2">
                 <a
@@ -180,9 +188,14 @@ function VerifyEmailContent() {
               </div>
             </div>
           ) : (
-            <form onSubmit={handleResend} className="space-y-4 text-xs sm:text-sm">
+            <form
+              onSubmit={handleResend}
+              className="space-y-4 text-xs sm:text-sm"
+            >
               <div className="space-y-1.5">
-                <label className="font-semibold text-ink">Your Registered Email Address</label>
+                <label className="font-semibold text-ink">
+                  Your Registered Email Address
+                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink/40">
                     <Mail className="h-4 w-4" />
@@ -220,22 +233,32 @@ function VerifyEmailContent() {
 
           {/* Quick simulation pills for testing */}
           <div className="pt-4 border-t border-ink/10 text-[11px] text-ink/50 space-y-1 text-center">
-            <p className="font-semibold text-ink/70">Test different verification states:</p>
+            <p className="font-semibold text-ink/70">
+              Test different verification states:
+            </p>
             <div className="flex justify-center gap-2 pt-1 flex-wrap">
-              <a href="/verify-email?token=valid_test_token" className="px-2 py-0.5 rounded bg-cream border border-ink/10 hover:border-teal-brand text-teal-brand">
+              <a
+                href="/verify-email?token=valid_test_token"
+                className="px-2 py-0.5 rounded bg-cream border border-ink/10 hover:border-teal-brand text-teal-brand"
+              >
                 Simulate Valid
               </a>
-              <a href="/verify-email?token=expired_test_token" className="px-2 py-0.5 rounded bg-cream border border-ink/10 hover:border-sun text-[#8b6100]">
+              <a
+                href="/verify-email?token=expired_test_token"
+                className="px-2 py-0.5 rounded bg-cream border border-ink/10 hover:border-sun text-[#8b6100]"
+              >
                 Simulate Expired
               </a>
-              <a href="/verify-email?token=invalid_test_token" className="px-2 py-0.5 rounded bg-cream border border-ink/10 hover:border-destructive text-destructive">
+              <a
+                href="/verify-email?token=invalid_test_token"
+                className="px-2 py-0.5 rounded bg-cream border border-ink/10 hover:border-destructive text-destructive"
+              >
                 Simulate Failed
               </a>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }
@@ -247,10 +270,15 @@ export default function VerifyEmailPage() {
       subtitle="Confirming your email identity for secure care home portal access."
       badge="Identity Security"
     >
-      <Suspense fallback={<div className="p-8 text-center text-xs text-ink/50">Processing verification request...</div>}>
+      <Suspense
+        fallback={
+          <div className="p-8 text-center text-xs text-ink/50">
+            Processing verification request...
+          </div>
+        }
+      >
         <VerifyEmailContent />
       </Suspense>
     </AuthCard>
   );
 }
-

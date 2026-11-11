@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import QueryProvider from "@/components/providers/query-provider";
+import { RoleProvider } from "@/lib/role-context";
 import PwaRegister from "@/components/pwa/pwa-register";
 import "./globals.css";
 
@@ -87,8 +88,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans">
         <QueryProvider>
-          {children}
-          <PwaRegister />
+          <RoleProvider>
+            {children}
+            <PwaRegister />
+          </RoleProvider>
         </QueryProvider>
       </body>
     </html>

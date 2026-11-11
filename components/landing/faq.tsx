@@ -67,7 +67,7 @@ export default function Faq() {
             return (
               <Reveal key={item.q}>
                 <div
-                  className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                  className={`rounded-md border transition-all duration-200 overflow-hidden ${
                     isOpen
                       ? "border-teal-brand/30 bg-cream/70 shadow-xs"
                       : "border-ink/10 bg-white hover:border-ink/20"

@@ -3,15 +3,15 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import AuthCard from "@/components/auth/auth-card";
-import { 
-  Building2, 
-  Home, 
-  ShieldCheck, 
-  CheckCircle2, 
-  ArrowRight, 
-  Lock, 
-  User, 
-  Phone 
+import {
+  Building2,
+  Home,
+  ShieldCheck,
+  CheckCircle2,
+  ArrowRight,
+  Lock,
+  User,
+  Phone,
 } from "lucide-react";
 
 function AcceptInvitationContent() {
@@ -50,7 +50,10 @@ function AcceptInvitationContent() {
           <div>
             <h2 className="text-xl font-bold text-ink">Account Activated!</h2>
             <p className="text-xs text-ink/70 mt-1 max-w-xs mx-auto leading-relaxed">
-              Your staff account has been provisioned with the <span className="font-semibold text-teal-brand">{roleParam}</span> role for <span className="font-semibold text-ink">{facilityParam}</span>.
+              Your staff account has been provisioned with the{" "}
+              <span className="font-semibold text-teal-brand">{roleParam}</span>{" "}
+              role for{" "}
+              <span className="font-semibold text-ink">{facilityParam}</span>.
             </p>
           </div>
 
@@ -66,9 +69,8 @@ function AcceptInvitationContent() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm">
-          
           {/* Context Boundary Card (Section 4.7) */}
-          <div className="p-4 rounded-2xl border border-teal-brand/20 bg-mint/40 space-y-2">
+          <div className="p-4 rounded-md border border-teal-brand/20 bg-mint/40 space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-teal-deep flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4 text-teal-brand" />
@@ -93,7 +95,9 @@ function AcceptInvitationContent() {
 
           {/* Invitee Email (Readonly) */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-ink">Invited Email Address</label>
+            <label className="font-semibold text-ink">
+              Invited Email Address
+            </label>
             <input
               type="email"
               disabled
@@ -122,7 +126,9 @@ function AcceptInvitationContent() {
 
           {/* Phone */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-ink">Contact Phone Number</label>
+            <label className="font-semibold text-ink">
+              Contact Phone Number
+            </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink/40">
                 <Phone className="h-4 w-4" />
@@ -163,7 +169,9 @@ function AcceptInvitationContent() {
               disabled={loading}
               className="w-full py-3.5 rounded-full bg-teal-brand text-white font-medium text-sm sm:text-base hover:bg-teal-deep shadow-[0_10px_25px_-8px_rgba(15,118,110,0.5)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <span>{loading ? "Activating..." : "Accept & Activate Account"}</span>
+              <span>
+                {loading ? "Activating..." : "Accept & Activate Account"}
+              </span>
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -180,10 +188,15 @@ export default function AcceptInvitationPage() {
       subtitle="Complete your profile to join your care organisation on CarerLoop."
       badge="Invitation Onboarding"
     >
-      <Suspense fallback={<div className="p-8 text-center text-xs text-ink/50">Validating invitation credentials...</div>}>
+      <Suspense
+        fallback={
+          <div className="p-8 text-center text-xs text-ink/50">
+            Validating invitation credentials...
+          </div>
+        }
+      >
         <AcceptInvitationContent />
       </Suspense>
     </AuthCard>
   );
 }
-

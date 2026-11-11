@@ -42,19 +42,25 @@ const testimonials = [
 
 export default function Stories() {
   return (
-    <section id="stories" className="relative overflow-hidden bg-cream py-24 sm:py-32">
+    <section
+      id="stories"
+      className="relative overflow-hidden bg-cream py-24 sm:py-32"
+    >
       {/* Decorative Blob */}
       <Blob className="pointer-events-none absolute -left-40 top-1/3 h-[450px] w-[450px] text-mint/40" />
 
       <div className="relative mx-auto max-w-6xl px-5 sm:px-8">
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-medium text-teal-brand">Real experiences</p>
+            <p className="text-sm font-medium text-teal-brand">
+              Real experiences
+            </p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-[2.75rem] sm:leading-[1.15]">
               Trusted by the people who deliver care every day.
             </h2>
             <p className="mt-4 text-base sm:text-lg text-ink/65">
-              From care home managers to front-line caregivers and families, here is what changes when care is better organised.
+              From care home managers to front-line caregivers and families,
+              here is what changes when care is better organised.
             </p>
           </div>
         </Reveal>
@@ -80,14 +86,16 @@ export default function Stories() {
 
                 <div className="pt-6 mt-6 border-t border-ink/10 flex items-center gap-3.5">
                   <div
-                    className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl font-bold text-sm shadow-xs ${t.avatarBg}`}
+                    className={`grid h-11 w-11 shrink-0 place-items-center rounded-md font-bold text-sm shadow-xs ${t.avatarBg}`}
                   >
                     {t.initials}
                   </div>
                   <div>
                     <p className="text-sm font-bold text-ink">{t.author}</p>
                     <p className="text-xs text-ink/65">{t.role}</p>
-                    <p className="text-[11px] text-teal-brand font-medium mt-0.5">{t.facility}</p>
+                    <p className="text-[11px] text-teal-brand font-medium mt-0.5">
+                      {t.facility}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -96,7 +104,7 @@ export default function Stories() {
         </div>
 
         {/* Bottom trust bar */}
-        <div className="mt-16 rounded-2xl bg-white border border-ink/10 p-6 sm:p-8 text-center max-w-3xl mx-auto shadow-xs">
+        <div className="mt-16 rounded-md bg-white border border-ink/10 p-6 sm:p-8 text-center max-w-3xl mx-auto shadow-xs">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-xs text-ink/70">
             <span className="flex items-center gap-2 font-medium">
               <CheckCircle2 className="h-4 w-4 text-teal-brand" />
@@ -114,7 +122,6 @@ export default function Stories() {
             </span>
           </div>
         </div>
-
       </div>
     </section>
   );
