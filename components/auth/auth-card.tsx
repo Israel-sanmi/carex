@@ -30,7 +30,7 @@ export default function AuthCard({
         <a href="/" className="inline-block transition-transform hover:scale-102">
           <Logo />
         </a>
-        <ThemeToggle />
+        {/* <ThemeToggle /> */}
       </div>
 
       {/* Main Card Container */}
