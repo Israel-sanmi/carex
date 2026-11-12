@@ -153,7 +153,7 @@ export default function UsersPage() {
             </span>
           </div>
           <p className="text-sm text-ink/70 mt-1">
-            Section 4.6 RBAC: Manage accounts, role assignments, security status
+            Manage accounts, role assignments, security status
             and facility boundaries.
           </p>
         </div>

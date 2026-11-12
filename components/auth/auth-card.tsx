@@ -32,14 +32,14 @@ export default function AuthCard({
       {/* Main Card Container */}
       <div className={`w-full ${maxWidth} mx-auto my-8`}>
         <div className="relative rounded-[2rem] bg-white p-6 sm:p-10 border border-ink/10 shadow-[0_20px_60px_-20px_rgba(19,48,45,0.18)]">
-          {/* Optional Badge */}
+          {/* Optional Badge
           {badge && (
             <div className="mb-4">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-mint text-teal-deep border border-teal-brand/20">
                 {badge}
               </span>
             </div>
-          )}
+          )} */}
 
           {/* Heading */}
           <div className="space-y-1.5 mb-6">

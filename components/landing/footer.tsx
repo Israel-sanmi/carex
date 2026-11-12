@@ -61,11 +61,16 @@ export default function Footer() {
                   Live Dashboard
                 </Link>
               </li>
-              <li>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-semibold border border-emerald-500/20">
-                  CQC & GDPR Compliant
-                </span>
+               <li>
+                <Link href="/dashboard" className="hover:text-teal-brand dark:hover:text-emerald-400 transition-colors">
+                   CQC & GDPR Compliant
+                </Link>
               </li>
+              {/* <li>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-semibold border border-emerald-500/20">
+                 
+                </span>
+              </li> */}
             </ul>
           </div>
 

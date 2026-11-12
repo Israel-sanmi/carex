@@ -157,7 +157,7 @@ export default function AuditLogsPage() {
             </span>
           </div>
           <p className="text-sm text-ink/70 mt-1">
-            Section 4.9 System Transparency: Cryptographically indexed activity
+            System Transparency: Cryptographically indexed activity
             records documenting all access and changes.
           </p>
         </div>

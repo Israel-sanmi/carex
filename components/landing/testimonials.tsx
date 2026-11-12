@@ -85,9 +85,9 @@ export default function Testimonials() {
                   <div className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
                     {r.role}
                   </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-none items-center gap-1.5 mt-0.5">
                     <Building2 className="w-3 h-3 text-slate-400" />
-                    <span>{r.careHome}</span>
+                    <span>{r.careHome}</span> <br />
                     <span className="text-emerald-500">• {r.cqc}</span>
                   </div>
                 </div>

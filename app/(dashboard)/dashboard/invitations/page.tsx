@@ -140,7 +140,7 @@ export default function InvitationsPage() {
             </span>
           </div>
           <p className="text-sm text-ink/70 mt-1">
-            Section 4.7 Invitation Management: Securely dispatch role-assigned
+            Invitation Management: Securely dispatch role-assigned
             invites with cryptographic onboarding links.
           </p>
         </div>

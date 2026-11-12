@@ -215,7 +215,7 @@ function AdmissionStatusContent() {
         {/* Section 1 What The Resident Sees: Progress Checklist */}
         <div className="space-y-3 pt-2">
           <h2 className="text-xs font-bold text-ink dark:text-white uppercase tracking-wider">
-            Onboarding Progress Checklist (Section 1)
+            Onboarding Progress Checklist
           </h2>
 
           <div className="space-y-2 text-xs">

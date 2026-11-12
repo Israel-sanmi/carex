@@ -100,9 +100,9 @@ export default function OfflineSpotlight() {
                       PWA Local DB
                     </span>
                   </div>
-                  <p className="text-xs text-slate-300">
+                  {/* <p className="text-xs text-slate-300">
                     14 observations logged in Room 22B. Queued for silent background replication.
-                  </p>
+                  </p> */}
                   <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
                     <span>Data integrity: 100% verified</span>
                     <span className="text-emerald-400 font-semibold">Zero lost records</span>

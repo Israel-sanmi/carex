@@ -164,7 +164,7 @@ export default function OrganisationsPage() {
             </span>
           </div>
           <p className="text-sm text-ink/70 mt-1">
-            Section 4.2 Multi-tenant Registry: Provision and oversee independent
+            Multi-tenant Registry: Provision and oversee independent
             care provider groups on CarerLoop.
           </p>
         </div>

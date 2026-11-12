@@ -296,7 +296,7 @@ export default function RegistrationsPage() {
             </span>
           </div>
           <p className="text-sm text-ink/70 dark:text-slate-300 mt-1">
-            Section 3: Review incoming self-registrations and transfer requests.
+            Review incoming self-registrations and transfer requests.
             Approving officially admits the resident and allocates a care home
             bed.
           </p>
@@ -308,7 +308,7 @@ export default function RegistrationsPage() {
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white text-sm font-semibold transition-all shadow-sm cursor-pointer"
         >
           <UserPlus className="h-4 w-4" />
-          Invite Resident (Section 2)
+          Invite Resident 
         </button>
       </div>
 
@@ -375,7 +375,7 @@ export default function RegistrationsPage() {
                 <th className="py-3.5 px-4">Previous Organisation / Home</th>
                 <th className="py-3.5 px-4">Destination Facility</th>
                 <th className="py-3.5 px-4">Request Date</th>
-                <th className="py-3.5 px-4">Current Status (Section 4)</th>
+                <th className="py-3.5 px-4">Current Status</th>
                 <th className="py-3.5 px-6 text-right">Actions</th>
               </tr>
             </thead>
@@ -727,7 +727,7 @@ export default function RegistrationsPage() {
             <div className="flex items-center justify-between border-b border-ink/10 dark:border-white/10 pb-4">
               <div>
                 <h3 className="text-lg font-bold text-ink dark:text-white font-heading">
-                  Invite Resident (Section 2)
+                  Invite Resident
                 </h3>
                 <p className="text-xs text-ink/60 dark:text-slate-400">
                   Send a direct onboarding invitation to a prospective or

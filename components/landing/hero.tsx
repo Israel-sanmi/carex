@@ -27,9 +27,9 @@ export default function Hero() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span className="text-emerald-800 dark:text-emerald-300 tracking-wide font-medium">
+              {/* <span className="text-emerald-800 dark:text-emerald-300 tracking-wide font-medium">
                 CQC & GDPR Compliant • Residential Care Platform
-              </span>
+              </span> */}
             </div>
 
             {/* Headline with Instrument Serif accent */}
@@ -82,22 +82,7 @@ export default function Hero() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-3 pt-1">
-                <div className="flex -space-x-2 overflow-hidden">
-                  <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-slate-950 bg-emerald-700 text-white text-xs font-bold flex items-center justify-center">
-                    SJ
-                  </div>
-                  <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-slate-950 bg-teal-600 text-white text-xs font-bold flex items-center justify-center">
-                    MC
-                  </div>
-                  <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-slate-950 bg-amber-600 text-white text-xs font-bold flex items-center justify-center">
-                    DR
-                  </div>
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">85+ care homes</span> trust CarerLoop every shift
-                </p>
-              </div>
+             
             </div>
           </div>
 
@@ -145,7 +130,7 @@ export default function Hero() {
                 <div className="glass dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl p-4 border border-white/50 dark:border-white/15 shadow-2xl space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center shadow-sm">
+                      <div className="w-9 h-9 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white font-bold text-xs flex flex-none items-center justify-center shadow-sm">
                         EV
                       </div>
                       <div>
@@ -157,7 +142,7 @@ export default function Hero() {
                         </div>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10">
+                    <span className="text-[10px] whitespace-nowrap font-mono text-emerald-600 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10">
                       09:15 AM
                     </span>
                   </div>

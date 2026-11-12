@@ -118,7 +118,7 @@ export default function RegisterPage() {
         <div className="flex items-center justify-between text-xs font-semibold text-ink/60 dark:text-slate-400 mb-2">
           <span className="text-teal-brand dark:text-emerald-400">Step {currentStep} of 4</span>
           <span>
-            {currentStep === 1 && "Personal Information (Section 1)"}
+            {currentStep === 1 && "Personal Information"}
             {currentStep === 2 && "Care Destination & Facility"}
             {currentStep === 3 && "Demographics & Next of Kin"}
             {currentStep === 4 && "Clinical Notes & Security"}

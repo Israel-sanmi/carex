@@ -342,14 +342,14 @@ export default function RoleTabs() {
                         <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
                         Family Portal Update • Eleanor Vance
                       </span>
-                      <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                      <span className="text-[10px] whitespace-nowrap font-mono text-emerald-600 dark:text-emerald-400 font-bold">
                         Today 2:30 PM
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-300">
                       Eleanor had a lovely afternoon in the garden and attended the live piano session. Ate lunch well and in high spirits!
                     </p>
-                    <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
+                    <div className="pt-2 border-t border-white/10 text-[11px] text-slate-400">
                       <span>Shared by: Key Worker Sarah</span>
                       <span className="text-emerald-500 font-semibold">Shared with 3 family members ✓</span>
                     </div>
