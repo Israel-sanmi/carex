@@ -122,7 +122,7 @@ export default function LoginPage() {
           </div>
           <div className="pt-2">
             <a
-              href="/dashboard"
+              // href="/dashboard"
               className="inline-flex items-center gap-2 rounded-full bg-teal-brand px-6 py-2.5 text-xs font-semibold text-white hover:bg-teal-deep transition-all shadow-sm"
             >
               <span>Go to Dashboard</span>
