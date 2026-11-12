@@ -102,7 +102,7 @@ export default function OrganisationsPage() {
 
   if (currentRole !== "SUPER_ADMIN") {
     return (
-      <div className="p-8 rounded-3xl bg-white border border-ink/10 text-center max-w-xl mx-auto space-y-4 my-12">
+      <div className="p-8 rounded-md bg-white border border-ink/10 text-center max-w-xl mx-auto space-y-4 my-12">
         <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
           <AlertTriangle className="h-6 w-6" />
         </div>
@@ -171,7 +171,7 @@ export default function OrganisationsPage() {
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-brand text-white text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-teal-brand text-white text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           Provision Organisation
@@ -220,7 +220,7 @@ export default function OrganisationsPage() {
             placeholder="Search by organisation name, code or admin..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all"
+            className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all"
           />
         </div>
       </div>
@@ -230,7 +230,7 @@ export default function OrganisationsPage() {
         {filtered.map((org) => (
           <div
             key={org.id}
-            className="p-6 rounded-3xl bg-white border border-ink/10 shadow-xs hover:border-teal-brand/40 transition-all space-y-4"
+            className="p-6 rounded-md bg-white border border-ink/10 shadow-xs hover:border-teal-brand/40 transition-all space-y-4"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -293,7 +293,7 @@ export default function OrganisationsPage() {
               </span>
               <button
                 onClick={() => {}}
-                className="px-3 py-1.5 rounded-xl bg-cream hover:bg-mint text-teal-deep text-xs font-semibold transition-all cursor-pointer"
+                className="px-3 py-1.5 rounded-md bg-cream hover:bg-mint text-teal-deep text-xs font-semibold transition-all cursor-pointer"
               >
                 Manage Tenant
               </button>
@@ -305,7 +305,7 @@ export default function OrganisationsPage() {
       {/* Provision Org Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-3xl p-6 shadow-2xl border border-ink/10 space-y-5 animate-in fade-in zoom-in-95">
+          <div className="w-full max-w-lg bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-5 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-ink/10 pb-4">
               <div>
                 <h3 className="text-lg font-bold text-ink font-heading">
@@ -333,7 +333,7 @@ export default function OrganisationsPage() {
                   placeholder="e.g. Sunrise Care Group Ltd"
                   value={newOrgName}
                   onChange={(e) => setNewOrgName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium"
+                  className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium"
                 />
               </div>
 
@@ -347,14 +347,14 @@ export default function OrganisationsPage() {
                     placeholder="e.g. SUNRISE"
                     value={newOrgCode}
                     onChange={(e) => setNewOrgCode(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 uppercase font-mono font-bold"
+                    className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 uppercase font-mono font-bold"
                   />
                 </div>
                 <div>
                   <label className="font-semibold text-ink block mb-1">
                     Subscription Plan
                   </label>
-                  <select className="w-full px-3 py-2 rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium">
+                  <select className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium">
                     <option>Enterprise Multi-Home</option>
                     <option>Professional</option>
                     <option>Standard</option>
@@ -371,7 +371,7 @@ export default function OrganisationsPage() {
                   placeholder="admin@organisation.co.uk"
                   value={newAdminEmail}
                   onChange={(e) => setNewAdminEmail(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium"
+                  className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium"
                 />
               </div>
             </div>
@@ -379,13 +379,13 @@ export default function OrganisationsPage() {
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-ink/10">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 rounded-xl border border-ink/10 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
+                className="px-4 py-2 rounded-md border border-ink/10 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateOrg}
-                className="px-4 py-2 rounded-xl bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer"
+                className="px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer"
               >
                 Provision Tenant
               </button>

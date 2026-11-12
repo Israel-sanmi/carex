@@ -1,6 +1,8 @@
+"use client";
+
 import React from "react";
 import Logo from "@/components/landing/logo";
-import { ShieldCheck, Heart } from "lucide-react";
+import ThemeToggle from "@/components/landing/theme-toggle";
 
 interface AuthCardProps {
   title: string;
@@ -16,42 +18,34 @@ export default function AuthCard({
   subtitle,
   children,
   footer,
-  badge,
   maxWidth = "max-w-md",
 }: AuthCardProps) {
   return (
-    <div className="min-h-screen bg-cream flex flex-col justify-between p-4 sm:p-6 lg:p-8 font-sans text-ink selection:bg-sun/60">
+    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-between p-4 sm:p-6 lg:p-8 font-sans text-ink dark:text-slate-100 selection:bg-emerald-500/30 overflow-x-hidden transition-colors duration-300">
+      {/* Aurora Gradient Background */}
+      <div className="aurora-bg" />
+
       {/* Top Header */}
-      <div className="w-full max-w-6xl mx-auto flex items-center justify-between py-2">
+      <div className="relative z-10 w-full max-w-6xl mx-auto flex items-center justify-between py-2">
         <a href="/" className="inline-block transition-transform hover:scale-102">
           <Logo />
         </a>
-        {/* <div className="flex items-center gap-2 text-xs font-medium text-ink/65">
-          <ShieldCheck className="h-4 w-4 text-teal-brand" />
-          <span className="hidden sm:inline">Role-Based Tenant Isolated</span>
-        </div> */}
+        <ThemeToggle />
       </div>
 
       {/* Main Card Container */}
-      <div className={`w-full ${maxWidth} mx-auto my-8`}>
-        <div className="relative rounded-[2rem] bg-white p-6 sm:p-10 border border-ink/10 shadow-[0_20px_60px_-20px_rgba(19,48,45,0.18)]">
-          {/* Badge */}
-          {/* {badge && (
-            <div className="mb-4">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-mint text-teal-deep border border-teal-brand/20">
-                <Heart className="h-3.5 w-3.5 text-teal-brand" />
-                {badge}
-              </span>
-            </div>
-          )} */}
+      <div className={`relative z-10 w-full ${maxWidth} mx-auto my-8`}>
+        {/* Radiant glow behind card */}
+        <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-[3rem] blur-2xl pointer-events-none" />
 
+        <div className="relative rounded-[2.5rem] glass dark:bg-slate-900/80 p-6 sm:p-10 border border-white/80 dark:border-white/10 shadow-2xl">
           {/* Heading */}
           <div className="space-y-1.5 mb-6">
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-ink">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink dark:text-white font-heading">
               {title}
             </h1>
             {subtitle && (
-              <p className="text-sm text-ink/65 leading-relaxed">
+              <p className="text-sm text-ink/75 dark:text-slate-300 leading-relaxed">
                 {subtitle}
               </p>
             )}
@@ -64,7 +58,7 @@ export default function AuthCard({
 
           {/* Optional Footer */}
           {footer && (
-            <div className="mt-6 pt-6 border-t border-ink/10 text-xs text-center text-ink/60">
+            <div className="mt-6 pt-6 border-t border-ink/10 dark:border-white/10 text-xs text-center text-ink/60 dark:text-slate-400">
               {footer}
             </div>
           )}
@@ -72,7 +66,7 @@ export default function AuthCard({
       </div>
 
       {/* Page Footer */}
-      <div className="w-full max-w-6xl mx-auto py-4 text-center text-xs text-ink/50">
+      <div className="relative z-10 w-full max-w-6xl mx-auto py-4 text-center text-xs text-ink/50 dark:text-slate-500">
         <p>© 2026 CARERLOOP. Better Organised Care. Better Lives.</p>
       </div>
     </div>

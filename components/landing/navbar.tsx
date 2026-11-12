@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import Logo from "./logo";
+import ThemeToggle from "./theme-toggle";
 
 const links = [
   { label: "Features", href: "#features" },
-  { label: "Daily Flow", href: "#shift-flow" },
+  { label: "Solutions", href: "#roles" },
   { label: "Impact", href: "#impact" },
-  { label: "Who it's for", href: "#who" },
-  { label: "Stories", href: "#stories" },
+  { label: "Reviews", href: "#reviews" },
   { label: "FAQ", href: "#faq" },
 ];
 
@@ -51,10 +52,13 @@ export default function Navbar() {
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-cream/90 backdrop-blur-md shadow-[0_1px_0_rgba(19,48,45,0.08)]"
-          : "bg-transparent"
+          ? "glass shadow-lg border-b border-ink/10 dark:border-emerald-500/10"
+          : "bg-white/70 dark:bg-[#040e0f]/80 backdrop-blur-md border-b border-white/20 dark:border-white/5"
       }`}
     >
+      {/* Subtle emerald horizon accent glow under navbar */}
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent pointer-events-none" />
+
       <nav className="mx-auto flex h-18 max-w-7xl items-center justify-between px-5 sm:px-8">
         <a
           href="#top"
@@ -65,47 +69,55 @@ export default function Navbar() {
           <Logo />
         </a>
 
-        <ul className="hidden items-center gap-8 md:flex">
-          {links.map((l) => (
-            <li key={l.href}>
-              <a
-                href={l.href}
-                onClick={(e) => handleSmoothScroll(e, l.href)}
-                className="text-[15px] text-ink/70 transition-colors hover:text-ink cursor-pointer"
-              >
-                {l.label}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <div className="hidden md:flex items-center gap-8">
+          <ul className="flex items-center gap-7">
+            {links.map((l) => (
+              <li key={l.href}>
+                <a
+                  href={l.href}
+                  onClick={(e) => handleSmoothScroll(e, l.href)}
+                  className="text-sm font-medium text-ink/75 dark:text-slate-300 transition-colors hover:text-teal-brand dark:hover:text-emerald-400 cursor-pointer"
+                >
+                  {l.label}
+                </a>
+              </li>
+            ))}
+          </ul>
 
-        <div className="hidden items-center gap-3 md:flex">
-          <a
-            href="/login"
-            className="px-3 py-2 text-[15px] font-medium text-ink/80 hover:text-ink"
-          >
-            Sign in
-          </a>
-          <a
-            href="/register"
-            className="rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-white transition hover:bg-teal-deep cursor-pointer"
-          >
-            Get started
-          </a>
+          {/* Theme Toggle Button right by the menu */}
+          <ThemeToggle />
         </div>
 
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="rounded-lg p-2 text-ink md:hidden cursor-pointer"
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
-        >
-          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="hidden items-center gap-4 md:flex">
+          <Link
+            href="/login"
+            className="px-3 py-2 text-sm font-semibold text-ink/80 dark:text-slate-300 hover:text-teal-brand dark:hover:text-emerald-400 transition-colors"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/register"
+            className="rounded-full bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-slate-950 font-semibold px-5 py-2.5 text-sm transition-all shadow-md shadow-emerald-500/20 hover:-translate-y-0.5 cursor-pointer"
+          >
+            Get started
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="rounded-md p-2 text-ink dark:text-slate-200 cursor-pointer"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+          >
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </nav>
 
       {open && (
-        <div className="border-t border-ink/10 bg-cream px-5 pb-6 pt-2 md:hidden animate-fade-in">
+        <div className="border-t border-ink/10 dark:border-white/10 glass px-5 pb-6 pt-2 md:hidden animate-fade-in">
           {links.map((l) => (
             <a
               key={l.href}
@@ -114,24 +126,24 @@ export default function Navbar() {
                 setOpen(false);
                 handleSmoothScroll(e, l.href);
               }}
-              className="block py-3 text-base text-ink/80 hover:text-ink cursor-pointer"
+              className="block py-3 text-base font-medium text-ink/80 dark:text-slate-200 hover:text-teal-brand dark:hover:text-emerald-400 cursor-pointer"
             >
               {l.label}
             </a>
           ))}
-          <div className="mt-3 flex gap-3">
-            <a
+          <div className="mt-4 flex flex-col gap-2 pt-3 border-t border-ink/10 dark:border-white/10">
+            <Link
               href="/login"
-              className="flex-1 rounded-full border border-ink/15 py-2.5 text-center text-sm font-medium text-ink"
+              className="w-full text-center py-2.5 text-sm font-semibold text-ink dark:text-slate-200 hover:text-teal-brand dark:hover:text-emerald-400"
             >
               Sign in
-            </a>
-            <a
+            </Link>
+            <Link
               href="/register"
-              className="flex-1 rounded-full bg-ink py-2.5 text-center text-sm font-medium text-white cursor-pointer"
+              className="w-full text-center rounded-full bg-emerald-600 dark:bg-emerald-500 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
             >
               Get started
-            </a>
+            </Link>
           </div>
         </div>
       )}

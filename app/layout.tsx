@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import QueryProvider from "@/components/providers/query-provider";
 import { RoleProvider } from "@/lib/role-context";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import PwaRegister from "@/components/pwa/pwa-register";
 import "./globals.css";
 
@@ -84,15 +85,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${poppins.variable} font-sans h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">
-        <QueryProvider>
-          <RoleProvider>
-            {children}
-            <PwaRegister />
-          </RoleProvider>
-        </QueryProvider>
+      <body className="min-h-full flex flex-col font-sans bg-slate-50 dark:bg-[#040e0f] text-slate-900 dark:text-slate-100 transition-colors duration-300">
+        <ThemeProvider>
+          <QueryProvider>
+            <RoleProvider>
+              {children}
+              <PwaRegister />
+            </RoleProvider>
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

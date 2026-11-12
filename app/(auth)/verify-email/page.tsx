@@ -78,36 +78,40 @@ function VerifyEmailContent() {
       {/* 2. SUCCESS STATE (Section 4.8) */}
       {status === "success" && (
         <div className="py-4 text-center space-y-5 animate-fade-in">
-          <div className="grid h-16 w-16 place-items-center rounded-full bg-mint text-teal-brand mx-auto shadow-sm">
+          <div className="grid h-16 w-16 place-items-center rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 mx-auto shadow-sm">
             <CheckCircle2 className="h-9 w-9" />
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold text-ink">
+            <h2 className="text-2xl font-bold text-ink dark:text-white font-heading">
               Email Verified Successfully
             </h2>
-            <p className="text-xs sm:text-sm text-ink/65 mt-1.5 max-w-sm mx-auto leading-relaxed">
-              Your email ownership is confirmed. If you registered as a
-              resident, your application is now queued for care home clinical
-              review.
+            <p className="text-xs sm:text-sm text-ink/65 dark:text-slate-300 mt-1.5 max-w-sm mx-auto leading-relaxed">
+              Your email ownership is confirmed. Your resident registration is now officially queued for administrative review.
             </p>
           </div>
 
-          {/* Separation reminder */}
-          {/* <div className="p-3.5 rounded-xl border border-teal-brand/20 bg-mint/40 text-xs text-left text-ink/80 space-y-1">
-            <p className="font-semibold text-teal-deep">Next Operation:</p>
-            <p>
-              Your care home administration team will review your admission details and assign an available room bed. You will receive an alert once admitted.
+          <div className="p-4 rounded-md bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-500/20 text-xs text-left text-purple-900 dark:text-purple-300 space-y-1">
+            <p className="font-bold flex items-center gap-1.5">
+              <Clock className="w-4 h-4" /> Next Stage: Awaiting Administrative Review
             </p>
-          </div> */}
+            <p className="text-[11px] leading-relaxed">
+              The care organisation administrator will evaluate your dossier and either admit or reject your request. You can check your live progress anytime on the Admission Status screen.
+            </p>
+          </div>
 
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
+            <a
+              href="/admission-status?status=PENDING_ADMISSION"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 px-6 py-3 text-xs sm:text-sm font-semibold text-white transition-all shadow-md"
+            >
+              <span>Track Admission Status →</span>
+            </a>
             <a
               href="/login"
-              className="inline-flex items-center gap-2 rounded-full bg-teal-brand px-7 py-3 text-sm font-semibold text-white hover:bg-teal-deep transition-all shadow-sm"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-ink/15 dark:border-white/15 px-6 py-3 text-xs sm:text-sm font-semibold text-ink dark:text-white hover:bg-cream dark:hover:bg-slate-800 transition-all"
             >
-              <span>Continue to Sign In</span>
-              <ArrowRight className="h-4 w-4" />
+              <span>Sign In to Portal</span>
             </a>
           </div>
         </div>
@@ -206,7 +210,7 @@ function VerifyEmailContent() {
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
                     placeholder="name@carehome.co.uk"
-                    className="w-full rounded-xl border border-ink/15 bg-cream/30 pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
+                    className="w-full rounded-md border border-ink/15 bg-cream/30 pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
                   />
                 </div>
               </div>

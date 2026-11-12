@@ -53,7 +53,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
       <div className="flex items-center gap-3">
         <button
           onClick={onOpenMobileNav}
-          className="p-2 rounded-xl text-ink/70 hover:text-ink hover:bg-cream lg:hidden cursor-pointer"
+          className="p-2 rounded-md text-ink/70 hover:text-ink hover:bg-cream lg:hidden cursor-pointer"
           aria-label="Open mobile navigation"
         >
           <Menu className="h-6 w-6" />
@@ -67,7 +67,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
                 setFacilityMenuOpen(!facilityMenuOpen);
                 setRoleMenuOpen(false);
               }}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-ink/10 bg-cream/50 hover:bg-cream text-xs font-semibold text-ink transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-ink/10 bg-cream/50 hover:bg-cream text-xs font-semibold text-ink transition-colors cursor-pointer"
             >
               <Home className="h-3.5 w-3.5 text-teal-brand" />
               <span className="hidden sm:inline">Facility:</span>
@@ -87,7 +87,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
                       setActiveCareHome(home.split(" (")[0]);
                       setFacilityMenuOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-left transition-colors cursor-pointer ${
                       activeCareHome === home.split(" (")[0]
                         ? "bg-mint text-teal-deep font-bold"
                         : "hover:bg-cream text-ink/70 hover:text-ink"
@@ -103,7 +103,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
             )}
           </div>
         ) : (
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cream border border-ink/10 text-xs text-ink/70 font-medium">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-cream border border-ink/10 text-xs text-ink/70 font-medium">
             <Building2 className="h-3.5 w-3.5 text-teal-brand" />
             <span>{user.organisationName}</span>
           </div>
@@ -147,7 +147,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
                       setCurrentRole(role);
                       setRoleMenuOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-colors cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-md text-left transition-colors cursor-pointer ${
                       currentRole === role
                         ? "bg-mint text-teal-deep font-bold"
                         : "hover:bg-cream text-ink/80 hover:text-ink"
@@ -179,7 +179,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
         <div className="relative">
           <button
             onClick={() => setNotificationsOpen(!notificationsOpen)}
-            className="relative p-2 rounded-xl text-ink/70 hover:text-ink hover:bg-cream transition-colors cursor-pointer"
+            className="relative p-2 rounded-md text-ink/70 hover:text-ink hover:bg-cream transition-colors cursor-pointer"
             aria-label="Notifications"
           >
             <Bell className="h-5 w-5" />
@@ -199,7 +199,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
               </div>
 
               <div className="space-y-2">
-                <div className="p-2.5 rounded-xl bg-cream/50 border border-ink/5 space-y-0.5">
+                <div className="p-2.5 rounded-md bg-cream/50 border border-ink/5 space-y-0.5">
                   <p className="font-semibold text-ink">
                     Room 14B • Eleanor Vance
                   </p>
@@ -209,7 +209,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
                   <span className="text-[10px] text-ink/40">5m ago</span>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-cream/50 border border-ink/5 space-y-0.5">
+                <div className="p-2.5 rounded-md bg-cream/50 border border-ink/5 space-y-0.5">
                   <p className="font-semibold text-ink">
                     New Self-Registration Ref: REG-2026-9904
                   </p>

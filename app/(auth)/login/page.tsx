@@ -149,7 +149,7 @@ export default function LoginPage() {
                   type="button"
                   key={role}
                   onClick={() => handleRoleSelect(role)}
-                  className={`flex items-center gap-1.5 p-2 rounded-xl text-left border text-xs transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 p-2 rounded-md text-left border text-xs transition-all cursor-pointer ${
                     selectedRole === role
                       ? "border-teal-brand bg-teal-brand/10 text-teal-deep font-bold ring-1 ring-teal-brand/30"
                       : "border-ink/10 bg-cream/40 text-ink/70 hover:bg-cream hover:text-ink"
@@ -163,7 +163,7 @@ export default function LoginPage() {
           </div> */}
 
           {/* Active Profile Context Banner */}
-          {/* <div className="p-3 rounded-xl border border-ink/10 bg-cream/50 text-xs space-y-1">
+          {/* <div className="p-3 rounded-md border border-ink/10 bg-cream/50 text-xs space-y-1">
             <div className="flex items-center justify-between">
               <span className="font-bold text-ink">{ROLE_PROFILES[selectedRole].name}</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
@@ -180,7 +180,7 @@ export default function LoginPage() {
 
           {/* Error alerts per Section 5 specification */}
           {errorType === "invalid_credentials" && (
-            <div className="p-3.5 rounded-xl border border-coral/30 bg-coral-soft/50 text-ink space-y-1 animate-fade-in">
+            <div className="p-3.5 rounded-md border border-coral/30 bg-coral-soft/50 text-ink space-y-1 animate-fade-in">
               <p className="font-semibold text-coral flex items-center gap-1.5 text-xs">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 Invalid email or password
@@ -192,7 +192,7 @@ export default function LoginPage() {
           )}
 
           {errorType === "unverified_email" && (
-            <div className="p-3.5 rounded-xl border border-sun/40 bg-sun-soft/60 text-ink space-y-1.5 animate-fade-in">
+            <div className="p-3.5 rounded-md border border-sun/40 bg-sun-soft/60 text-ink space-y-1.5 animate-fade-in">
               <p className="font-semibold text-[#8b6100] flex items-center gap-1.5 text-xs">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 Email verification required
@@ -211,7 +211,7 @@ export default function LoginPage() {
           )}
 
           {errorType === "suspended_account" && (
-            <div className="p-3.5 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive space-y-1 animate-fade-in">
+            <div className="p-3.5 rounded-md border border-destructive/30 bg-destructive/10 text-destructive space-y-1 animate-fade-in">
               <p className="font-semibold flex items-center gap-1.5 text-xs">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 Account inactive or suspended
@@ -238,7 +238,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@carehome.co.uk"
-                className="w-full rounded-xl border border-ink/15 bg-cream/30 pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
+                className="w-full rounded-md border border-ink/15 bg-cream/30 pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
               />
             </div>
           </div>
@@ -264,7 +264,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
-                className="w-full rounded-xl border border-ink/15 bg-cream/30 pl-10 pr-10 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
+                className="w-full rounded-md border border-ink/15 bg-cream/30 pl-10 pr-10 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
               />
               <button
                 type="button"

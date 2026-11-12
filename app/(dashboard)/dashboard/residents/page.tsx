@@ -188,7 +188,7 @@ export default function ResidentsPage() {
     const myProfile = mockResidents[0]; // Arthur Pendelton
     return (
       <div className="space-y-6 max-w-5xl mx-auto">
-        <div className="p-6 rounded-3xl bg-teal-brand text-white shadow-md relative overflow-hidden">
+        <div className="p-6 rounded-md bg-teal-brand text-white shadow-md relative overflow-hidden">
           <div className="relative z-10">
             <span className="text-xs px-2.5 py-1 rounded-full bg-white/20 font-semibold tracking-wide">
               Resident & Family Portal
@@ -206,7 +206,7 @@ export default function ResidentsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Main Details */}
           <div className="md:col-span-2 space-y-6">
-            <div className="p-6 rounded-3xl bg-white border border-ink/10 shadow-xs space-y-4">
+            <div className="p-6 rounded-md bg-white border border-ink/10 shadow-xs space-y-4">
               <h2 className="text-lg font-bold text-ink font-heading flex items-center gap-2">
                 <Heart className="h-5 w-5 text-coral" />
                 Personal Profile & Care Level
@@ -274,13 +274,13 @@ export default function ResidentsPage() {
             </div>
 
             {/* Daily Schedule Preview */}
-            <div className="p-6 rounded-3xl bg-white border border-ink/10 shadow-xs space-y-4">
+            <div className="p-6 rounded-md bg-white border border-ink/10 shadow-xs space-y-4">
               <h2 className="text-lg font-bold text-ink font-heading flex items-center gap-2">
                 <Clock className="h-5 w-5 text-teal-brand" />
                 Today&apos;s Wellbeing & Activities
               </h2>
               <div className="space-y-3 text-xs">
-                <div className="flex items-start gap-3 p-3 rounded-xl bg-cream/30 border border-ink/5">
+                <div className="flex items-start gap-3 p-3 rounded-md bg-cream/30 border border-ink/5">
                   <span className="font-bold text-teal-deep w-16">
                     09:00 AM
                   </span>
@@ -293,7 +293,7 @@ export default function ResidentsPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 p-3 rounded-xl bg-cream/30 border border-ink/5">
+                <div className="flex items-start gap-3 p-3 rounded-md bg-cream/30 border border-ink/5">
                   <span className="font-bold text-teal-deep w-16">
                     11:00 AM
                   </span>
@@ -306,7 +306,7 @@ export default function ResidentsPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 p-3 rounded-xl bg-cream/30 border border-ink/5">
+                <div className="flex items-start gap-3 p-3 rounded-md bg-cream/30 border border-ink/5">
                   <span className="font-bold text-teal-deep w-16">
                     02:30 PM
                   </span>
@@ -325,7 +325,7 @@ export default function ResidentsPage() {
 
           {/* Sidebar Info */}
           <div className="space-y-6">
-            <div className="p-6 rounded-3xl bg-white border border-ink/10 shadow-xs space-y-4">
+            <div className="p-6 rounded-md bg-white border border-ink/10 shadow-xs space-y-4">
               <h3 className="text-sm font-bold text-ink font-heading">
                 Emergency Contact
               </h3>
@@ -392,7 +392,7 @@ export default function ResidentsPage() {
         {["ORGANISATION_ADMIN", "CARE_HOME_MANAGER"].includes(currentRole) && (
           <button
             onClick={() => {}}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-brand text-white text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-teal-brand text-white text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             Admit New Resident
@@ -409,7 +409,7 @@ export default function ResidentsPage() {
             placeholder="Search by name, room, ref #, or caregiver..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 focus:border-teal-brand transition-all"
+            className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 focus:border-teal-brand transition-all"
           />
         </div>
 
@@ -419,7 +419,7 @@ export default function ResidentsPage() {
           <select
             value={selectedCareLevel}
             onChange={(e) => setSelectedCareLevel(e.target.value)}
-            className="text-xs rounded-xl border border-ink/10 px-3 py-2 bg-cream/30 focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium text-ink"
+            className="text-xs rounded-md border border-ink/10 px-3 py-2 bg-cream/30 focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium text-ink"
           >
             <option value="all">All Care Levels</option>
             <option value="High Dependency">High Dependency</option>
@@ -431,7 +431,7 @@ export default function ResidentsPage() {
       </div>
 
       {/* Residents Table */}
-      <div className="rounded-3xl bg-white border border-ink/10 shadow-xs overflow-hidden">
+      <div className="rounded-md bg-white border border-ink/10 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="whitespace-nowrap w-full text-left text-xs text-ink">
             <thead className="bg-cream/40 border-b border-ink/10 text-ink/60 font-semibold uppercase tracking-wider text-[11px]">
@@ -531,7 +531,7 @@ export default function ResidentsPage() {
                         e.stopPropagation();
                         setSelectedResident(res);
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-cream hover:bg-mint text-teal-deep text-xs font-semibold transition-all cursor-pointer"
+                      className="px-3 py-1.5 rounded-md bg-cream hover:bg-mint text-teal-deep text-xs font-semibold transition-all cursor-pointer"
                     >
                       View File
                     </button>
@@ -546,7 +546,7 @@ export default function ResidentsPage() {
       {/* Resident Detail Modal */}
       {selectedResident && (
         <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl bg-white rounded-3xl p-6 shadow-2xl border border-ink/10 space-y-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95">
+          <div className="w-full max-w-2xl bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95">
             <div className="flex items-start justify-between border-b border-ink/10 pb-4">
               <div>
                 <div className="flex items-center gap-2">
@@ -645,7 +645,7 @@ export default function ResidentsPage() {
                 <div className="flex items-center gap-2">
                   <a
                     href={`tel:${selectedResident.emergencyContact.phone}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-brand text-white font-semibold cursor-pointer hover:bg-teal-deep"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-teal-brand text-white font-semibold cursor-pointer hover:bg-teal-deep"
                   >
                     <Phone className="h-3.5 w-3.5" />
                     {selectedResident.emergencyContact.phone}
@@ -657,7 +657,7 @@ export default function ResidentsPage() {
             <div className="flex items-center justify-between pt-4 border-t border-ink/10">
               <button
                 onClick={() => setSelectedResident(null)}
-                className="px-4 py-2 rounded-xl border border-ink/10 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
+                className="px-4 py-2 rounded-md border border-ink/10 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
               >
                 Close Window
               </button>
@@ -665,7 +665,7 @@ export default function ResidentsPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setSelectedResident(null)}
-                  className="px-4 py-2 rounded-xl bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep cursor-pointer"
+                  className="px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep cursor-pointer"
                 >
                   Edit Care Plan
                 </button>

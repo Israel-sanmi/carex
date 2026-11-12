@@ -69,7 +69,7 @@ export default function Stories() {
           {testimonials.map((t, idx) => (
             <Reveal key={t.author}>
               <div
-                className={`group relative flex h-full flex-col justify-between rounded-3xl p-7 sm:p-8 bg-white border ${t.accent} shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-md`}
+                className={`group relative flex h-full flex-col justify-between rounded-md p-7 sm:p-8 bg-white border ${t.accent} shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-md`}
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">

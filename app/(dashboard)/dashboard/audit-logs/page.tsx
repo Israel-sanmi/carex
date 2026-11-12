@@ -115,7 +115,7 @@ export default function AuditLogsPage() {
 
   if (!["SUPER_ADMIN", "ORGANISATION_ADMIN"].includes(currentRole)) {
     return (
-      <div className="p-8 rounded-3xl bg-white border border-ink/10 text-center max-w-xl mx-auto space-y-4 my-12">
+      <div className="p-8 rounded-md bg-white border border-ink/10 text-center max-w-xl mx-auto space-y-4 my-12">
         <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
           <AlertTriangle className="h-6 w-6" />
         </div>
@@ -164,7 +164,7 @@ export default function AuditLogsPage() {
 
         <button
           onClick={() => {}}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-ink/10 bg-white hover:bg-cream text-ink text-sm font-semibold transition-all shadow-xs cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md border border-ink/10 bg-white hover:bg-cream text-ink text-sm font-semibold transition-all shadow-xs cursor-pointer"
         >
           <Download className="h-4 w-4 text-teal-brand" />
           Export Audit Report (CSV)
@@ -180,7 +180,7 @@ export default function AuditLogsPage() {
             placeholder="Search by actor, action description or target..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all"
+            className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all"
           />
         </div>
 
@@ -190,7 +190,7 @@ export default function AuditLogsPage() {
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="text-xs rounded-xl border border-ink/10 px-3 py-2 bg-cream/30 focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium text-ink"
+            className="text-xs rounded-md border border-ink/10 px-3 py-2 bg-cream/30 focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium text-ink"
           >
             <option value="ALL">All Categories</option>
             <option value="AUTH">Authentication (AUTH)</option>
@@ -203,7 +203,7 @@ export default function AuditLogsPage() {
       </div>
 
       {/* Ledger Table */}
-      <div className="rounded-3xl bg-white border border-ink/10 shadow-xs overflow-hidden">
+      <div className="rounded-md bg-white border border-ink/10 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="whitespace-nowrap w-full text-left text-xs text-ink">
             <thead className="bg-cream/40 border-b border-ink/10 text-ink/60 font-semibold uppercase tracking-wider text-[11px]">

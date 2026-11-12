@@ -151,7 +151,7 @@ export default function CareHomesPage() {
         {["SUPER_ADMIN", "ORGANISATION_ADMIN"].includes(currentRole) && (
           <button
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-brand text-white text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-teal-brand text-white text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             Add Care Home
@@ -228,7 +228,7 @@ export default function CareHomesPage() {
             placeholder="Search by facility name, city or manager..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 focus:border-teal-brand transition-all"
+            className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 focus:border-teal-brand transition-all"
           />
         </div>
 
@@ -238,7 +238,7 @@ export default function CareHomesPage() {
           <select
             value={filterRating}
             onChange={(e) => setFilterRating(e.target.value)}
-            className="text-xs rounded-xl border border-ink/10 px-3 py-2 bg-cream/30 focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium text-ink"
+            className="text-xs rounded-md border border-ink/10 px-3 py-2 bg-cream/30 focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium text-ink"
           >
             <option value="all">All Ratings</option>
             <option value="Outstanding">Outstanding</option>
@@ -259,7 +259,7 @@ export default function CareHomesPage() {
           return (
             <div
               key={home.id}
-              className={`p-6 rounded-3xl bg-white border transition-all hover:shadow-md ${
+              className={`p-6 rounded-md bg-white border transition-all hover:shadow-md ${
                 isSelected
                   ? "border-teal-brand ring-2 ring-teal-brand/20 bg-mint/5"
                   : "border-ink/10 hover:border-ink/20"
@@ -287,7 +287,7 @@ export default function CareHomesPage() {
 
                 <button
                   onClick={() => setActiveCareHome(home.name)}
-                  className={`text-xs px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+                  className={`text-xs px-3 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
                     isSelected
                       ? "bg-teal-brand text-white shadow-xs"
                       : "bg-cream text-ink/70 hover:bg-mint hover:text-teal-deep"
@@ -346,7 +346,7 @@ export default function CareHomesPage() {
       {/* Add Care Home Modal mock */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-3xl p-6 shadow-2xl border border-ink/10 space-y-5 animate-in fade-in zoom-in-95">
+          <div className="w-full max-w-lg bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-5 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-ink/10 pb-4">
               <div>
                 <h3 className="text-lg font-bold text-ink font-heading">
@@ -372,7 +372,7 @@ export default function CareHomesPage() {
                 <input
                   type="text"
                   placeholder="e.g. Primrose Court Nursing Centre"
-                  className="w-full px-3 py-2 rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
+                  className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
                 />
               </div>
 
@@ -384,7 +384,7 @@ export default function CareHomesPage() {
                   <input
                     type="number"
                     placeholder="e.g. 40"
-                    className="w-full px-3 py-2 rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
+                    className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
                   />
                 </div>
                 <div>
@@ -394,7 +394,7 @@ export default function CareHomesPage() {
                   <input
                     type="text"
                     placeholder="e.g. PCN-05"
-                    className="w-full px-3 py-2 rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
+                    className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
                   />
                 </div>
               </div>
@@ -406,7 +406,7 @@ export default function CareHomesPage() {
                 <input
                   type="text"
                   placeholder="Street, City, Postal Code"
-                  className="w-full px-3 py-2 rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
+                  className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
                 />
               </div>
 
@@ -418,7 +418,7 @@ export default function CareHomesPage() {
                   <input
                     type="text"
                     placeholder="Manager full name"
-                    className="w-full px-3 py-2 rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
+                    className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
                   />
                 </div>
                 <div>
@@ -428,7 +428,7 @@ export default function CareHomesPage() {
                   <input
                     type="tel"
                     placeholder="+44 (0) ..."
-                    className="w-full px-3 py-2 rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
+                    className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
                   />
                 </div>
               </div>
@@ -437,13 +437,13 @@ export default function CareHomesPage() {
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-ink/10">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 rounded-xl border border-ink/10 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
+                className="px-4 py-2 rounded-md border border-ink/10 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 rounded-xl bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep cursor-pointer"
+                className="px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep cursor-pointer"
               >
                 Save Facility
               </button>

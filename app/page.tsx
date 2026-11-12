@@ -1,32 +1,55 @@
 import Navbar from "@/components/landing/navbar";
 import Hero from "@/components/landing/hero";
-import Features from "@/components/landing/features";
-import DayInTheLife from "@/components/landing/day-in-the-life";
-import PeopleSection from "@/components/landing/people-section";
-import ImpactCalculator from "@/components/landing/impact-calculator";
-import Steps from "@/components/landing/steps";
-import Audiences from "@/components/landing/audiences";
-import Stories from "@/components/landing/stories";
+import TrustBar from "@/components/landing/trust-bar";
+import BeforeAfter from "@/components/landing/before-after";
+import RoleTabs from "@/components/landing/role-tabs";
+import OfflineSpotlight from "@/components/landing/offline-spotlight";
+import ImpactStats from "@/components/landing/impact-stats";
+import Testimonials from "@/components/landing/testimonials";
 import Faq from "@/components/landing/faq";
 import Cta from "@/components/landing/cta";
 import Footer from "@/components/landing/footer";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-cream font-sans text-ink selection:bg-sun/60">
+    <div className="relative min-h-screen bg-slate-50 dark:bg-[#040e0f] font-sans text-ink dark:text-slate-100 antialiased overflow-x-hidden selection:bg-emerald-500/30 transition-colors duration-300">
+      {/* Aurora Gradient Background strictly from Sample 2 */}
+      <div className="aurora-bg" />
+
+      {/* Navigation */}
       <Navbar />
-      <main>
+
+      {/* Main Content Sections arranged strictly per Sample 1 */}
+      <main className="relative z-10">
+        {/* 1. Hero Section */}
         <Hero />
-        <Features />
-        <DayInTheLife />
-        <PeopleSection />
-        <ImpactCalculator />
-        <Steps />
-        <Audiences />
-        <Stories />
+
+        {/* 2. Trust Bar */}
+        <TrustBar />
+
+        {/* 3. Features (Before & After) */}
+        <BeforeAfter />
+
+        {/* 4. Solutions (Role-Based Tabs) */}
+        <RoleTabs />
+
+        {/* 5. Offline Feature Spotlight */}
+        <OfflineSpotlight />
+
+        {/* 6. Impact / Measurable ROI Stats */}
+        <ImpactStats />
+
+        {/* 7. Loved By Caregivers (Testimonials) */}
+        <Testimonials />
+
+        {/* 8. FAQ Accordion */}
         <Faq />
+
+        {/* 9. Final Call to Action */}
         <Cta />
       </main>
+
+      {/* Footer */}
       <Footer />
     </div>
   );

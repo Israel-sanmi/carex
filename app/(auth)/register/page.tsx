@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AuthCard from "@/components/auth/auth-card";
 import {
   Building2,
+  Home,
   ShieldCheck,
   Calendar,
   ArrowRight,
@@ -12,6 +13,10 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
+  User,
+  Mail,
+  Phone,
+  Lock,
 } from "lucide-react";
 
 export default function RegisterPage() {
@@ -20,32 +25,38 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Form State
+  // Form State adhering to Section 1 of Resident Onboarding Guide
   const [formData, setFormData] = useState({
-    // Step 1: Organisation & Care Home
-    organisation: "St. Jude Care Services Group",
-    preferredCareHome: "Meadow View Lodge",
-    desiredIntakeDate: "",
-    applicantType: "representative", // 'self' | 'representative'
+    // Personal Information (Section 1)
+    firstName: "",
+    middleName: "", // optional
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
 
-    // Step 2: Resident Details
-    residentFullName: "",
+    // Destination Context
+    organisation: "Apex Care Group",
+    preferredCareHome: "St. Jude's Residential Home",
+    desiredIntakeDate: "",
+    applicantType: "self", // 'self' | 'representative'
+
+    // Resident Additional Demographics
     residentDob: "",
     residentGender: "Female",
     residentCurrentAddress: "",
 
-    // Step 3: Emergency Contact / Next of Kin
+    // Next of Kin / Emergency Contact
     contactName: "",
     contactRelationship: "Son / Daughter",
     contactPhone: "",
     contactEmail: "",
     hasPowerOfAttorney: true,
 
-    // Step 4: Care Notes & Security
+    // Clinical Preferences
     knownAllergies: "",
     dietaryRequirements: "Regular Texture",
     mobilityNotes: "",
-    password: "",
   });
 
   const handleNext = (e: React.FormEvent) => {
@@ -72,11 +83,13 @@ export default function RegisterPage() {
     setTimeout(() => {
       setLoading(false);
       const generatedRef = `REG-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      const fullName = `${formData.firstName} ${formData.middleName ? formData.middleName + " " : ""}${formData.lastName}`;
       const queryParams = new URLSearchParams({
         ref: generatedRef,
-        name: formData.residentFullName || "Applicant",
-        email: formData.contactEmail || "applicant@example.com",
+        name: fullName || "Arthur Pendelton",
+        email: formData.email || "arthur.pendelton@example.co.uk",
         home: formData.preferredCareHome,
+        org: formData.organisation,
       });
 
       router.push(`/register/confirmation?${queryParams.toString()}`);
@@ -85,16 +98,15 @@ export default function RegisterPage() {
 
   return (
     <AuthCard
-      title="Resident Self-Registration"
-      subtitle="Submit resident details and care preferences to begin the admissions pipeline."
-      // badge="Stage 1: Intake Registration"
+      title="Create Resident Account"
+      subtitle="Register independently to join a care home organisation and initiate your admissions dossier."
       maxWidth="max-w-2xl"
       footer={
-        <p>
-          Already registered?{" "}
+        <p className="text-ink/70 dark:text-slate-400">
+          Already have a CarerLoop account?{" "}
           <a
             href="/login"
-            className="font-semibold text-teal-brand hover:text-teal-deep underline decoration-teal-brand/40 underline-offset-4"
+            className="font-semibold text-teal-brand dark:text-emerald-400 hover:underline"
           >
             Sign in to your portal
           </a>
@@ -103,414 +115,410 @@ export default function RegisterPage() {
     >
       {/* Progress Indicator */}
       <div className="mb-6">
-        <div className="flex items-center justify-between text-xs font-semibold text-ink/60 mb-2">
-          <span className="text-teal-brand">Step {currentStep} of 4</span>
+        <div className="flex items-center justify-between text-xs font-semibold text-ink/60 dark:text-slate-400 mb-2">
+          <span className="text-teal-brand dark:text-emerald-400">Step {currentStep} of 4</span>
           <span>
-            {currentStep === 1 && "Care Home Context"}
-            {currentStep === 2 && "Resident Information"}
-            {currentStep === 3 && "Emergency Contacts"}
-            {currentStep === 4 && "Care Directives & Password"}
+            {currentStep === 1 && "Personal Information (Section 1)"}
+            {currentStep === 2 && "Care Destination & Facility"}
+            {currentStep === 3 && "Demographics & Next of Kin"}
+            {currentStep === 4 && "Clinical Notes & Security"}
           </span>
         </div>
-        <div className="w-full bg-cream rounded-full h-2 overflow-hidden border border-ink/5">
+        <div className="w-full bg-cream dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-ink/5 dark:border-white/10">
           <div
-            className="bg-teal-brand h-full rounded-full transition-all duration-300"
+            className="bg-emerald-600 dark:bg-emerald-500 h-full rounded-full transition-all duration-300"
             style={{ width: `${(currentStep / 4) * 100}%` }}
           />
         </div>
       </div>
 
       <form onSubmit={handleNext} className="space-y-6 text-xs sm:text-sm">
-        {/* STEP 1: CARE HOME SELECTION */}
+        {/* STEP 1: PERSONAL INFORMATION (SECTION 1 REQUIRED SPEC) */}
         {currentStep === 1 && (
           <div className="space-y-4 animate-fade-in">
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-ink">
-                Care Organisation & Facility
+              <h2 className="text-lg sm:text-xl font-bold text-ink dark:text-white font-heading">
+                Resident Personal Information
               </h2>
-              <p className="text-xs text-ink/65 mt-0.5">
-                Select the care provider and preferred facility for placement.
+              <p className="text-xs text-ink/65 dark:text-slate-400 mt-0.5">
+                Provide your identity details to create your CarerLoop account and master resident record.
+              </p>
+            </div>
+
+            {/* Name row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <label className="font-semibold text-ink dark:text-slate-200">
+                  First Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Arthur"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-semibold text-ink dark:text-slate-200">
+                  Middle Name <span className="text-ink/40 dark:text-slate-500 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. James"
+                  value={formData.middleName}
+                  onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+                  className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-semibold text-ink dark:text-slate-200">
+                  Last Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Pendelton"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
+                />
+              </div>
+            </div>
+
+            {/* Email and Phone */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="font-semibold text-ink dark:text-slate-200">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink/40 dark:text-slate-500">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    placeholder="resident@example.co.uk"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 pl-9 pr-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
+                  />
+                </div>
+                <span className="text-[10px] text-ink/50 dark:text-slate-400">
+                  We will send your email verification link here.
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-semibold text-ink dark:text-slate-200">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink/40 dark:text-slate-500">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+44 7911 234567"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 pl-9 pr-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Password */}
+            <div className="space-y-1.5">
+              <label className="font-semibold text-ink dark:text-slate-200">
+                Create Account Password <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink/40 dark:text-slate-500">
+                  <Lock className="h-4 w-4" />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  placeholder="Minimum 8 characters"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 pl-9 pr-10 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-ink/40 dark:text-slate-500 hover:text-ink dark:hover:text-white cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: DESTINATION CARE ORGANISATION & CARE HOME */}
+        {currentStep === 2 && (
+          <div className="space-y-4 animate-fade-in">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-ink dark:text-white font-heading">
+                Destination Care Facility
+              </h2>
+              <p className="text-xs text-ink/65 dark:text-slate-400 mt-0.5">
+                Select the care organisation and home where you are seeking residential placement.
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <label className="font-semibold text-ink">
-                Care Organisation
+              <label className="font-semibold text-ink dark:text-slate-200">
+                Destination Care Organisation
               </label>
               <select
                 value={formData.organisation}
-                onChange={(e) =>
-                  setFormData({ ...formData, organisation: e.target.value })
-                }
-                className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
+                onChange={(e) => setFormData({ ...formData, organisation: e.target.value })}
+                className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
               >
-                <option value="St. Jude Care Services Group">
-                  St. Jude Care Services Group
-                </option>
-                <option value="Oakridge Healthcare Ltd">
-                  Oakridge Healthcare Ltd
-                </option>
-                <option value="Meadow View Residential Trust">
-                  Meadow View Residential Trust
-                </option>
+                <option value="Apex Care Group">Apex Care Group (4 Homes - South West)</option>
+                <option value="Kindred Care Living">Kindred Care Living (Bath & Somerset)</option>
+                <option value="Serenity Haven Healthcare">Serenity Haven Healthcare</option>
               </select>
             </div>
 
             <div className="space-y-1.5">
-              <label className="font-semibold text-ink">
-                Preferred Care Home
+              <label className="font-semibold text-ink dark:text-slate-200">
+                Requested Care Home
               </label>
               <select
                 value={formData.preferredCareHome}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    preferredCareHome: e.target.value,
-                  })
-                }
-                className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
+                onChange={(e) => setFormData({ ...formData, preferredCareHome: e.target.value })}
+                className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
               >
-                <option value="Meadow View Lodge">
-                  Meadow View Lodge (Residential & Dementia)
-                </option>
-                <option value="Oakridge Manor">
-                  Oakridge Manor (Nursing & Assisted Living)
-                </option>
-                <option value="Willow Creek Court">
-                  Willow Creek Court (Independent Supported)
-                </option>
+                <option value="St. Jude's Residential Home">St. Jude&apos;s Residential Home (Bristol)</option>
+                <option value="Meadow View Lodge">Meadow View Lodge (Bath)</option>
+                <option value="Oakridge Manor Care Centre">Oakridge Manor Care Centre (Gloucester)</option>
+                <option value="Hazelwood House">Hazelwood House (Cheltenham)</option>
               </select>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="font-semibold text-ink">
-                  Desired Admission Date
+                <label className="font-semibold text-ink dark:text-slate-200">
+                  Target Admission Date
                 </label>
                 <input
                   type="date"
                   required
                   value={formData.desiredIntakeDate}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      desiredIntakeDate: e.target.value,
-                    })
-                  }
-                  className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
+                  onChange={(e) => setFormData({ ...formData, desiredIntakeDate: e.target.value })}
+                  className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-semibold text-ink">
-                  I am registering as
+                <label className="font-semibold text-ink dark:text-slate-200">
+                  I am completing this as
                 </label>
                 <select
                   value={formData.applicantType}
-                  onChange={(e) =>
-                    setFormData({ ...formData, applicantType: e.target.value })
-                  }
-                  className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
+                  onChange={(e) => setFormData({ ...formData, applicantType: e.target.value })}
+                  className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
                 >
-                  <option value="representative">
-                    Next of Kin / Family Representative
-                  </option>
-                  <option value="self">Resident Self-Registering</option>
-                  <option value="social_worker">
-                    Social Worker / Care Coordinator
-                  </option>
+                  <option value="self">Prospective Resident (Self)</option>
+                  <option value="representative">Next of Kin / Family Representative</option>
+                  <option value="social_worker">Hospital / Social Care Coordinator</option>
                 </select>
               </div>
             </div>
           </div>
         )}
 
-        {/* STEP 2: RESIDENT DETAILS */}
-        {currentStep === 2 && (
+        {/* STEP 3: DEMOGRAPHICS & NEXT OF KIN */}
+        {currentStep === 3 && (
           <div className="space-y-4 animate-fade-in">
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-ink">
-                Resident Information
+              <h2 className="text-lg sm:text-xl font-bold text-ink dark:text-white font-heading">
+                Demographics & Next of Kin
               </h2>
-              <p className="text-xs text-ink/65 mt-0.5">
-                Personal records are securely encrypted and kept at the center
-                of care.
+              <p className="text-xs text-ink/65 dark:text-slate-400 mt-0.5">
+                Emergency contacts and background details for the resident profile.
               </p>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="font-semibold text-ink">
-                Resident Full Name
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.residentFullName}
-                onChange={(e) =>
-                  setFormData({ ...formData, residentFullName: e.target.value })
-                }
-                placeholder="e.g. Eleanor Vance"
-                className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
-              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="font-semibold text-ink">Date of Birth</label>
+                <label className="font-semibold text-ink dark:text-slate-200">Date of Birth</label>
                 <input
                   type="date"
                   required
                   value={formData.residentDob}
-                  onChange={(e) =>
-                    setFormData({ ...formData, residentDob: e.target.value })
-                  }
-                  className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
+                  onChange={(e) => setFormData({ ...formData, residentDob: e.target.value })}
+                  className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-semibold text-ink">Gender</label>
+                <label className="font-semibold text-ink dark:text-slate-200">Gender</label>
                 <select
                   value={formData.residentGender}
-                  onChange={(e) =>
-                    setFormData({ ...formData, residentGender: e.target.value })
-                  }
-                  className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
+                  onChange={(e) => setFormData({ ...formData, residentGender: e.target.value })}
+                  className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
                 >
-                  <option value="Female">Female</option>
-                  <option value="Male">Male</option>
-                  <option value="Other">Other / Prefer not to say</option>
+                  <option>Female</option>
+                  <option>Male</option>
+                  <option>Non-binary / Other</option>
+                  <option>Prefer not to say</option>
                 </select>
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="font-semibold text-ink">
-                Current Residence Address
-              </label>
-              <textarea
-                required
-                value={formData.residentCurrentAddress}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    residentCurrentAddress: e.target.value,
-                  })
-                }
-                placeholder="14 Orchard Lane, Harrogate, HG1 2PQ"
-                className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
-              />
+            <div className="p-4 rounded-md bg-cream/40 dark:bg-slate-800/50 border border-ink/5 dark:border-white/5 space-y-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-teal-deep dark:text-emerald-400 block">
+                Primary Next of Kin / Emergency Contact
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-semibold text-xs text-ink dark:text-slate-200">Contact Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Helen Pendelton"
+                    value={formData.contactName}
+                    onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                    className="w-full rounded-md border border-ink/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-xs text-ink dark:text-slate-200">Relationship</label>
+                  <select
+                    value={formData.contactRelationship}
+                    onChange={(e) => setFormData({ ...formData, contactRelationship: e.target.value })}
+                    className="w-full rounded-md border border-ink/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option>Son / Daughter</option>
+                    <option>Spouse / Partner</option>
+                    <option>Sibling</option>
+                    <option>Legal Guardian</option>
+                    <option>Close Friend</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-semibold text-xs text-ink dark:text-slate-200">Emergency Phone</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+44 7911 884210"
+                    value={formData.contactPhone}
+                    onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                    className="w-full rounded-md border border-ink/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-xs text-ink dark:text-slate-200">Emergency Email</label>
+                  <input
+                    type="email"
+                    placeholder="contact@example.co.uk"
+                    value={formData.contactEmail}
+                    onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                    className="w-full rounded-md border border-ink/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* STEP 3: EMERGENCY CONTACT */}
-        {currentStep === 3 && (
-          <div className="space-y-4 animate-fade-in">
-            <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-ink">
-                Emergency Contact & Next of Kin
-              </h2>
-              <p className="text-xs text-ink/65 mt-0.5">
-                This contact will receive the verification email and admission
-                updates.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="font-semibold text-ink">
-                  Contact Full Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.contactName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, contactName: e.target.value })
-                  }
-                  placeholder="e.g. David Vance"
-                  className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-semibold text-ink">
-                  Relationship to Resident
-                </label>
-                <select
-                  value={formData.contactRelationship}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      contactRelationship: e.target.value,
-                    })
-                  }
-                  className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
-                >
-                  <option value="Son / Daughter">Son / Daughter</option>
-                  <option value="Spouse / Partner">Spouse / Partner</option>
-                  <option value="Sibling">Sibling</option>
-                  <option value="Legal Guardian">Legal Guardian</option>
-                  <option value="Friend / Advocate">Friend / Advocate</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="font-semibold text-ink">
-                  Contact Phone Number
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={formData.contactPhone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, contactPhone: e.target.value })
-                  }
-                  placeholder="+44 7700 900821"
-                  className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-semibold text-ink">
-                  Contact Email Address
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={formData.contactEmail}
-                  onChange={(e) =>
-                    setFormData({ ...formData, contactEmail: e.target.value })
-                  }
-                  placeholder="david.vance@example.co.uk"
-                  className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
-                />
-              </div>
-            </div>
-
-            <label className="flex items-start gap-3 p-3.5 rounded-md border border-ink/10 bg-cream/40 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.hasPowerOfAttorney}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    hasPowerOfAttorney: e.target.checked,
-                  })
-                }
-                className="mt-0.5 h-4 w-4 rounded border-ink/20 text-teal-brand accent-teal-brand"
-              />
-              <div className="text-xs">
-                <span className="font-semibold text-ink">
-                  Authorized Power of Attorney / Medical Guardian
-                </span>
-                <p className="text-ink/65 mt-0.5">
-                  Authorizes access to resident clinical transparency updates.
-                </p>
-              </div>
-            </label>
-          </div>
-        )}
-
-        {/* STEP 4: CARE DIRECTIVES & ACCOUNT SETUP */}
+        {/* STEP 4: CLINICAL NOTES & CONFIRMATION */}
         {currentStep === 4 && (
           <div className="space-y-4 animate-fade-in">
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-ink">
-                Care Directives & Account Password
+              <h2 className="text-lg sm:text-xl font-bold text-ink dark:text-white font-heading">
+                Care Notes & Directives
               </h2>
-              <p className="text-xs text-ink/65 mt-0.5">
-                Help our clinical team prepare room directives and secure your
-                portal account.
+              <p className="text-xs text-ink/65 dark:text-slate-400 mt-0.5">
+                Vital medical notices for the care home clinical review team.
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <label className="font-semibold text-ink">Known Allergies</label>
-              <textarea
+              <label className="font-semibold text-ink dark:text-slate-200">
+                Known Drug & Food Allergies
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Penicillin, Latex, Peanuts (or 'None known')"
                 value={formData.knownAllergies}
-                onChange={(e) =>
-                  setFormData({ ...formData, knownAllergies: e.target.value })
-                }
-                placeholder="e.g. Penicillin, Tree Nuts, Latex (or None)"
-                className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
+                onChange={(e) => setFormData({ ...formData, knownAllergies: e.target.value })}
+                className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
               />
             </div>
 
-            <div className="">
-              <label className="font-semibold text-ink">
-                Dietary Requirements
-              </label>
-              <select
-                value={formData.dietaryRequirements}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    dietaryRequirements: e.target.value,
-                  })
-                }
-                className="w-full rounded-md border border-ink/15 bg-cream/30 px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
-              >
-                <option value="Regular Texture">Regular Texture</option>
-                <option value="Soft / Moistened">
-                  Soft / Moistened Texture
-                </option>
-                <option value="Diabetic-Friendly">Diabetic-Friendly</option>
-                <option value="Low Sodium / Cardiac">
-                  Low Sodium / Cardiac
-                </option>
-                <option value="Vegetarian / Vegan">Vegetarian / Vegan</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="font-semibold text-ink">
-                Create Account Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  minLength={8}
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  placeholder="Minimum 8 characters"
-                  className="w-full rounded-md border border-ink/15 bg-cream/30 pl-3.5 pr-10 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-ink/40 hover:text-ink cursor-pointer"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="font-semibold text-ink dark:text-slate-200">
+                  Dietary Texture / Regimen
+                </label>
+                <select
+                  value={formData.dietaryRequirements}
+                  onChange={(e) => setFormData({ ...formData, dietaryRequirements: e.target.value })}
+                  className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
+                  <option>Regular Standard Diet</option>
+                  <option>Soft Texture / Fork-Mashable</option>
+                  <option>Pureed (Dysphagia Diet)</option>
+                  <option>Diabetic-Friendly</option>
+                  <option>Low Sodium</option>
+                  <option>Vegetarian / Vegan</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-semibold text-ink dark:text-slate-200">
+                  Mobility Assistance Needed
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Walker frame, 1-carer assist"
+                  value={formData.mobilityNotes}
+                  onChange={(e) => setFormData({ ...formData, mobilityNotes: e.target.value })}
+                  className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
+                />
               </div>
             </div>
 
-           
+            {/* Regulatory Notice (Section 6) */}
+            <div className="p-4 rounded-md bg-mint/30 dark:bg-emerald-950/40 border border-teal-brand/20 dark:border-emerald-500/20 text-xs text-ink/80 dark:text-slate-300 space-y-1">
+              <p className="font-bold text-teal-deep dark:text-emerald-300 flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4" />
+                Two-Stage Admission Protocol (Section 6)
+              </p>
+              <p className="text-[11px] leading-relaxed">
+                Submitting this form creates your account and resident master dossier. Next, you will verify your email address. Once verified, the care organisation conducts clinical evaluation before allocating your room bed and completing admission.
+              </p>
+            </div>
           </div>
         )}
 
-        {/* Navigation Buttons */}
-        <div className="pt-4 flex items-center justify-between gap-3 border-t border-ink/10">
+        {/* Buttons Bar */}
+        <div className="flex items-center justify-between pt-4 border-t border-ink/10 dark:border-white/10">
           {currentStep > 1 ? (
             <button
               type="button"
               onClick={handleBack}
-              className="inline-flex items-center gap-2 rounded-full border border-ink/15 px-5 py-2.5 text-sm font-medium text-ink hover:bg-cream transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md border border-ink/10 dark:border-white/10 hover:bg-cream dark:hover:bg-slate-800 text-xs sm:text-sm font-semibold text-ink dark:text-slate-200 transition-all cursor-pointer"
             >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back</span>
+              <ArrowLeft className="w-4 h-4" />
+              Back
             </button>
           ) : (
             <div />
@@ -519,16 +527,21 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-full bg-teal-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-teal-deep shadow-sm transition-all cursor-pointer disabled:opacity-50 ml-auto"
+            className="inline-flex items-center gap-2 px-7 py-3 rounded-md bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white text-xs sm:text-sm font-semibold transition-all shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer"
           >
-            <span>
-              {currentStep === 4
-                ? loading
-                  ? "Submitting..."
-                  : "Submit Registration"
-                : "Continue"}
-            </span>
-            <ArrowRight className="h-4 w-4" />
+            {loading ? (
+              <span>Creating Resident Profile...</span>
+            ) : currentStep < 4 ? (
+              <>
+                <span>Continue</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Submit Resident Registration</span>
+              </>
+            )}
           </button>
         </div>
       </form>

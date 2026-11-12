@@ -35,8 +35,8 @@ export default function Logo({ className = "", light = false }: LogoProps) {
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
       <LogoMark />
       <span
-        className={`text-lg font-semibold tracking-[0.08em] ${
-          light ? "text-white" : "text-ink"
+        className={`text-lg font-bold tracking-[0.08em] ${
+          light ? "text-white" : "text-ink dark:text-white"
         }`}
       >
         CARERLOOP

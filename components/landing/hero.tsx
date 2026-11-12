@@ -1,129 +1,178 @@
+"use client";
+
 import Image from "next/image";
-import { ArrowRight, Check } from "lucide-react";
-import { images } from "./images";
-import { Blob, DotGrid, HeartLine, Sparkle, Squiggle } from "./illustrations";
+import Link from "next/link";
+import {
+  ArrowRight,
+  CheckCircle2,
+  ShieldCheck,
+  Heart,
+  Clock,
+  Sparkles,
+  Wifi,
+  Activity,
+  Check,
+} from "lucide-react";
 
-interface HeroProps {
-  onOpenDemo?: () => void;
-}
-
-export default function Hero({ onOpenDemo }: HeroProps) {
+export default function Hero() {
   return (
-    <section
-      id="top"
-      className="relative overflow-hidden bg-cream pt-32 pb-20 sm:pt-40 lg:pb-28"
-    >
-      {/* soft background shapes */}
-      <Blob className="pointer-events-none absolute -right-40 -top-32 h-[560px] w-[560px] text-mint" />
-      <Blob className="pointer-events-none absolute -left-48 bottom-[-220px] h-[420px] w-[420px] rotate-90 text-sun-soft" />
+    <section id="top" className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          {/* Left Column: Copy & Value Proposition (7 cols) */}
+          <div className="lg:col-span-7 space-y-8 animate-fade-in">
+            {/* Accreditation / Trust pill */}
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full glass border border-emerald-500/20 dark:border-emerald-500/30 text-xs sm:text-sm font-semibold shadow-xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-emerald-800 dark:text-emerald-300 tracking-wide font-medium">
+                CQC & GDPR Compliant • Residential Care Platform
+              </span>
+            </div>
 
-      <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-5 sm:px-8 lg:grid-cols-[1.05fr_1fr]">
-        {/* Copy */}
-        <div className="animate-fade-in">
-          <p className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-teal-brand">
-            <span className="h-px w-8 bg-teal-brand" />
-            Care management, made calm
-          </p>
+            {/* Headline with Instrument Serif accent */}
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl leading-[1.08] tracking-tight text-slate-900 dark:text-white font-heading">
+              <span className="font-serif italic font-normal text-slate-700 dark:text-slate-200">
+                Give your team
+              </span>{" "}
+              <br />
+              <span className="gradient-text font-bold">
+                the gift of time.
+              </span>
+            </h1>
 
-          <h1 className="text-[2.6rem] font-semibold leading-[1.08] tracking-tight text-ink sm:text-6xl">
-            Better organised care.
-            <br />
-            <span className="relative inline-block">
-              Better lives.
-              <Squiggle className="absolute -bottom-3 left-0 w-full text-coral" />
-            </span>
-          </h1>
-
-          <p className="mt-8 max-w-lg text-lg leading-relaxed text-ink/70">
-            CarerLoop brings your residents, care homes, staff and admissions
-            into one simple place - so your team spends less time on paperwork
-            and more time with the people they care for.
-          </p>
-
-          <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <a
-              href="/register"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-teal-brand px-7 py-3.5 font-medium text-white shadow-[0_10px_30px_-10px_rgba(15,118,110,0.6)] transition hover:bg-teal-deep"
-            >
-              Get started
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </a>
-            <a
-              href="#how-it-works"
-              className="inline-flex items-center justify-center rounded-full px-6 py-3.5 font-medium text-ink underline decoration-coral decoration-2 underline-offset-[6px] hover:text-teal-deep"
-            >
-              See how it works
-            </a>
-          </div>
-
-          <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink/65">
-            {[
-              "Works on any device",
-              "One place for every home",
-              "Secure by design",
-            ].map((t) => (
-              <li key={t} className="flex items-center gap-2">
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-mint text-teal-brand">
-                  <Check className="h-3 w-3" strokeWidth={3} />
-                </span>
-                {t}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Visual */}
-        <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-          <DotGrid className="absolute -left-8 -top-8 h-32 w-32 text-coral/40" />
-          <Sparkle className="absolute -right-2 top-6 h-8 w-8 animate-float text-sun" />
-
-          <div className="relative overflow-hidden rounded-[2.5rem] rounded-tr-[7rem] bg-mint shadow-[0_30px_60px_-25px_rgba(19,48,45,0.35)]">
-            <Image
-              src={images.hero}
-              alt="A caregiver sharing a laugh with an elderly resident in a care home lounge"
-              width={800}
-              height={1000}
-              priority
-              className="aspect-[4/5] h-auto w-full object-cover"
-            />
-          </div>
-
-          {/* floating card: today */}
-          <div className="absolute -left-6 bottom-16 w-56 animate-float rounded-md bg-white p-4 shadow-[0_20px_40px_-15px_rgba(19,48,45,0.3)] sm:-left-12">
-            <p className="text-xs font-medium text-ink/50">
-              Today at Meadow View
+            {/* Subtitle */}
+            <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
+              CarerLoop replaces scattered paper binders, frantic shift handovers, and disconnected systems with one calm, human-centred platform. Designed so your staff can spend less time typing and more time with residents.
             </p>
-            <div className="mt-3 flex items-end justify-between">
-              <div>
-                <p className="text-2xl font-semibold text-ink">42</p>
-                <p className="text-xs text-ink/60">residents</p>
+
+            {/* Call to Actions */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-2">
+              <Link
+                href="/register"
+                className="inline-flex justify-center items-center gap-2 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-slate-950 rounded-full font-bold text-base sm:text-lg transition-all shadow-xl shadow-emerald-600/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 cursor-pointer"
+              >
+                Get started
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex justify-center items-center gap-2 px-8 py-4 glass text-slate-800 dark:text-white font-semibold text-base sm:text-lg rounded-full transition-all hover:bg-white/90 dark:hover:bg-slate-800/80 hover:shadow-md cursor-pointer border border-slate-200/80 dark:border-white/10"
+              >
+                Sign in to Dashboard
+              </Link>
+            </div>
+
+            {/* Micro guarantees & social proof */}
+            <div className="pt-2 border-t border-slate-200/70 dark:border-white/10 space-y-4">
+              <div className="flex flex-wrap items-center gap-6 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  No credit card required
+                </span>
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  Setup in under 2 hours
+                </span>
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  Free data migration
+                </span>
               </div>
-              <svg viewBox="0 0 80 32" className="h-8 w-20" aria-hidden="true">
-                <path
-                  d="M2 26c10-2 14-12 24-12s12 8 22 6S64 6 78 4"
-                  fill="none"
-                  stroke="#0f766e"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-              </svg>
+
+              <div className="flex items-center gap-3 pt-1">
+                <div className="flex -space-x-2 overflow-hidden">
+                  <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-slate-950 bg-emerald-700 text-white text-xs font-bold flex items-center justify-center">
+                    SJ
+                  </div>
+                  <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-slate-950 bg-teal-600 text-white text-xs font-bold flex items-center justify-center">
+                    MC
+                  </div>
+                  <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-slate-950 bg-amber-600 text-white text-xs font-bold flex items-center justify-center">
+                    DR
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">85+ care homes</span> trust CarerLoop every shift
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* floating card: admission */}
-          <div
-            className="absolute -right-3 top-24 flex items-center gap-3 rounded-md bg-white py-3 pl-3 pr-5 shadow-[0_20px_40px_-15px_rgba(19,48,45,0.3)] sm:-right-8"
-            style={{
-              animation: "var(--animate-float)",
-              animationDelay: "1.5s",
-            }}
-          >
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-coral-soft text-coral">
-              <HeartLine className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-ink">New admission</p>
-              <p className="text-xs text-ink/55">Room 14B is ready</p>
+          {/* Right Column: Layered Authentic Care Photography & Live HUD (5 cols) */}
+          <div className="lg:col-span-5 relative mt-6 lg:mt-0">
+            {/* Ambient emerald backlight orb */}
+            <div className="absolute -inset-4 bg-gradient-to-tr from-emerald-500/25 via-teal-500/15 to-transparent rounded-3xl blur-2xl pointer-events-none" />
+
+            {/* Photo Card Container */}
+            <div className="relative rounded-3xl overflow-hidden glass-card border border-white/60 dark:border-white/10 shadow-2xl">
+              {/* Main Real Photography */}
+              <div className="relative h-[420px] sm:h-[480px] w-full overflow-hidden">
+                <Image
+                  src="/images/hero-care.jpg"
+                  alt="Compassionate caregiver interacting warmly with an elderly resident"
+                  fill
+                  priority
+                  className="object-cover object-center transform hover:scale-102 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
+              </div>
+
+              {/* Floating Top Badge: Handover Verification */}
+              <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+                <div className="glass dark:bg-slate-900/80 backdrop-blur-md rounded-2xl px-3.5 py-2 border border-white/40 dark:border-white/15 shadow-lg flex items-center gap-2.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <div>
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-300 block leading-tight">
+                      Morning Handover
+                    </span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                      Meadow View • Room 14B
+                    </span>
+                  </div>
+                </div>
+
+                <div className="glass dark:bg-slate-900/80 backdrop-blur-md rounded-2xl px-3 py-1.5 border border-white/40 dark:border-white/15 shadow-lg flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>Verified</span>
+                </div>
+              </div>
+
+              {/* Floating Bottom HUD Card: Bedside Record Entry */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <div className="glass dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl p-4 border border-white/50 dark:border-white/15 shadow-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center shadow-sm">
+                        EV
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">
+                          Eleanor Vance, 84
+                        </div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                          Blood pressure 124/82 mmHg • Metformin 500mg taken
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10">
+                      09:15 AM
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 dark:border-white/10 text-[11px]">
+                    <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">
+                      <Clock className="w-3 h-3 text-emerald-500" />
+                      8-minute shift handover
+                    </span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                      <Wifi className="w-3 h-3" /> Offline auto-synced
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

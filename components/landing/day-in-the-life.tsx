@@ -215,7 +215,7 @@ export default function DayInTheLife() {
                     <p className="text-sm font-bold text-ink">
                       {activeEvent.activeResident}
                     </p>
-                    <p className="text-xs text-ink/70 leading-relaxed bg-white/80 p-3 rounded-xl border border-ink/5">
+                    <p className="text-xs text-ink/70 leading-relaxed bg-white/80 p-3 rounded-md border border-ink/5">
                       &ldquo;{activeEvent.note}&rdquo;
                     </p>
                   </div>

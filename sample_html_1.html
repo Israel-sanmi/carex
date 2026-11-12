@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CarePool | Care Management, Made Calm</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f4f9f6',
+                            100: '#e3f2e9',
+                            500: '#10b981', // Emerald/Sage
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        },
+                        sand: {
+                            50: '#fafaf9',
+                            100: '#f5f5f4',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tab-active {
+            border-bottom: 2px solid #059669;
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .tab-inactive {
+            color: #78716c;
+        }
+
+        .tab-inactive:hover {
+            color: #44403c;
+        }
+    </style>
+</head>
+
+<body class="bg-sand-50 text-stone-800 antialiased">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full bg-white/90 backdrop-blur-md border-b border-stone-200 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="heart-handshake" class="h-8 w-8 text-brand-600"></i>
+                    <span class="text-xl font-bold text-stone-900 tracking-tight">CarePool</span>
+                </div>
+                <div class="hidden md:flex space-x-8 text-sm font-medium text-stone-600">
+                    <a href="#features" class="hover:text-brand-600 transition">Features</a>
+                    <a href="#roles" class="hover:text-brand-600 transition">Solutions</a>
+                    <a href="#impact" class="hover:text-brand-600 transition">Impact</a>
+                    <a href="#faq" class="hover:text-brand-600 transition">FAQ</a>
+                </div>
+                <a href="#demo"
+                    class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-full text-sm font-semibold transition shadow-sm hover:shadow-md">
+                    Book a Demo
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 lg:pt-40 lg:pb-28 bg-gradient-to-b from-brand-50 to-sand-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="space-y-8">
+                    <div
+                        class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold uppercase tracking-wide">
+                        <span class="w-2 h-2 rounded-full bg-brand-600 animate-pulse"></span>
+                        Now CQC & GDPR Compliant
+                    </div>
+                    <h1 class="text-4xl lg:text-6xl font-bold text-stone-900 leading-tight">
+                        Give your team the gift of time. <span class="text-brand-600">Give residents the care they
+                            deserve.</span>
+                    </h1>
+                    <p class="text-lg text-stone-600 leading-relaxed max-w-xl">
+                        CarePool replaces scattered paperwork and chaotic handovers with one calm, secure, and intuitive
+                        platform. So your staff can focus on what truly matters: people.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <a href="#demo"
+                            class="inline-flex justify-center items-center px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-full font-semibold text-lg transition shadow-lg hover:shadow-xl hover:-translate-y-0.5">
+                            Book a 15-Minute Demo
+                        </a>
+                        <a href="#features"
+                            class="inline-flex justify-center items-center px-8 py-4 bg-white border border-stone-200 hover:border-brand-300 text-stone-700 rounded-full font-semibold text-lg transition hover:bg-stone-50">
+                            <i data-lucide="play-circle" class="w-5 h-5 mr-2 text-brand-600"></i> Watch Overview
+                        </a>
+                    </div>
+                    <div class="flex items-center gap-6 text-sm text-stone-500 pt-4">
+                        <span class="flex items-center gap-1"><i data-lucide="check-circle"
+                                class="w-4 h-4 text-brand-600"></i> No credit card required</span>
+                        <span class="flex items-center gap-1"><i data-lucide="check-circle"
+                                class="w-4 h-4 text-brand-600"></i> Setup in under 2 hours</span>
+                    </div>
+                </div>
+                <div class="relative">
+                    <div class="absolute -inset-4 bg-brand-200/50 rounded-md blur-2xl opacity-60"></div>
+                    <div class="relative bg-white rounded-md shadow-2xl border border-stone-100 p-6 lg:p-8">
+                        <!-- Mock UI -->
+                        <div class="flex items-center justify-between mb-6 border-b border-stone-100 pb-4">
+                            <div>
+                                <h3 class="font-semibold text-stone-900">Morning Handover</h3>
+                                <p class="text-sm text-stone-500">Meadow View Lodge • Room 14B</p>
+                            </div>
+                            <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">Verified
+                                ✓</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-4 p-4 bg-stone-50 rounded-md">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold">
+                                    EV</div>
+                                <div>
+                                    <p class="font-medium text-stone-900">Eleanor Vance</p>
+                                    <p class="text-sm text-stone-600">Blood pressure 124/82 mmHg recorded. Metformin
+                                        500mg administered.</p>
+                                    <p class="text-xs text-stone-400 mt-1">Logged by Lead Carer • 09:15 AM</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-4 p-4 bg-stone-50 rounded-md opacity-60">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center text-stone-600 font-bold">
+                                    JT</div>
+                                <div>
+                                    <p class="font-medium text-stone-900">John Taylor</p>
+                                    <p class="text-sm text-stone-600">Pending: Morning mobility assessment.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Bar -->
+    <section class="py-10 bg-white border-y border-stone-100">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-sm font-semibold text-stone-400 uppercase tracking-wider mb-6">Trusted by forward-thinking
+                care providers</p>
+            <div class="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale">
+                <span class="text-xl font-bold text-stone-800 flex items-center gap-2"><i data-lucide="home"
+                        class="w-6 h-6"></i> Oakridge Care</span>
+                <span class="text-xl font-bold text-stone-800 flex items-center gap-2"><i data-lucide="sun"
+                        class="w-6 h-6"></i> Meadow View</span>
+                <span class="text-xl font-bold text-stone-800 flex items-center gap-2"><i data-lucide="heart"
+                        class="w-6 h-6"></i> Harmony Living</span>
+                <span class="text-xl font-bold text-stone-800 flex items-center gap-2"><i data-lucide="shield-check"
+                        class="w-6 h-6"></i> BrightPath</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Before & After -->
+    <section id="features" class="py-20 lg:py-28 bg-sand-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="text-3xl lg:text-4xl font-bold text-stone-900 mb-4">The end of care-by-paperwork.</h2>
+                <p class="text-lg text-stone-600">We designed CarePool to eliminate the friction that steals time from
+                    your caregivers.</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-md border border-red-100 shadow-sm">
+                    <h3 class="text-xl font-bold text-red-600 mb-6 flex items-center gap-2"><i data-lucide="x-circle"
+                            class="w-6 h-6"></i> The Old Way</h3>
+                    <ul class="space-y-4">
+                        <li class="flex gap-3 text-stone-600"><i data-lucide="minus"
+                                class="w-5 h-5 text-red-400 shrink-0"></i> Fragmented notes lost in binders and sticky
+                            notes.</li>
+                        <li class="flex gap-3 text-stone-600"><i data-lucide="minus"
+                                class="w-5 h-5 text-red-400 shrink-0"></i> 45-minute handwritten handovers prone to
+                            errors.</li>
+                        <li class="flex gap-3 text-stone-600"><i data-lucide="minus"
+                                class="w-5 h-5 text-red-400 shrink-0"></i> Families left in the dark, calling the front
+                            desk constantly.</li>
+                        <li class="flex gap-3 text-stone-600"><i data-lucide="minus"
+                                class="w-5 h-5 text-red-400 shrink-0"></i> Wi-Fi drops mean care delivery and logging
+                            stops.</li>
+                    </ul>
+                </div>
+                <div class="bg-brand-900 p-8 rounded-md border border-brand-700 shadow-xl text-white">
+                    <h3 class="text-xl font-bold text-brand-100 mb-6 flex items-center gap-2"><i
+                            data-lucide="check-circle" class="w-6 h-6 text-brand-400"></i> The CarePool Way</h3>
+                    <ul class="space-y-4">
+                        <li class="flex gap-3 text-brand-50"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-400 shrink-0"></i> One secure, real-time digital record for
+                            every resident.</li>
+                        <li class="flex gap-3 text-brand-50"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-400 shrink-0"></i> 8-minute digital handovers with verified,
+                            tap-to-complete checklists.</li>
+                        <li class="flex gap-3 text-brand-50"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-400 shrink-0"></i> Optional family portal for transparent,
+                            reassuring updates.</li>
+                        <li class="flex gap-3 text-brand-50"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-400 shrink-0"></i> Full offline mode. Tap, log, and auto-sync
+                            when connected.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Role Based Tabs -->
+    <section id="roles" class="py-20 lg:py-28 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl lg:text-4xl font-bold text-stone-900">One platform, perfectly tailored to every
+                    role.</h2>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="flex flex-wrap justify-center gap-8 border-b border-stone-200 mb-10">
+                <button onclick="switchTab('managers')" id="tab-managers"
+                    class="tab-active pb-4 px-2 text-lg transition">Care Home Managers</button>
+                <button onclick="switchTab('caregivers')" id="tab-caregivers"
+                    class="tab-inactive pb-4 px-2 text-lg transition">Frontline Caregivers</button>
+                <button onclick="switchTab('directors')" id="tab-directors"
+                    class="tab-inactive pb-4 px-2 text-lg transition">Operations Directors</button>
+                <button onclick="switchTab('families')" id="tab-families"
+                    class="tab-inactive pb-4 px-2 text-lg transition">Families</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="content-managers" class="tab-content fade-in grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h3 class="text-2xl font-bold text-stone-900 mb-4">Run your home, calmly.</h3>
+                    <p class="text-stone-600 mb-6 text-lg">Streamline admissions from first inquiry to move-in day.
+                        Manage rotas, onboard staff instantly with role-based access, and ensure 100% inspection
+                        readiness at all times.</p>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3 text-stone-700"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-600"></i> Automated admission tracking</li>
+                        <li class="flex items-center gap-3 text-stone-700"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-600"></i> One-click staff onboarding</li>
+                        <li class="flex items-center gap-3 text-stone-700"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-600"></i> Real-time compliance dashboards</li>
+                    </ul>
+                </div>
+                <div class="bg-stone-100 rounded-md p-8 h-64 flex items-center justify-center">
+                    <i data-lucide="layout-dashboard" class="w-24 h-24 text-stone-300"></i>
+                </div>
+            </div>
+
+            <div id="content-caregivers" class="tab-content hidden fade-in grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h3 class="text-2xl font-bold text-stone-900 mb-4">Care at the bedside, not the desk.</h3>
+                    <p class="text-stone-600 mb-6 text-lg">Access resident profiles, allergy alerts, and care plans on
+                        any phone or tablet. Log vitals in one tap. Works flawlessly, even without an internet
+                        connection.</p>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3 text-stone-700"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-600"></i> Works offline in dead zones</li>
+                        <li class="flex items-center gap-3 text-stone-700"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-600"></i> Instant allergy & medication alerts</li>
+                        <li class="flex items-center gap-3 text-stone-700"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-600"></i> No app store download required (PWA)</li>
+                    </ul>
+                </div>
+                <div class="bg-stone-100 rounded-md p-8 h-64 flex items-center justify-center">
+                    <i data-lucide="smartphone" class="w-24 h-24 text-stone-300"></i>
+                </div>
+            </div>
+
+            <div id="content-directors" class="tab-content hidden fade-in grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h3 class="text-2xl font-bold text-stone-900 mb-4">See the whole picture.</h3>
+                    <p class="text-stone-600 mb-6 text-lg">Real-time dashboards across all your homes. Track occupancy,
+                        compliance audits, and staffing efficiency from a single, secure command center.</p>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3 text-stone-700"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-600"></i> Multi-site oversight</li>
+                        <li class="flex items-center gap-3 text-stone-700"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-600"></i> Strict cross-tenant data separation</li>
+                        <li class="flex items-center gap-3 text-stone-700"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-600"></i> Exportable audit reports</li>
+                    </ul>
+                </div>
+                <div class="bg-stone-100 rounded-md p-8 h-64 flex items-center justify-center">
+                    <i data-lucide="bar-chart-3" class="w-24 h-24 text-stone-300"></i>
+                </div>
+            </div>
+
+            <div id="content-families" class="tab-content hidden fade-in grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h3 class="text-2xl font-bold text-stone-900 mb-4">Peace of mind, delivered.</h3>
+                    <p class="text-stone-600 mb-6 text-lg">An optional, secure window into their loved one’s day. Share
+                        meal highlights, activity photos, and well-being updates to build trust and reduce inbound calls
+                        to the front desk.</p>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3 text-stone-700"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-600"></i> Secure, private family portal</li>
+                        <li class="flex items-center gap-3 text-stone-700"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-600"></i> Controlled, consent-based sharing</li>
+                        <li class="flex items-center gap-3 text-stone-700"><i data-lucide="check"
+                                class="w-5 h-5 text-brand-600"></i> Reduces administrative phone calls</li>
+                    </ul>
+                </div>
+                <div class="bg-stone-100 rounded-md p-8 h-64 flex items-center justify-center">
+                    <i data-lucide="users" class="w-24 h-24 text-stone-300"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Offline Feature Spotlight -->
+    <section class="py-20 bg-stone-900 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div
+                class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-800 text-stone-300 text-xs font-semibold uppercase tracking-wide mb-6">
+                <i data-lucide="wifi-off" class="w-4 h-4"></i> Offline-First Architecture
+            </div>
+            <h2 class="text-3xl lg:text-5xl font-bold mb-6">Care doesn’t stop when the Wi-Fi does.</h2>
+            <p class="text-lg text-stone-400 max-w-2xl mx-auto mb-10">
+                Care homes are notorious for dead zones. CarePool is built as a Progressive Web App (PWA) with
+                native-like offline capabilities. Caregivers can log medication, update notes, and check allergies
+                without an internet connection. The moment the device reconnects, everything syncs securely and
+                instantly. Zero data loss. Zero stress.
+            </p>
+            <div class="flex justify-center gap-4 text-stone-500">
+                <i data-lucide="shield-check" class="w-8 h-8"></i>
+                <i data-lucide="database" class="w-8 h-8"></i>
+                <i data-lucide="refresh-cw" class="w-8 h-8"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- Impact / ROI -->
+    <section id="impact" class="py-20 lg:py-28 bg-brand-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl lg:text-4xl font-bold text-stone-900">The CarePool Effect</h2>
+            </div>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="text-center p-6">
+                    <div class="text-4xl lg:text-5xl font-bold text-brand-600 mb-2">15+</div>
+                    <div class="text-stone-600 font-medium">Hours saved per manager, monthly</div>
+                </div>
+                <div class="text-center p-6">
+                    <div class="text-4xl lg:text-5xl font-bold text-brand-600 mb-2">99.8%</div>
+                    <div class="text-stone-600 font-medium">Reduction in logging errors</div>
+                </div>
+                <div class="text-center p-6">
+                    <div class="text-4xl lg:text-5xl font-bold text-brand-600 mb-2">&lt;24h</div>
+                    <div class="text-stone-600 font-medium">Inquiry to digital admission</div>
+                </div>
+                <div class="text-center p-6">
+                    <div class="text-4xl lg:text-5xl font-bold text-brand-600 mb-2">100%</div>
+                    <div class="text-stone-600 font-medium">Audit-ready, tamper-proof records</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="py-20 lg:py-28 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl lg:text-4xl font-bold text-stone-900 text-center mb-16">Loved by the people who deliver
+                care every day.</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-sand-50 p-8 rounded-md border border-stone-100">
+                    <div class="flex text-brand-500 mb-4">
+                        <i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star"
+                            class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i
+                            data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star"
+                            class="w-5 h-5 fill-current"></i>
+                    </div>
+                    <p class="text-stone-700 text-lg italic mb-6">"Our morning handovers used to take 45 minutes of
+                        deciphering handwriting. With CarePool, it takes eight minutes. Our nurses actually spend that
+                        extra time talking to residents over breakfast. It has changed the culture of our home."</p>
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="w-12 h-12 rounded-full bg-stone-300 flex items-center justify-center font-bold text-stone-600">
+                            SJ</div>
+                        <div>
+                            <div class="font-semibold text-stone-900">Sarah Jenkins, RN</div>
+                            <div class="text-sm text-stone-500">Registered Manager, Meadow View Lodge</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-sand-50 p-8 rounded-md border border-stone-100">
+                    <div class="flex text-brand-500 mb-4">
+                        <i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star"
+                            class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i
+                            data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star"
+                            class="w-5 h-5 fill-current"></i>
+                    </div>
+                    <p class="text-stone-700 text-lg italic mb-6">"As a caregiver, the offline mode is a lifesaver. I
+                        can tap a resident’s room on my phone, see their exact care plan and allergies, and log my visit
+                        without rummaging through locked filing cabinets. It just works."</p>
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="w-12 h-12 rounded-full bg-stone-300 flex items-center justify-center font-bold text-stone-600">
+                            MC</div>
+                        <div>
+                            <div class="font-semibold text-stone-900">Marcus Cole</div>
+                            <div class="text-sm text-stone-500">Lead Senior Caregiver, Oakridge Residential</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="py-20 lg:py-28 bg-sand-50">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl lg:text-4xl font-bold text-stone-900 text-center mb-12">Questions? We have answers.</h2>
+            <div class="space-y-4">
+                <div class="bg-white rounded-md border border-stone-200 overflow-hidden">
+                    <button
+                        class="w-full px-6 py-4 text-left flex justify-between items-center font-semibold text-stone-900 hover:bg-stone-50 transition"
+                        onclick="toggleFaq(this)">
+                        How long does it take to migrate our existing records?
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-stone-400 transition-transform"></i>
+                    </button>
+                    <div class="hidden px-6 pb-4 text-stone-600">
+                        We provide a simple, secure template for bulk uploading existing resident data. Most homes
+                        complete the transition in a single afternoon, with our support team on standby to help.
+                    </div>
+                </div>
+                <div class="bg-white rounded-md border border-stone-200 overflow-hidden">
+                    <button
+                        class="w-full px-6 py-4 text-left flex justify-between items-center font-semibold text-stone-900 hover:bg-stone-50 transition"
+                        onclick="toggleFaq(this)">
+                        Do caregivers need to download an app from the App Store?
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-stone-400 transition-transform"></i>
+                    </button>
+                    <div class="hidden px-6 pb-4 text-stone-600">
+                        No. CarePool works directly in any mobile browser and can be "Added to Home Screen" to function
+                        exactly like a native app, bypassing IT restrictions and app store updates.
+                    </div>
+                </div>
+                <div class="bg-white rounded-md border border-stone-200 overflow-hidden">
+                    <button
+                        class="w-full px-6 py-4 text-left flex justify-between items-center font-semibold text-stone-900 hover:bg-stone-50 transition"
+                        onclick="toggleFaq(this)">
+                        Is our residents' data truly secure?
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-stone-400 transition-transform"></i>
+                    </button>
+                    <div class="hidden px-6 pb-4 text-stone-600">
+                        Absolutely. We use bank-level AES-256 encryption, role-based access control, and maintain full
+                        compliance with GDPR and CQC data handling standards. Your data never leaves secure, certified
+                        servers.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section id="demo" class="py-20 lg:py-28 bg-brand-900 text-white text-center">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl lg:text-5xl font-bold mb-6">Ready to bring calm back to your care operations?</h2>
+            <p class="text-xl text-brand-100 mb-10 max-w-2xl mx-auto">See how CarePool can give your team their time
+                back. No pressure, no jargon—just a friendly conversation about your home’s needs.</p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="#"
+                    class="inline-flex justify-center items-center px-8 py-4 bg-white text-brand-900 rounded-full font-bold text-lg transition hover:bg-brand-50 shadow-lg">
+                    Book Your 15-Minute Demo
+                </a>
+                <a href="#"
+                    class="inline-flex justify-center items-center px-8 py-4 bg-brand-800 text-white border border-brand-700 rounded-full font-semibold text-lg transition hover:bg-brand-700">
+                    <i data-lucide="phone" class="w-5 h-5 mr-2"></i> Speak to Our Team
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-stone-950 text-stone-400 py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-12 mb-12">
+                <div class="col-span-1 md:col-span-1">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="heart-handshake" class="h-6 w-6 text-brand-500"></i>
+                        <span class="text-lg font-bold text-white tracking-tight">CarePool</span>
+                    </div>
+                    <p class="text-sm">Care management, made calm. Built with 💙 for those who care.</p>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition">Features</a></li>
+                        <li><a href="#" class="hover:text-white transition">Security</a></li>
+                        <li><a href="#" class="hover:text-white transition">Pricing</a></li>
+                        <li><a href="#" class="hover:text-white transition">Integrations</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition">About Us</a></li>
+                        <li><a href="#" class="hover:text-white transition">Careers</a></li>
+                        <li><a href="#" class="hover:text-white transition">Contact</a></li>
+                        <li><a href="#" class="hover:text-white transition">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-white transition">Terms of Service</a></li>
+                        <li><a href="#" class="hover:text-white transition">GDPR Statement</a></li>
+                        <li><a href="#" class="hover:text-white transition">Cookie Settings</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-stone-800 pt-8 text-sm text-center">
+                © 2024 CarePool. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Scripts -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Tab Switching Logic
+        function switchTab(tabName) {
+            // Hide all content
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            // Show selected content
+            document.getElementById('content-' + tabName).classList.remove('hidden');
+
+            // Reset all tab buttons
+            document.querySelectorAll('[id^="tab-"]').forEach(el => {
+                el.classList.remove('tab-active');
+                el.classList.add('tab-inactive');
+            });
+            // Activate selected tab button
+            document.getElementById('tab-' + tabName).classList.remove('tab-inactive');
+            document.getElementById('tab-' + tabName).classList.add('tab-active');
+        }
+
+        // FAQ Accordion Logic
+        function toggleFaq(button) {
+            const content = button.nextElementSibling;
+            const icon = button.querySelector('i');
+
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                content.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+    </script>
+</body>
+
+</html>

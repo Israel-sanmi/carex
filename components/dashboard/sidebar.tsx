@@ -142,7 +142,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
             </Link>
             <button
               onClick={onCloseMobile}
-              className="p-1.5 rounded-lg text-ink/60 hover:text-ink lg:hidden cursor-pointer"
+              className="p-1.5 rounded-md text-ink/60 hover:text-ink lg:hidden cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
@@ -182,7 +182,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
                   key={item.href}
                   href={item.href}
                   onClick={onCloseMobile}
-                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all ${
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
                     isActive
                       ? "bg-teal-brand text-white font-semibold shadow-xs shadow-teal-brand/30"
                       : "text-ink/70 hover:text-ink hover:bg-cream"
@@ -215,7 +215,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
         {/* Footer User Profile & Sign Out */}
         <div className="p-4 border-t border-ink/10 bg-cream/40 space-y-3">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-brand text-white font-bold text-xs shadow-xs">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-teal-brand text-white font-bold text-xs shadow-xs">
               {user.avatarInitials}
             </div>
             <div className="min-w-0 flex-1">
@@ -228,7 +228,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
 
           <Link
             href="/login"
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-ink/10 bg-white hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive text-ink/70 text-xs font-semibold transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-md border border-ink/10 bg-white hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive text-ink/70 text-xs font-semibold transition-colors"
           >
             <LogOut className="h-3.5 w-3.5" />
             <span>Sign Out</span>

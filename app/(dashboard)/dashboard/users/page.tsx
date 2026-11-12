@@ -160,7 +160,7 @@ export default function UsersPage() {
 
         <Link
           href="/dashboard/invitations"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-brand text-white text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-teal-brand text-white text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
         >
           <UserPlus className="h-4 w-4" />
           Invite Staff Member
@@ -176,7 +176,7 @@ export default function UsersPage() {
             placeholder="Search by name, email or facility..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all"
+            className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all"
           />
         </div>
 
@@ -186,7 +186,7 @@ export default function UsersPage() {
           <select
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value)}
-            className="text-xs rounded-xl border border-ink/10 px-3 py-2 bg-cream/30 focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium text-ink"
+            className="text-xs rounded-md border border-ink/10 px-3 py-2 bg-cream/30 focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium text-ink"
           >
             <option value="ALL">All Roles</option>
             <option value="SUPER_ADMIN">Super Administrator</option>
@@ -200,7 +200,7 @@ export default function UsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="rounded-3xl bg-white border border-ink/10 shadow-xs overflow-hidden">
+      <div className="rounded-md bg-white border border-ink/10 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="whitespace-nowrap w-full text-left text-xs text-ink">
             <thead className="bg-cream/40 border-b border-ink/10 text-ink/60 font-semibold uppercase tracking-wider text-[11px]">
@@ -273,7 +273,7 @@ export default function UsersPage() {
                     {usr.status !== "Pending Invitation" ? (
                       <button
                         onClick={() => toggleUserStatus(usr.id)}
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                           usr.status === "Active"
                             ? "bg-red-50 text-red-700 hover:bg-red-100"
                             : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"

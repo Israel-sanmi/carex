@@ -114,7 +114,7 @@ export default function ImpactCalculator() {
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Card 1: Hours Saved */}
             <div className="rounded-md bg-white p-5 border border-ink/10 shadow-xs space-y-2 transition-transform duration-300 hover:-translate-y-1">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-mint text-teal-brand">
+              <div className="grid h-10 w-10 place-items-center rounded-md bg-mint text-teal-brand">
                 <Clock className="h-5 w-5" />
               </div>
               <p className="text-3xl font-bold text-ink tracking-tight">
@@ -131,7 +131,7 @@ export default function ImpactCalculator() {
 
             {/* Card 2: Residents supported */}
             <div className="rounded-md bg-white p-5 border border-ink/10 shadow-xs space-y-2 transition-transform duration-300 hover:-translate-y-1">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-coral-soft text-coral">
+              <div className="grid h-10 w-10 place-items-center rounded-md bg-coral-soft text-coral">
                 <Heart className="h-5 w-5" />
               </div>
               <p className="text-3xl font-bold text-ink tracking-tight">
@@ -147,7 +147,7 @@ export default function ImpactCalculator() {
 
             {/* Card 3: Admission turnaround */}
             <div className="rounded-md bg-white p-5 border border-ink/10 shadow-xs space-y-2 transition-transform duration-300 hover:-translate-y-1">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-sun-soft text-[#9a6700]">
+              <div className="grid h-10 w-10 place-items-center rounded-md bg-sun-soft text-[#9a6700]">
                 <TrendingUp className="h-5 w-5" />
               </div>
               <p className="text-3xl font-bold text-ink tracking-tight">
@@ -163,7 +163,7 @@ export default function ImpactCalculator() {
 
             {/* Card 4: Audit & Inspection readiness */}
             <div className="rounded-md bg-white p-5 border border-ink/10 shadow-xs space-y-2 transition-transform duration-300 hover:-translate-y-1">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-lilac-soft text-lilac">
+              <div className="grid h-10 w-10 place-items-center rounded-md bg-lilac-soft text-lilac">
                 <FileCheck2 className="h-5 w-5" />
               </div>
               <p className="text-3xl font-bold text-ink tracking-tight">100%</p>
