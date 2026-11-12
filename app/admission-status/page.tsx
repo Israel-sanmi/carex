@@ -4,7 +4,6 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/landing/logo";
-import ThemeToggle from "@/components/landing/theme-toggle";
 import {
   CheckCircle2,
   Clock,
@@ -106,7 +105,7 @@ function AdmissionStatusContent() {
   return (
     <div className="space-y-6 text-ink dark:text-slate-100 animate-fade-in max-w-2xl mx-auto">
       {/* Status Simulator Controls for testing UI */}
-      <div className="p-3 rounded-md glass dark:bg-slate-900/80 border border-teal-brand/30 dark:border-emerald-500/30 text-xs flex flex-wrap items-center justify-between gap-2 shadow-xs">
+      {/* <div className="p-3 rounded-md glass dark:bg-slate-900/80 border border-teal-brand/30 dark:border-emerald-500/30 text-xs flex flex-wrap items-center justify-between gap-2 shadow-xs">
         <span className="font-bold text-teal-deep dark:text-emerald-300 flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5" />
           Interactive Status Preview:
@@ -153,7 +152,7 @@ function AdmissionStatusContent() {
             Preview Transfer
           </button>
         </div>
-      </div>
+      </div> */}
 
       {/* Main Status Header Card */}
       <div className="glass dark:bg-slate-900/80 rounded-md p-6 sm:p-8 border border-white/80 dark:border-white/10 shadow-2xl space-y-6">
@@ -395,9 +394,7 @@ function AdmissionStatusContent() {
 
 export default function AdmissionStatusPage() {
   return (
-    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 font-sans text-ink dark:text-slate-100 selection:bg-emerald-500/30 overflow-x-hidden transition-colors duration-300">
-      <div className="aurora-bg" />
-
+    <div className="relative min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8 font-sans text-ink selection:bg-emerald-500/30 overflow-x-hidden">
       {/* Header */}
       <div className="relative z-10 w-full max-w-4xl mx-auto flex items-center justify-between py-2 mb-6">
         <Link
@@ -406,7 +403,6 @@ export default function AdmissionStatusPage() {
         >
           <Logo />
         </Link>
-        <ThemeToggle />
       </div>
 
       <div className="relative z-10 w-full max-w-4xl mx-auto my-4">

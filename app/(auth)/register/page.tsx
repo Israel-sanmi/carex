@@ -450,18 +450,7 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="font-semibold text-ink dark:text-slate-200">
-                Known Drug & Food Allergies
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Penicillin, Latex, Peanuts (or 'None known')"
-                value={formData.knownAllergies}
-                onChange={(e) => setFormData({ ...formData, knownAllergies: e.target.value })}
-                className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
-              />
-            </div>
+           
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -496,16 +485,18 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Regulatory Notice (Section 6) */}
-            <div className="p-4 rounded-md bg-mint/30 dark:bg-emerald-950/40 border border-teal-brand/20 dark:border-emerald-500/20 text-xs text-ink/80 dark:text-slate-300 space-y-1">
-              <p className="font-bold text-teal-deep dark:text-emerald-300 flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4" />
-                Two-Stage Admission Protocol (Section 6)
-              </p>
-              <p className="text-[11px] leading-relaxed">
-                Submitting this form creates your account and resident master dossier. Next, you will verify your email address. Once verified, the care organisation conducts clinical evaluation before allocating your room bed and completing admission.
-              </p>
+             <div className="space-y-1.5">
+              <label className="font-semibold text-ink dark:text-slate-200">
+                Known Drug & Food Allergies
+              </label>
+              <textarea
+                placeholder="e.g. Penicillin, Latex, Peanuts (or 'None known')"
+                value={formData.knownAllergies}
+                onChange={(e) => setFormData({ ...formData, knownAllergies: e.target.value })}
+                className="w-full rounded-md border border-ink/15 dark:border-white/15 bg-cream/30 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
+              />
             </div>
+           
           </div>
         )}
 

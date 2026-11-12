@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 type Theme = "light" | "dark";
 
@@ -8,38 +9,54 @@ interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
   setTheme: (theme: Theme) => void;
+  isLandingPage: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark"); // Default to dark as shown in user image, or sync with stored
+  const [theme, setThemeState] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+  const isLandingPage = pathname === "/";
 
+  // Initial load: retrieve user preference
   useEffect(() => {
     setMounted(true);
     const stored = localStorage.getItem("carerloop-theme") as Theme | null;
     if (stored === "dark" || stored === "light") {
       setThemeState(stored);
-      if (stored === "dark") {
+    } else {
+      setThemeState("dark");
+    }
+  }, []);
+
+  // Sync .dark class ONLY when on the landing page ("/")
+  // Every other page (auth, onboarding, dashboards) always stays in standard light mode
+  useEffect(() => {
+    if (!mounted) return;
+
+    if (isLandingPage) {
+      if (theme === "dark") {
         document.documentElement.classList.add("dark");
       } else {
         document.documentElement.classList.remove("dark");
       }
     } else {
-      // Default to dark mode to match user reference image
-      document.documentElement.classList.add("dark");
-      setThemeState("dark");
+      // Strictly remove dark class outside the landing page
+      document.documentElement.classList.remove("dark");
     }
-  }, []);
+  }, [theme, isLandingPage, mounted]);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem("carerloop-theme", newTheme);
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+    if (isLandingPage) {
+      if (newTheme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
     }
   };
 
@@ -48,7 +65,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider
+      value={{ theme, toggleTheme, setTheme, isLandingPage }}
+    >
       {children}
     </ThemeContext.Provider>
   );
@@ -61,4 +80,3 @@ export function useTheme() {
   }
   return context;
 }
-

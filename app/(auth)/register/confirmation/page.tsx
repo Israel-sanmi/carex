@@ -82,65 +82,8 @@ function ConfirmationContent() {
         </p>
       </div>
 
-      {/* Next Steps: Highlighting Section 1 & Section 6 */}
-      <div className="space-y-3 pt-2">
-        <p className="text-xs font-bold text-ink dark:text-white uppercase tracking-wider">
-          Onboarding Stages:
-        </p>
-
-        <div className="space-y-2.5 text-xs">
-          {/* Step 1 */}
-          <div className="flex items-start gap-3 p-3.5 rounded-md border border-ink/10 dark:border-white/10 bg-cream/40 dark:bg-slate-800/40">
-            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-emerald-600 text-white font-bold text-xs mt-0.5">
-              1
-            </div>
-            <div>
-              <p className="font-semibold text-ink dark:text-white">
-                Verify Your Email Address
-              </p>
-              <p className="text-ink/65 dark:text-slate-400 mt-0.5 leading-relaxed">
-                We sent a secure verification link to{" "}
-                <span className="font-semibold text-ink dark:text-white">
-                  {email}
-                </span>
-                . Click the link in your email to confirm account ownership.
-              </p>
-            </div>
-          </div>
-
-          {/* Step 2 */}
-          <div className="flex items-start gap-3 p-3.5 rounded-md border border-ink/10 dark:border-white/10 bg-cream/40 dark:bg-slate-800/40">
-            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-ink/10 dark:bg-slate-700 text-ink dark:text-slate-300 font-bold text-xs mt-0.5">
-              2
-            </div>
-            <div>
-              <p className="font-semibold text-ink dark:text-white">
-                Administrative Evaluation & Approval
-              </p>
-              <p className="text-ink/65 dark:text-slate-400 mt-0.5 leading-relaxed">
-                The care organisation administrator reviews your clinical
-                profile, care level, and facility capacity.
-              </p>
-            </div>
-          </div>
-
-          {/* Step 3 */}
-          <div className="flex items-start gap-3 p-3.5 rounded-md border border-ink/10 dark:border-white/10 bg-cream/40 dark:bg-slate-800/40">
-            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-ink/10 dark:bg-slate-700 text-ink dark:text-slate-300 font-bold text-xs mt-0.5">
-              3
-            </div>
-            <div>
-              <p className="font-semibold text-ink dark:text-white">
-                Bed Allocation & Placement
-              </p>
-              <p className="text-ink/65 dark:text-slate-400 mt-0.5 leading-relaxed">
-                Once approved, a room and bed slot is officially assigned and
-                your resident services portal activates.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      
+      
 
       {/* Action buttons */}
       <div className="pt-2 flex flex-col gap-3">
@@ -148,14 +91,14 @@ function ConfirmationContent() {
           href={`/verify-email?token=demo_token_${refCode}&email=${encodeURIComponent(email)}&ref=${refCode}&name=${encodeURIComponent(residentName)}&home=${encodeURIComponent(careHome)}&org=${encodeURIComponent(org)}`}
           className="py-3 rounded-md bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-semibold text-xs sm:text-sm text-center transition-all shadow-md"
         >
-          Simulate Email Verification Link →
+          Email Verification →
         </Link>
         <Link
           href={`/admission-status?ref=${refCode}&name=${encodeURIComponent(residentName)}&email=${encodeURIComponent(email)}&home=${encodeURIComponent(careHome)}&org=${encodeURIComponent(org)}&status=PENDING_ADMISSION`}
           className="py-3 rounded-md border border-ink/15 dark:border-white/15 text-ink dark:text-white font-semibold text-xs sm:text-sm text-center hover:bg-cream dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
         >
           <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span>Track Admission Status Screen</span>
+          <span>Admission Status</span>
         </Link>
       </div>
     </div>
