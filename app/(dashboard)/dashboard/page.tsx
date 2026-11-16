@@ -1,7 +1,9 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { useRole } from "@/lib/role-context";
 import Link from "next/link";
+import StatCard from "@/components/dashboard/stat-card";
 import {
   Building2,
   Home,
@@ -24,51 +26,89 @@ import {
   Phone,
 } from "lucide-react";
 
+// Time-dependent strings are read on the client only. Cache Components
+// forbids `new Date()` during prerender, so the server snapshot is a neutral fallback.
+const noopSubscribe = () => () => {};
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
+};
+const getToday = () =>
+  new Date().toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
 export default function DashboardPage() {
   const { currentRole, user, activeCareHome } = useRole();
+  const greetingText = useSyncExternalStore(
+    noopSubscribe,
+    getGreeting,
+    () => "Welcome back",
+  );
+  const today = useSyncExternalStore(noopSubscribe, getToday, () => "");
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8">
       {/* Welcome & Context Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-md bg-white border border-ink/10 shadow-sm">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
-              {user.roleTier}
-            </span>
-            <span className="text-xs text-ink/50">•</span>
-            <span className="text-xs text-teal-brand font-medium">
-              {user.roleTitle}
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
-            Welcome back, {user.name}
-          </h1>
-          <p className="text-xs sm:text-sm text-ink/65">
-            {user.organisationName} • {user.careHomeName}
-          </p>
-        </div>
+      <div className="relative overflow-hidden rounded-md p-6 sm:p-8 text-white bg-[linear-gradient(120deg,#073b38,#0f766e_55%,#10b981)] shadow-xl shadow-teal-900/15">
+        <div className="absolute inset-0 bg-grid opacity-50 pointer-events-none" />
+        <div className="absolute -right-16 -top-24 w-80 h-80 rounded-full bg-emerald-300/30 blur-3xl animate-float-slow pointer-events-none" />
+        <div className="absolute right-1/3 -bottom-32 w-72 h-72 rounded-full bg-amber-200/20 blur-3xl pointer-events-none" />
 
-        {/* Quick Context Pill */}
-        <div className="flex items-center gap-2">
-          {currentRole === "CAREGIVER" && user.shiftBadge && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-teal-brand/10 text-teal-deep text-xs font-semibold">
-              <span className="h-2 w-2 rounded-full bg-teal-brand animate-pulse" />
-              {user.shiftBadge}
-            </span>
-          )}
-          {currentRole === "RESIDENT" && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-coral-soft text-coral text-xs font-semibold">
-              <Heart className="h-3.5 w-3.5" />
-              Assigned: Room 14B
-            </span>
-          )}
-          <Link
-            href="/dashboard/settings"
-            className="px-3.5 py-1.5 rounded-md border border-ink/10 bg-cream/40 hover:bg-cream text-xs font-semibold text-ink transition-colors"
-          >
-            Preferences
-          </Link>
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] px-2.5 py-1 rounded-full bg-white/15 border border-white/20 backdrop-blur-md font-semibold">
+                {user.roleTier}
+              </span>
+              <span className="text-xs text-emerald-100/90 font-medium">
+                {user.roleTitle}
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight">
+              {greetingText},{" "}
+              <span className="font-serif italic font-normal text-emerald-100">
+                {user.name?.split(" ")[0] || user.name}
+              </span>
+            </h1>
+            <p className="text-xs sm:text-sm text-emerald-50/80 flex flex-wrap items-center gap-x-2">
+              <span>{user.organisationName}</span>
+              <span className="opacity-50">•</span>
+              <span>{user.careHomeName}</span>
+              {today && (
+                <>
+                  <span className="opacity-50">•</span>
+                  <span>{today}</span>
+                </>
+              )}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {currentRole === "CAREGIVER" && user.shiftBadge && (
+              <span className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/15 border border-white/20 backdrop-blur-md text-xs font-semibold">
+                <span className="h-2 w-2 rounded-full bg-emerald-300 animate-ring" />
+                {user.shiftBadge}
+              </span>
+            )}
+            {currentRole === "RESIDENT" && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-white/15 border border-white/20 backdrop-blur-md text-xs font-semibold">
+                <Heart className="h-3.5 w-3.5 text-coral-soft" />
+                Assigned: Room 14B
+              </span>
+            )}
+            <Link
+              href="/dashboard/settings"
+              className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-white text-teal-deep text-xs font-semibold shadow-lg shadow-teal-950/20 hover:-translate-y-0.5 transition-all"
+            >
+              Preferences
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -79,56 +119,43 @@ export default function DashboardPage() {
         <div className="space-y-6">
           {/* Platform Metric Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="p-4 rounded-md bg-white border border-ink/10 shadow-xs space-y-1">
-              <p className="text-xs text-ink/60 flex items-center justify-between">
-                <span>Total Organisations</span>
-                <Building2 className="h-4 w-4 text-teal-brand" />
-              </p>
-              <p className="text-2xl sm:text-3xl font-bold text-ink">18</p>
-              <p className="text-[11px] text-emerald-600 font-medium">
-                +2 this quarter
-              </p>
-            </div>
-
-            <div className="p-4 rounded-md bg-white border border-ink/10 shadow-xs space-y-1">
-              <p className="text-xs text-ink/60 flex items-center justify-between">
-                <span>Total Care Homes</span>
-                <Home className="h-4 w-4 text-teal-brand" />
-              </p>
-              <p className="text-2xl sm:text-3xl font-bold text-ink">64</p>
-              <p className="text-[11px] text-ink/50">Across UK & EU</p>
-            </div>
-
-            <div className="p-4 rounded-md bg-white border border-ink/10 shadow-xs space-y-1">
-              <p className="text-xs text-ink/60 flex items-center justify-between">
-                <span>Total Residents</span>
-                <Users className="h-4 w-4 text-teal-brand" />
-              </p>
-              <p className="text-2xl sm:text-3xl font-bold text-ink">2,418</p>
-              <p className="text-[11px] text-emerald-600 font-medium">
-                92% capacity
-              </p>
-            </div>
-
-            <div className="p-4 rounded-md bg-white border border-ink/10 shadow-xs space-y-1">
-              <p className="text-xs text-ink/60 flex items-center justify-between">
-                <span>Registered Users</span>
-                <UserCheck className="h-4 w-4 text-teal-brand" />
-              </p>
-              <p className="text-2xl sm:text-3xl font-bold text-ink">812</p>
-              <p className="text-[11px] text-ink/50">Staff & Caregivers</p>
-            </div>
-
-            <div className="p-4 rounded-md bg-white border border-ink/10 shadow-xs space-y-1 col-span-2 lg:col-span-1">
-              <p className="text-xs text-ink/60 flex items-center justify-between">
-                <span>Pending Registrations</span>
-                <UserPlus className="h-4 w-4 text-coral" />
-              </p>
-              <p className="text-2xl sm:text-3xl font-bold text-coral">14</p>
-              <p className="text-[11px] text-coral font-medium">
-                Awaiting org review
-              </p>
-            </div>
+            <StatCard
+              label="Total Organisations"
+              value="18"
+              icon={Building2}
+              hint="+2 this quarter"
+            />
+            <StatCard
+              label="Total Care Homes"
+              value="64"
+              icon={Home}
+              tone="sky"
+              hint="Across UK & EU"
+              hintMuted
+            />
+            <StatCard
+              label="Total Residents"
+              value="2,418"
+              icon={Users}
+              tone="lilac"
+              hint="92% capacity"
+            />
+            <StatCard
+              label="Registered Users"
+              value="812"
+              icon={UserCheck}
+              tone="sun"
+              hint="Staff & Caregivers"
+              hintMuted
+            />
+            <StatCard
+              label="Pending Registrations"
+              value="14"
+              icon={UserPlus}
+              tone="coral"
+              hint="Awaiting org review"
+              className="col-span-2 lg:col-span-1"
+            />
           </div>
 
           {/* Platform Management & Recent Activities */}
@@ -254,45 +281,35 @@ export default function DashboardPage() {
         <div className="space-y-6">
           {/* Organisation Metric Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs space-y-1">
-              <p className="text-xs text-ink/60 flex items-center justify-between">
-                <span>Care Homes in Group</span>
-                <Home className="h-4 w-4 text-teal-brand" />
-              </p>
-              <p className="text-3xl font-bold text-ink">4</p>
-              <p className="text-[11px] text-ink/50">166 Total Licensed Beds</p>
-            </div>
-
-            <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs space-y-1">
-              <p className="text-xs text-ink/60 flex items-center justify-between">
-                <span>Total Residents</span>
-                <Users className="h-4 w-4 text-teal-brand" />
-              </p>
-              <p className="text-3xl font-bold text-ink">154</p>
-              <p className="text-[11px] text-emerald-600 font-medium">
-                92.7% Group Occupancy
-              </p>
-            </div>
-
-            <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs space-y-1">
-              <p className="text-xs text-ink/60 flex items-center justify-between">
-                <span>Organisation Staff</span>
-                <UserCheck className="h-4 w-4 text-teal-brand" />
-              </p>
-              <p className="text-3xl font-bold text-ink">53</p>
-              <p className="text-[11px] text-ink/50">Carers, Nurses & Leads</p>
-            </div>
-
-            <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs space-y-1">
-              <p className="text-xs text-ink/60 flex items-center justify-between">
-                <span>Pending Admissions</span>
-                <UserPlus className="h-4 w-4 text-coral" />
-              </p>
-              <p className="text-3xl font-bold text-coral">6</p>
-              <p className="text-[11px] text-coral font-medium">
-                Across 3 facilities
-              </p>
-            </div>
+            <StatCard
+              label="Care Homes in Group"
+              value="4"
+              icon={Home}
+              hint="166 Total Licensed Beds"
+              hintMuted
+            />
+            <StatCard
+              label="Total Residents"
+              value="154"
+              icon={Users}
+              tone="sky"
+              hint="92.7% Group Occupancy"
+            />
+            <StatCard
+              label="Organisation Staff"
+              value="53"
+              icon={UserCheck}
+              tone="lilac"
+              hint="Carers, Nurses & Leads"
+              hintMuted
+            />
+            <StatCard
+              label="Pending Admissions"
+              value="6"
+              icon={UserPlus}
+              tone="coral"
+              hint="Across 3 facilities"
+            />
           </div>
 
           {/* Facility Distribution Overview */}
@@ -327,7 +344,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-full bg-cream rounded-full h-2.5 overflow-hidden border border-ink/5">
                   <div
-                    className="bg-teal-brand h-full rounded-full"
+                    className="bg-gradient-to-r from-teal-brand to-emerald-400 h-full rounded-full animate-grow-x"
                     style={{ width: "87.5%" }}
                   />
                 </div>
@@ -349,7 +366,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-full bg-cream rounded-full h-2.5 overflow-hidden border border-ink/5">
                   <div
-                    className="bg-teal-brand h-full rounded-full"
+                    className="bg-gradient-to-r from-teal-brand to-emerald-400 h-full rounded-full animate-grow-x"
                     style={{ width: "94.4%" }}
                   />
                 </div>
@@ -371,7 +388,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-full bg-cream rounded-full h-2.5 overflow-hidden border border-ink/5">
                   <div
-                    className="bg-amber-500 h-full rounded-full"
+                    className="bg-gradient-to-r from-amber-500 to-sun h-full rounded-full animate-grow-x"
                     style={{ width: "93.3%" }}
                   />
                 </div>
@@ -393,7 +410,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-full bg-cream rounded-full h-2.5 overflow-hidden border border-ink/5">
                   <div
-                    className="bg-teal-brand h-full rounded-full"
+                    className="bg-gradient-to-r from-teal-brand to-emerald-400 h-full rounded-full animate-grow-x"
                     style={{ width: "96.1%" }}
                   />
                 </div>
@@ -414,49 +431,34 @@ export default function DashboardPage() {
         <div className="space-y-6">
           {/* Care Home Metric Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs space-y-1">
-              <p className="text-xs text-ink/60 flex items-center justify-between">
-                <span>Active Residents</span>
-                <Users className="h-4 w-4 text-teal-brand" />
-              </p>
-              <p className="text-3xl font-bold text-ink">42</p>
-              <p className="text-[11px] text-emerald-600 font-medium">
-                42 of 48 Beds Occupied
-              </p>
-            </div>
-
-            <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs space-y-1">
-              <p className="text-xs text-ink/60 flex items-center justify-between">
-                <span>Pending Admissions</span>
-                <UserPlus className="h-4 w-4 text-coral" />
-              </p>
-              <p className="text-3xl font-bold text-coral">4</p>
-              <p className="text-[11px] text-coral font-medium">
-                2 ready for room placement
-              </p>
-            </div>
-
-            <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs space-y-1">
-              <p className="text-xs text-ink/60 flex items-center justify-between">
-                <span>Staff on Shift</span>
-                <UserCheck className="h-4 w-4 text-teal-brand" />
-              </p>
-              <p className="text-3xl font-bold text-ink">11</p>
-              <p className="text-[11px] text-ink/50">
-                Morning Shift B • 1:4 Ratio
-              </p>
-            </div>
-
-            <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs space-y-1">
-              <p className="text-xs text-ink/60 flex items-center justify-between">
-                <span>Daily Task Progress</span>
-                <CheckCircle2 className="h-4 w-4 text-teal-brand" />
-              </p>
-              <p className="text-3xl font-bold text-ink">94%</p>
-              <p className="text-[11px] text-emerald-600 font-medium">
-                128 of 136 checks logged
-              </p>
-            </div>
+            <StatCard
+              label="Active Residents"
+              value="42"
+              icon={Users}
+              hint="42 of 48 Beds Occupied"
+            />
+            <StatCard
+              label="Pending Admissions"
+              value="4"
+              icon={UserPlus}
+              tone="coral"
+              hint="2 ready for room placement"
+            />
+            <StatCard
+              label="Staff on Shift"
+              value="11"
+              icon={UserCheck}
+              tone="sky"
+              hint="Morning Shift B • 1:4 Ratio"
+              hintMuted
+            />
+            <StatCard
+              label="Daily Task Progress"
+              value="94%"
+              icon={CheckCircle2}
+              tone="lilac"
+              hint="128 of 136 checks logged"
+            />
           </div>
 
           {/* Placement Overview & Pending Admission Pipeline */}

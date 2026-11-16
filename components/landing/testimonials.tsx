@@ -39,7 +39,8 @@ export default function Testimonials() {
             <span className="gradient-text">deliver care</span> every day.
           </h2>
           <p className="text-base lg:text-lg text-slate-600 dark:text-slate-300 mt-3 max-w-2xl mx-auto">
-            Hear from registered managers and caregivers who use CarerLoop to run calmer, safer residential care homes.
+            Hear from registered managers and caregivers who use CarerLoop to
+            run calmer, safer residential care homes.
           </p>
         </div>
 
@@ -47,7 +48,7 @@ export default function Testimonials() {
           {reviews.map((r, idx) => (
             <div
               key={idx}
-              className="glass-card rounded-3xl p-8 sm:p-10 border border-white/80 dark:border-white/10 shadow-xl relative flex flex-col justify-between group hover:border-emerald-500/30 transition-all duration-300"
+              className="glass-card rounded-md p-8 sm:p-10 border border-white/80 dark:border-white/10 shadow-xl relative flex flex-col justify-between group hover:border-emerald-500/30 transition-all duration-300"
             >
               <div className="space-y-6">
                 {/* Star rating & quote icon */}

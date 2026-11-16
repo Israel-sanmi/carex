@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useRole, RoleType } from "@/lib/role-context";
+import { usePathname, useRouter } from "next/navigation";
+import { useRole } from "@/lib/role-context";
+import { useLogoutMutation } from "@/lib/hooks/use-auth-mutations";
 import Logo from "@/components/landing/logo";
 import {
   LayoutDashboard,
@@ -15,9 +16,8 @@ import {
   FileClock,
   Settings,
   LogOut,
-  ShieldCheck,
-  Heart,
   X,
+  Loader2,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -25,12 +25,28 @@ interface SidebarProps {
   onCloseMobile: () => void;
 }
 
+type NavGroup = "Overview" | "Care" | "People" | "System";
+
 export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
-  const { currentRole, user } = useRole();
+  const router = useRouter();
+  const { currentRole, roles, user } = useRole();
+  const logoutMutation = useLogoutMutation();
 
-  // Define nav links with role-based visibility matrix according to Section 5
-  const allNavItems = [
+  const handleSignOut = async () => {
+    await logoutMutation.mutateAsync();
+    router.push("/login");
+  };
+
+  // Role-based visibility matrix (Section 5)
+  const allNavItems: {
+    label: string;
+    href: string;
+    icon: typeof LayoutDashboard;
+    allowedRoles: string[];
+    badge?: string;
+    group: NavGroup;
+  }[] = [
     {
       label: "Dashboard",
       href: "/dashboard",
@@ -42,7 +58,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
         "CAREGIVER",
         "RESIDENT",
       ],
-      badge: undefined,
+      group: "Overview",
     },
     {
       label: "Organisations",
@@ -50,13 +66,14 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
       icon: Building2,
       allowedRoles: ["SUPER_ADMIN"],
       badge: "Platform",
+      group: "Care",
     },
     {
       label: "Care Homes",
       href: "/dashboard/care-homes",
       icon: Home,
       allowedRoles: ["SUPER_ADMIN", "ORGANISATION_ADMIN", "CARE_HOME_MANAGER"],
-      badge: undefined,
+      group: "Care",
     },
     {
       label: "Residents",
@@ -69,6 +86,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
         "RESIDENT",
       ],
       badge: currentRole === "RESIDENT" ? "My Profile" : undefined,
+      group: "Care",
     },
     {
       label: "Admissions & Intake",
@@ -76,20 +94,21 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
       icon: UserPlus,
       allowedRoles: ["SUPER_ADMIN", "ORGANISATION_ADMIN", "CARE_HOME_MANAGER"],
       badge: "4",
+      group: "Care",
     },
     {
       label: "User Management",
       href: "/dashboard/users",
       icon: UserCheck,
       allowedRoles: ["SUPER_ADMIN", "ORGANISATION_ADMIN", "CARE_HOME_MANAGER"],
-      badge: undefined,
+      group: "People",
     },
     {
       label: "Invitations",
       href: "/dashboard/invitations",
       icon: Mail,
       allowedRoles: ["SUPER_ADMIN", "ORGANISATION_ADMIN", "CARE_HOME_MANAGER"],
-      badge: undefined,
+      group: "People",
     },
     {
       label: "Audit Logs",
@@ -97,6 +116,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
       icon: FileClock,
       allowedRoles: ["SUPER_ADMIN", "ORGANISATION_ADMIN"],
       badge: "Immutable",
+      group: "System",
     },
     {
       label: "Settings",
@@ -109,130 +129,156 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
         "CAREGIVER",
         "RESIDENT",
       ],
-      badge: undefined,
+      group: "System",
     },
   ];
 
-  // Filter items by active role
-  const visibleNavItems = allNavItems.filter((item) =>
-    item.allowedRoles.includes(currentRole),
+  const visibleNavItems = allNavItems.filter(
+    (item) =>
+      item.allowedRoles.includes(currentRole) ||
+      item.allowedRoles.some((r) => roles.includes(r)),
   );
+
+  const groups: NavGroup[] = ["Overview", "Care", "People", "System"];
+
+  const isActive = (href: string) =>
+    href === "/dashboard"
+      ? pathname === href
+      : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <>
-      {/* Mobile Backdrop */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-xs lg:hidden"
-          onClick={onCloseMobile}
-        />
-      )}
+      {/* Mobile backdrop */}
+      <div
+        onClick={onCloseMobile}
+        className={`fixed inset-0 z-40 bg-ink/40 lg:hidden transition-opacity duration-300 ${
+          mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden="true"
+      />
 
-      {/* Sidebar Container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-ink/10 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 flex flex-col text-white overflow-hidden bg-[linear-gradient(180deg,#073b38_0%,#062b29_55%,#05201f_100%)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] lg:translate-x-0 ${
           mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
-        {/* Top Header */}
-        <div>
-          <div className="h-18 px-6 flex items-center justify-between border-b border-ink/10">
-            <Link href="/" className="inline-block">
-              <Logo />
-            </Link>
-            <button
-              onClick={onCloseMobile}
-              className="p-1.5 rounded-md text-ink/60 hover:text-ink lg:hidden cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+        {/* Ambient glow */}
+        <div className="absolute -top-24 -left-20 w-72 h-72 rounded-full bg-emerald-400/15 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-20 -right-24 w-60 h-60 rounded-full bg-teal-300/10 blur-3xl pointer-events-none" />
 
-          {/* Active Tenant / Facility Pill */}
-          {/* <div className="p-4 border-b border-ink/5 bg-cream/30">
-            <div className="p-3 rounded-md bg-cream border border-ink/10 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-teal-deep uppercase tracking-wider">
-                  Tenant Scope
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
-                  {user.roleTier}
-                </span>
-              </div>
-              <p className="text-xs font-bold text-ink truncate">
-                {user.organisationName}
-              </p>
-              <p className="text-[11px] text-teal-brand font-medium truncate">
-                {user.careHomeName}
-              </p>
-            </div>
-          </div> */}
-
-          {/* Nav Items */}
-          <nav className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-280px)]">
-            {/* <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-ink/40">
-              Navigation ({currentRole.replace(/_/g, " ")})
-            </p> */}
-
-            {visibleNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onCloseMobile}
-                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-teal-brand text-white font-semibold shadow-xs shadow-teal-brand/30"
-                      : "text-ink/70 hover:text-ink hover:bg-cream"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon
-                      className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-ink/50"}`}
-                    />
-                    <span>{item.label}</span>
-                  </div>
-
-                  {item.badge && (
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                        isActive
-                          ? "bg-white/20 text-white"
-                          : "bg-coral-soft text-coral"
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
+        {/* Header */}
+        <div className="relative h-18 shrink-0 px-6 flex items-center justify-between border-b border-white/10">
+          <Link
+            href="/"
+            className="inline-block transition-opacity hover:opacity-90"
+          >
+            <Logo light />
+          </Link>
+          <button
+            onClick={onCloseMobile}
+            className="p-1.5 rounded-md text-white/60 hover:text-white hover:bg-white/10 lg:hidden"
+            aria-label="Close navigation"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        {/* Footer User Profile & Sign Out */}
-        <div className="p-4 border-t border-ink/10 bg-cream/40 space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-teal-brand text-white font-bold text-xs shadow-xs">
-              {user.avatarInitials}
+        {/* Nav */}
+        <nav className="relative flex-1 overflow-y-auto px-3 py-5 space-y-6 [scrollbar-width:thin]">
+          {groups.map((group) => {
+            const items = visibleNavItems.filter((i) => i.group === group);
+            if (!items.length) return null;
+            return (
+              <div key={group}>
+                <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">
+                  {group}
+                </p>
+                <ul className="space-y-0.5">
+                  {items.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.href);
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          onClick={onCloseMobile}
+                          className={`group relative flex items-center justify-between gap-2 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                            active
+                              ? "bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                              : "text-white/60 hover:text-white hover:bg-white/[0.06]"
+                          }`}
+                        >
+                          {/* Active indicator */}
+                          <span
+                            className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-r-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)] transition-all duration-300 ${
+                              active ? "h-6 opacity-100" : "h-0 opacity-0"
+                            }`}
+                          />
+                          <span className="flex items-center gap-3 min-w-0">
+                            <span
+                              className={`grid place-items-center w-8 h-8 rounded-md shrink-0 transition-all duration-200 ${
+                                active
+                                  ? "bg-emerald-400 text-teal-950 shadow-lg shadow-emerald-500/30"
+                                  : "bg-white/5 text-white/60 group-hover:text-white group-hover:bg-white/10 group-hover:scale-105"
+                              }`}
+                            >
+                              <Icon className="h-4 w-4" />
+                            </span>
+                            <span className="truncate">{item.label}</span>
+                          </span>
+
+                          {item.badge && (
+                            <span
+                              className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${
+                                /^\d+$/.test(item.badge)
+                                  ? "bg-coral text-white min-w-5 text-center"
+                                  : active
+                                    ? "bg-white/15 text-white"
+                                    : "bg-white/[0.08] text-white/60"
+                              }`}
+                            >
+                              {item.badge}
+                            </span>
+                          )}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* Profile + sign out */}
+        <div className="relative p-3 border-t border-white/10">
+          <div className="flex items-center gap-3 p-2.5 rounded-md bg-white/[0.06] border border-white/10">
+            <div className="relative shrink-0">
+              <div className="grid h-10 w-10 place-items-center rounded-md bg-gradient-to-br from-emerald-300 to-teal-600 text-teal-950 font-bold text-xs shadow-md">
+                {user.avatarInitials}
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#05201f]" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-ink truncate">{user.name}</p>
-              <p className="text-[11px] text-ink/60 truncate">
+              <p className="text-sm font-semibold truncate">{user.name}</p>
+              <p className="text-[11px] text-white/50 truncate">
                 {user.roleTitle}
               </p>
             </div>
+            <button
+              onClick={handleSignOut}
+              disabled={logoutMutation.isPending}
+              title="Sign out"
+              aria-label="Sign out"
+              className="grid place-items-center w-9 h-9 rounded-md text-white/50 hover:text-white hover:bg-red-500/80 transition-all disabled:opacity-50"
+            >
+              {logoutMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="h-4 w-4" />
+              )}
+            </button>
           </div>
-
-          <Link
-            href="/login"
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-md border border-ink/10 bg-white hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive text-ink/70 text-xs font-semibold transition-colors"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span>Sign Out</span>
-          </Link>
         </div>
       </aside>
     </>

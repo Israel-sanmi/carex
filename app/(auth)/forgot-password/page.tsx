@@ -2,22 +2,33 @@
 
 import { useState } from "react";
 import AuthCard from "@/components/auth/auth-card";
-import { Mail, ArrowRight, CheckCircle2, ArrowLeft } from "lucide-react";
+import { useForgotPasswordMutation } from "@/lib/hooks/use-auth-mutations";
+import {
+  Mail,
+  ArrowRight,
+  CheckCircle2,
+  ArrowLeft,
+  AlertCircle,
+} from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  const forgotPasswordMutation = useForgotPasswordMutation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    if (!email) return;
 
-    // Simulate backend /api/v1/auth/forgot-password
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-    }, 700);
+    forgotPasswordMutation.mutate(
+      { email },
+      {
+        onSuccess: () => {
+          setSubmitted(true);
+        },
+      },
+    );
   };
 
   return (
@@ -41,24 +52,39 @@ export default function ForgotPasswordPage() {
             <CheckCircle2 className="h-8 w-8" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-ink">Reset Link Sent</h2>
+            <h2 className="text-xl font-bold text-ink">
+              Reset Instructions Sent
+            </h2>
             <p className="text-xs text-ink/70 mt-1 max-w-xs mx-auto leading-relaxed">
-              If an account exists for <span className="font-semibold text-ink">{email}</span>, we have dispatched instructions to reset your password.
+              If an account exists for{" "}
+              <span className="font-semibold text-ink">{email}</span>, we have
+              dispatched a password reset link to your email address.
             </p>
           </div>
-          <div className="pt-2">
+          {/* <div className="pt-2">
             <a
-              href="/reset-password?token=sample_demo_token"
+              href="/login"
               className="inline-flex items-center gap-2 rounded-full bg-teal-brand px-6 py-2.5 text-xs font-semibold text-white hover:bg-teal-deep transition-all shadow-sm"
             >
-              <span>Simulate Resetting Password →</span>
+              <span>Return to Sign In</span>
+              <ArrowRight className="h-4 w-4" />
             </a>
-          </div>
+          </div> */}
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm">
+          {forgotPasswordMutation.isError && (
+            <div className="p-3.5 rounded-md border border-coral/30 bg-coral-soft/50 text-ink space-y-1 animate-fade-in">
+              <p className="font-semibold text-coral flex items-center gap-1.5 text-xs">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {forgotPasswordMutation.error.message ||
+                  "Unable to send reset instructions"}
+              </p>
+            </div>
+          )}
+
           <div className="space-y-1.5">
-            <label className="font-semibold text-ink">Email</label>
+            <label className="font-semibold text-ink">Email Address</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink/40">
                 <Mail className="h-4 w-4" />
@@ -68,7 +94,7 @@ export default function ForgotPasswordPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@carehome.co.uk"
+                placeholder="name@carehome.com"
                 className="w-full rounded-md border border-ink/15 bg-cream/30 pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
               />
             </div>
@@ -77,10 +103,14 @@ export default function ForgotPasswordPage() {
           <div className="pt-2">
             <button
               type="submit"
-              disabled={loading}
+              disabled={forgotPasswordMutation.isPending}
               className="w-full py-3.5 rounded-full bg-teal-brand text-white font-medium text-sm sm:text-base hover:bg-teal-deep shadow-[0_10px_25px_-8px_rgba(15,118,110,0.5)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <span>{loading ? "Sending..." : "Send Reset Link"}</span>
+              <span>
+                {forgotPasswordMutation.isPending
+                  ? "Sending..."
+                  : "Send Password Reset Link"}
+              </span>
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -89,4 +119,3 @@ export default function ForgotPasswordPage() {
     </AuthCard>
   );
 }
-

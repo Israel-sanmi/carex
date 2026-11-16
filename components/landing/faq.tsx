@@ -62,26 +62,52 @@ export default function Faq() {
             return (
               <div
                 key={idx}
-                className="glass-card rounded-2xl border border-white/80 dark:border-white/10 overflow-hidden shadow-xs transition-all duration-300"
+                className={`glass-card rounded-md border overflow-hidden transition-all duration-500 ${
+                  isOpen
+                    ? "border-emerald-500/40 shadow-lg shadow-emerald-900/5"
+                    : "border-white/80 dark:border-white/10 shadow-xs hover:border-emerald-500/20"
+                }`}
               >
                 <button
                   onClick={() => toggle(idx)}
-                  className="w-full px-6 py-5 text-left flex justify-between items-center font-bold text-slate-900 dark:text-white text-base sm:text-lg hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
+                  aria-expanded={isOpen}
+                  className="w-full px-6 py-5 text-left flex justify-between items-center gap-4 font-bold text-slate-900 dark:text-white text-base sm:text-lg hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
                 >
-                  <span>{f.question}</span>
-                  <ChevronDown
-                    className={`w-5 h-5 text-slate-400 transition-transform duration-300 shrink-0 ml-4 ${
-                      isOpen
-                        ? "rotate-180 text-emerald-600 dark:text-emerald-400"
-                        : ""
+                  <span className="flex items-center gap-4">
+                    <span
+                      className={`hidden sm:grid place-items-center w-8 h-8 rounded-md text-xs font-mono font-bold shrink-0 transition-colors duration-300 ${
+                        isOpen
+                          ? "bg-emerald-500 text-white"
+                          : "bg-slate-900/5 dark:bg-white/10 text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {String(idx + 1).padStart(2, "0")}
+                    </span>
+                    {f.question}
+                  </span>
+                  <span
+                    className={`grid place-items-center w-8 h-8 rounded-full shrink-0 transition-all duration-300 ${
+                      isOpen ? "bg-emerald-500/10 rotate-180" : ""
                     }`}
-                  />
+                  >
+                    <ChevronDown
+                      className={`w-5 h-5 ${isOpen ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}
+                    />
+                  </span>
                 </button>
-                {isOpen && (
-                  <div className="px-6 pb-5 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-200/60 dark:border-white/10 pt-4 animate-fade-in">
-                    {f.answer}
+                <div
+                  className={`grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    isOpen
+                      ? "grid-rows-[1fr] opacity-100"
+                      : "grid-rows-[0fr] opacity-0"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-6 sm:pl-18 pb-6 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+                      {f.answer}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}

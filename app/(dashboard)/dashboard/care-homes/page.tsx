@@ -1,137 +1,238 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useRole } from "@/lib/role-context";
+import { useOrganisations } from "@/lib/hooks/use-organisations";
+import {
+  useCareHomesByOrganisation,
+  useMyCareHomes,
+  useCreateCareHomeMutation,
+  useUpdateCareHomeMutation,
+  useUpdateCareHomeStatusMutation,
+} from "@/lib/hooks/use-care-homes";
+import {
+  CareHomeItem,
+  CareHomeStatus,
+  CreateCareHomePayload,
+} from "@/lib/api-care-homes";
+import { toast } from "@/components/ui/toast";
 import {
   Building2,
   MapPin,
   Phone,
   Mail,
-  Users,
-  Bed,
   Plus,
   Search,
-  SlidersHorizontal,
-  ChevronRight,
-  ShieldCheck,
   CheckCircle2,
-  Clock,
-  Sparkles,
+  AlertTriangle,
+  RefreshCw,
+  Copy,
+  Check,
+  Edit2,
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Home,
+  SlidersHorizontal,
+  Calendar,
 } from "lucide-react";
 
-interface CareHome {
-  id: string;
-  name: string;
-  code: string;
-  organisation: string;
-  address: string;
-  city: string;
-  postalCode: string;
-  phone: string;
-  email: string;
-  manager: string;
-  capacity: number;
-  occupied: number;
-  staffCount: number;
-  cqcRating: "Outstanding" | "Good" | "Requires Improvement";
-  status: "Active" | "Maintenance";
-}
+function CareHomesContent() {
+  const searchParams = useSearchParams();
+  const urlOrgId = searchParams.get("orgId") || "";
 
-const mockCareHomes: CareHome[] = [
-  {
-    id: "ch-1",
-    name: "St. Jude's Residential Home",
-    code: "STJ-01",
-    organisation: "Apex Care Group",
-    address: "14 Primrose Crescent",
-    city: "Bristol",
-    postalCode: "BS8 4HG",
-    phone: "+44 (0) 117 496 0281",
-    email: "stjudes@apexcare.co.uk",
-    manager: "Eleanor Vance",
-    capacity: 48,
-    occupied: 42,
-    staffCount: 34,
-    cqcRating: "Good",
-    status: "Active",
-  },
-  {
-    id: "ch-2",
-    name: "Meadow View Lodge",
-    code: "MVL-02",
-    organisation: "Apex Care Group",
-    address: "88 Willow Green",
-    city: "Bath",
-    postalCode: "BA2 9PQ",
-    phone: "+44 (0) 122 590 1144",
-    email: "meadowview@apexcare.co.uk",
-    manager: "Marcus Thorne",
-    capacity: 32,
-    occupied: 30,
-    staffCount: 26,
-    cqcRating: "Outstanding",
-    status: "Active",
-  },
-  {
-    id: "ch-3",
-    name: "Oakridge Manor Care Centre",
-    code: "OMC-03",
-    organisation: "Apex Care Group",
-    address: "5 Highfield Avenue",
-    city: "Gloucester",
-    postalCode: "GL1 3TR",
-    phone: "+44 (0) 145 233 4902",
-    email: "oakridge@apexcare.co.uk",
-    manager: "Sarah Jenkins",
-    capacity: 60,
-    occupied: 54,
-    staffCount: 42,
-    cqcRating: "Good",
-    status: "Active",
-  },
-  {
-    id: "ch-4",
-    name: "Hazelwood House",
-    code: "HZH-04",
-    organisation: "Apex Care Group",
-    address: "21 Elmhurst Lane",
-    city: "Cheltenham",
-    postalCode: "GL50 2EE",
-    phone: "+44 (0) 124 251 7708",
-    email: "hazelwood@apexcare.co.uk",
-    manager: "David Bell",
-    capacity: 25,
-    occupied: 18,
-    staffCount: 19,
-    cqcRating: "Good",
-    status: "Active",
-  },
-];
+  const { roleAssignments } = useRole();
 
-export default function CareHomesPage() {
-  const { currentRole, user, activeCareHome, setActiveCareHome } = useRole();
+  // Search & Organisation selection
+  const [selectedOrgId, setSelectedOrgId] = useState<string>(urlOrgId);
   const [search, setSearch] = useState("");
-  const [filterRating, setFilterRating] = useState("all");
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [page, setPage] = useState(0);
+  const pageSize = 20;
 
-  // Scoping logic: Care home managers see primarily their assigned home, while Org & Super admins see all
-  const filteredHomes = mockCareHomes.filter((home) => {
-    const matchesSearch =
-      home.name.toLowerCase().includes(search.toLowerCase()) ||
-      home.city.toLowerCase().includes(search.toLowerCase()) ||
-      home.manager.toLowerCase().includes(search.toLowerCase());
-    const matchesRating =
-      filterRating === "all" || home.cqcRating === filterRating;
-    return matchesSearch && matchesRating;
+  // Modals state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingHome, setEditingHome] = useState<CareHomeItem | null>(null);
+  const [viewingHome, setViewingHome] = useState<CareHomeItem | null>(null);
+  const [statusHome, setStatusHome] = useState<CareHomeItem | null>(null);
+  const [confirmStatusHome, setConfirmStatusHome] = useState<{
+    home: CareHomeItem;
+    targetStatus: CareHomeStatus;
+  } | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // New Care Home Form
+  const [createForm, setCreateForm] = useState<CreateCareHomePayload>({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "United Kingdom",
+    postalCode: "",
   });
 
-  const totalBeds = mockCareHomes.reduce((acc, h) => acc + h.capacity, 0);
-  const totalOccupied = mockCareHomes.reduce((acc, h) => acc + h.occupied, 0);
-  const avgOccupancy = Math.round((totalOccupied / totalBeds) * 100);
+  // Query organisations so admin can switch organisation filter
+  const { data: orgsData, isLoading: isLoadingOrgs } = useOrganisations({
+    page: 0,
+    size: 100,
+  });
+
+  const organisations = orgsData?.content || [];
+
+  // Automatically select the first organisation if none is selected yet
+  useEffect(() => {
+    if (!selectedOrgId) {
+      if (urlOrgId) {
+        setSelectedOrgId(urlOrgId);
+      } else if (organisations.length > 0) {
+        setSelectedOrgId(organisations[0].publicId);
+      } else {
+        const assignedOrg = roleAssignments.find(
+          (ra) => ra.organisationPublicId,
+        )?.organisationPublicId;
+        if (assignedOrg) {
+          setSelectedOrgId(assignedOrg);
+        }
+      }
+    }
+  }, [urlOrgId, organisations, selectedOrgId, roleAssignments]);
+
+  // Query care homes for the selected organisation
+  const {
+    data: careHomesPage,
+    isLoading: isLoadingHomes,
+    isError: isHomesError,
+    error: homesError,
+    refetch,
+    isFetching,
+  } = useCareHomesByOrganisation(
+    selectedOrgId || null,
+    { page, size: pageSize },
+    { enabled: Boolean(selectedOrgId) },
+  );
+
+  // Also query my care homes if no organisation selected or as fallback
+  const { data: myCareHomes } = useMyCareHomes({
+    enabled: !selectedOrgId,
+  });
+
+  // Mutations
+  const createMutation = useCreateCareHomeMutation();
+  const updateMutation = useUpdateCareHomeMutation();
+  const statusMutation = useUpdateCareHomeStatusMutation();
+
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    toast.info("Care Home ID copied to clipboard");
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrgId) {
+      toast.error("Please select a parent organisation first");
+      return;
+    }
+    if (!createForm.name || !createForm.email) {
+      toast.error("Care home name and official email are required");
+      return;
+    }
+
+    try {
+      await createMutation.mutateAsync({
+        organisationPublicId: selectedOrgId,
+        payload: createForm,
+      });
+      setShowAddModal(false);
+      setCreateForm({
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        state: "",
+        country: "United Kingdom",
+        postalCode: "",
+      });
+    } catch {
+      // handled in mutation hook
+    }
+  };
+
+  const handleUpdateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingHome) return;
+
+    try {
+      await updateMutation.mutateAsync({
+        organisationPublicId: editingHome.organisationPublicId || selectedOrgId,
+        careHomePublicId: editingHome.publicId,
+        payload: {
+          name: editingHome.name,
+          email: editingHome.email,
+          phone: editingHome.phone,
+          address: editingHome.address,
+          city: editingHome.city,
+          state: editingHome.state,
+          country: editingHome.country,
+          postalCode: editingHome.postalCode,
+        },
+      });
+      setEditingHome(null);
+    } catch {
+      // handled in mutation hook
+    }
+  };
+
+  const handleStatusChange = async (
+    home: CareHomeItem,
+    status: CareHomeStatus,
+  ) => {
+    try {
+      await statusMutation.mutateAsync({
+        organisationPublicId: home.organisationPublicId || selectedOrgId,
+        careHomePublicId: home.publicId,
+        status,
+      });
+      setStatusHome(null);
+    } catch {
+      // handled in mutation hook
+    }
+  };
+
+  const rawHomes: CareHomeItem[] = selectedOrgId
+    ? careHomesPage?.content || []
+    : myCareHomes || [];
+
+  const filteredHomes = rawHomes.filter((home) => {
+    const matchesSearch =
+      !search ||
+      home.name.toLowerCase().includes(search.toLowerCase()) ||
+      (home.city && home.city.toLowerCase().includes(search.toLowerCase())) ||
+      (home.email && home.email.toLowerCase().includes(search.toLowerCase()));
+
+    const matchesStatus =
+      statusFilter === "all" ||
+      home.status.toLowerCase() === statusFilter.toLowerCase();
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const totalElements = careHomesPage?.totalElements ?? filteredHomes.length;
+  const totalPages =
+    careHomesPage?.totalPages ?? (Math.ceil(totalElements / pageSize) || 1);
+
+  const currentOrg = organisations.find((o) => o.publicId === selectedOrgId);
 
   return (
     <div className="space-y-8">
-      {/* Page Header */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -139,83 +240,83 @@ export default function CareHomesPage() {
               Care Homes & Facilities
             </h1>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
-              {mockCareHomes.length} Facilities
+              {filteredHomes.length} Facilities Listed
             </span>
           </div>
           <p className="text-sm text-ink/70 mt-1">
-            Manage residential care facilities, bed capacity, allocations, and
-            compliance standards.
+            Manage residential care facilities, contact information, and
+            operating status.
           </p>
         </div>
 
-        {["SUPER_ADMIN", "ORGANISATION_ADMIN"].includes(currentRole) && (
+        <div className="flex items-center gap-3">
+          {/* <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-ink/15 text-xs font-semibold text-ink/80 hover:bg-cream transition-all cursor-pointer disabled:opacity-50"
+            title="Refresh list"
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${isFetching ? "animate-spin text-teal-brand" : ""}`}
+            />
+            <span>Refresh</span>
+          </button> */}
+
           <button
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              if (!selectedOrgId && organisations.length > 0) {
+                setSelectedOrgId(organisations[0].publicId);
+              }
+              setShowAddModal(true);
+            }}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-teal-brand text-white text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
           >
             <Plus className="h-4 w-4" />
-            Add Care Home
+            <span>Add Care Home</span>
           </button>
-        )}
+        </div>
       </div>
 
-      {/* Capacity & Occupancy KPI Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-ink/60 uppercase tracking-wider">
-              Total Facilities
-            </span>
-            <Building2 className="h-5 w-5 text-teal-brand" />
+      {/* Organisation Switcher Banner */}
+      <div className="p-4 rounded-md bg-white border border-ink/10 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-md bg-teal-brand/10 text-teal-brand flex items-center justify-center shrink-0">
+            <Building2 className="h-5 w-5" />
           </div>
-          <p className="text-3xl font-bold text-ink mt-2">
-            {mockCareHomes.length}
-          </p>
-          <span className="text-xs text-ink/60">Across South West Region</span>
-        </div>
-
-        <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-ink/60 uppercase tracking-wider">
-              Total Bed Capacity
+          <div>
+            <span className="text-[11px] font-bold text-ink/50 uppercase tracking-wider block">
+              Active Organisation Filter
             </span>
-            <Bed className="h-5 w-5 text-teal-brand" />
-          </div>
-          <p className="text-3xl font-bold text-ink mt-2">{totalBeds}</p>
-          <span className="text-xs text-teal-deep font-semibold">
-            {totalOccupied} Currently Occupied
-          </span>
-        </div>
-
-        <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-ink/60 uppercase tracking-wider">
-              Group Occupancy
-            </span>
-            <div className="h-6 w-6 rounded-full bg-mint flex items-center justify-center text-teal-deep text-xs font-bold">
-              %
+            <div className="font-bold text-ink text-sm sm:text-base">
+              {currentOrg ? currentOrg.name : "Select an Organisation"}
             </div>
           </div>
-          <p className="text-3xl font-bold text-ink mt-2">{avgOccupancy}%</p>
-          <div className="w-full bg-cream rounded-full h-1.5 mt-2">
-            <div
-              className="bg-teal-brand h-1.5 rounded-full"
-              style={{ width: `${avgOccupancy}%` }}
-            />
-          </div>
         </div>
 
-        <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-ink/60 uppercase tracking-wider">
-              Available Beds
-            </span>
-            <Sparkles className="h-5 w-5 text-amber-500" />
-          </div>
-          <p className="text-3xl font-bold text-teal-deep mt-2">
-            {totalBeds - totalOccupied}
-          </p>
-          <span className="text-xs text-ink/60">Ready for instant intake</span>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <label className="text-xs font-medium text-ink/70 whitespace-nowrap">
+            Switch Org:
+          </label>
+          <select
+            value={selectedOrgId}
+            onChange={(e) => {
+              setSelectedOrgId(e.target.value);
+              setPage(0);
+            }}
+            disabled={isLoadingOrgs}
+            className="w-full sm:w-72 rounded-md border border-ink/15 bg-cream/30 px-3 py-2 text-xs sm:text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 font-medium cursor-pointer"
+          >
+            <option value="">
+              {isLoadingOrgs
+                ? "Loading organisations..."
+                : "-- Select Organisation --"}
+            </option>
+            {organisations.map((org) => (
+              <option key={org.publicId} value={org.publicId}>
+                {org.name} ({org.status})
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -225,232 +326,815 @@ export default function CareHomesPage() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
           <input
             type="text"
-            placeholder="Search by facility name, city or manager..."
+            placeholder="Search by facility name, city or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 focus:border-teal-brand transition-all"
+            className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all text-ink"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <SlidersHorizontal className="h-4 w-4 text-ink/40" />
-          <span className="text-xs text-ink/60 font-medium">CQC Rating:</span>
+          <span className="text-xs text-ink/60 font-medium">Status:</span>
           <select
-            value={filterRating}
-            onChange={(e) => setFilterRating(e.target.value)}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
             className="text-xs rounded-md border border-ink/10 px-3 py-2 bg-cream/30 focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium text-ink"
           >
-            <option value="all">All Ratings</option>
-            <option value="Outstanding">Outstanding</option>
-            <option value="Good">Good</option>
-            <option value="Requires Improvement">Requires Improvement</option>
+            <option value="all">All Statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="PENDING">Pending</option>
+            <option value="SUSPENDED">Suspended</option>
+            <option value="INACTIVE">Inactive</option>
           </select>
         </div>
       </div>
 
-      {/* Care Homes Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredHomes.map((home) => {
-          const occupancyRate = Math.round(
-            (home.occupied / home.capacity) * 100,
-          );
-          const isSelected = activeCareHome === home.name;
-
-          return (
+      {/* Content Grid */}
+      {isLoadingHomes ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((i) => (
             <div
-              key={home.id}
-              className={`p-6 rounded-md bg-white border transition-all hover:shadow-md ${
-                isSelected
-                  ? "border-teal-brand ring-2 ring-teal-brand/20 bg-mint/5"
-                  : "border-ink/10 hover:border-ink/20"
-              }`}
+              key={i}
+              className="p-6 rounded-md bg-white border border-ink/10 shadow-xs animate-pulse space-y-4"
             >
-              {/* Header */}
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-ink/5 text-ink/70">
-                      {home.code}
-                    </span>
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-mint text-teal-deep">
-                      CQC: {home.cqcRating}
-                    </span>
+              <div className="h-5 bg-ink/10 rounded-md w-1/2" />
+              <div className="h-4 bg-ink/10 rounded-md w-1/3" />
+              <div className="h-20 bg-cream rounded-md" />
+            </div>
+          ))}
+        </div>
+      ) : isHomesError ? (
+        <div className="p-8 rounded-md bg-red-50 border border-red-200 text-center space-y-3">
+          <AlertTriangle className="h-8 w-8 text-red-600 mx-auto" />
+          <p className="text-sm font-semibold text-red-800">
+            Failed to load care homes
+          </p>
+          <p className="text-xs text-red-600 font-mono">
+            {homesError instanceof Error ? homesError.message : "Unknown error"}
+          </p>
+          <button
+            onClick={() => refetch()}
+            className="px-4 py-2 rounded-md bg-red-600 text-white text-xs font-semibold hover:bg-red-700 cursor-pointer"
+          >
+            Try Again
+          </button>
+        </div>
+      ) : filteredHomes.length === 0 ? (
+        <div className="p-12 rounded-md bg-white border border-ink/10 text-center space-y-4 shadow-xs">
+          <div className="w-14 h-14 rounded-full bg-cream text-teal-brand flex items-center justify-center mx-auto">
+            <Home className="h-7 w-7" />
+          </div>
+          <div className="max-w-md mx-auto space-y-1">
+            <h3 className="text-base font-bold text-ink">
+              No Care Homes Found
+            </h3>
+            <p className="text-xs text-ink/60">
+              {search
+                ? `No facilities match "${search}". Try adjusting your search term.`
+                : selectedOrgId
+                  ? `No care homes have been registered under "${currentOrg?.name || "this organisation"}". Add the first one below.`
+                  : "Please select an organisation above to view and manage care homes."}
+            </p>
+          </div>
+          {selectedOrgId && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Register First Care Home</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredHomes.map((home) => (
+            <div
+              key={home.publicId}
+              className="p-6 rounded-md bg-white border border-ink/10 shadow-xs hover:border-teal-brand/40 transition-all space-y-4 flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                          home.status === "ACTIVE"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : home.status === "PENDING"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {home.status}
+                      </span>
+                      {home.organisationName && (
+                        <span className="text-[11px] font-semibold text-teal-deep bg-mint px-2 py-0.5 rounded-md">
+                          {home.organisationName}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-bold text-ink mt-1.5 font-heading">
+                      {home.name}
+                    </h3>
                   </div>
-                  <h3 className="text-lg font-bold text-ink mt-1 font-heading">
-                    {home.name}
-                  </h3>
-                  <p className="text-xs text-ink/60 flex items-center gap-1.5 mt-1">
-                    <MapPin className="h-3.5 w-3.5 text-teal-brand" />
-                    {home.address}, {home.city} {home.postalCode}
-                  </p>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setEditingHome(home)}
+                      title="Edit Care Home"
+                      className="p-1.5 rounded-md text-ink/50 hover:text-ink hover:bg-cream cursor-pointer"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewingHome(home)}
+                      title="View Details"
+                      className="p-1.5 rounded-md text-ink/50 hover:text-ink hover:bg-cream cursor-pointer"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
 
-                <button
-                  onClick={() => setActiveCareHome(home.name)}
-                  className={`text-xs px-3 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
-                    isSelected
-                      ? "bg-teal-brand text-white shadow-xs"
-                      : "bg-cream text-ink/70 hover:bg-mint hover:text-teal-deep"
-                  }`}
-                >
-                  {isSelected ? "Active View" : "Select View"}
-                </button>
+                {/* Details Section */}
+                <div className="p-3.5 rounded-md bg-cream/30 border border-ink/5 text-xs space-y-2">
+                  <div className="flex items-center gap-2 text-ink/80 truncate">
+                    <Mail className="h-3.5 w-3.5 text-teal-brand shrink-0" />
+                    <span className="font-medium truncate">{home.email}</span>
+                  </div>
+                  {home.phone && (
+                    <div className="flex items-center gap-2 text-ink/80">
+                      <Phone className="h-3.5 w-3.5 text-teal-brand shrink-0" />
+                      <span>{home.phone}</span>
+                    </div>
+                  )}
+                  {(home.address || home.city) && (
+                    <div className="flex items-center gap-2 text-ink/80">
+                      <MapPin className="h-3.5 w-3.5 text-teal-brand shrink-0" />
+                      <span>
+                        {[
+                          home.address,
+                          home.city,
+                          home.state,
+                          home.country,
+                          home.postalCode,
+                        ]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Occupancy bar */}
-              <div className="mt-5 p-4 rounded-md bg-cream/40 border border-ink/5 space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="text-ink/70">Occupancy Level</span>
-                  <span className="text-teal-deep">
-                    {home.occupied} / {home.capacity} Beds ({occupancyRate}%)
-                  </span>
-                </div>
-                <div className="w-full bg-ink/10 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full transition-all ${
-                      occupancyRate > 90 ? "bg-amber-500" : "bg-teal-brand"
-                    }`}
-                    style={{ width: `${occupancyRate}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between text-[11px] text-ink/60 pt-1">
-                  <span>{home.capacity - home.occupied} vacant beds</span>
-                  <span className="text-emerald-700 font-semibold">
-                    {home.staffCount} Dedicated Carers
-                  </span>
-                </div>
-              </div>
-
-              {/* Contact & Manager Footer */}
-              <div className="mt-5 pt-4 border-t border-ink/5 grid grid-cols-2 gap-3 text-xs">
-                <div>
-                  <span className="text-[11px] text-ink/50 uppercase font-semibold">
-                    Care Home Manager
-                  </span>
-                  <p className="font-bold text-ink mt-0.5">{home.manager}</p>
-                </div>
-                <div>
-                  <span className="text-[11px] text-ink/50 uppercase font-semibold">
-                    Contact Direct
-                  </span>
-                  <p className="font-medium text-ink mt-0.5 truncate">
-                    {home.phone}
-                  </p>
+              {/* Card Footer */}
+              <div className="pt-3 border-t border-ink/5 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setStatusHome(home)}
+                    className="px-2.5 py-1 rounded-md border border-ink/15 text-[11px] font-semibold text-ink/70 hover:bg-cream cursor-pointer"
+                  >
+                    Change Status
+                  </button>
+                  <Link
+                    href={`/dashboard/users`}
+                    className="px-3 py-1 rounded-md bg-teal-brand/10 hover:bg-teal-brand/20 text-teal-deep font-semibold text-xs transition-all cursor-pointer"
+                  >
+                    Manage Residents
+                  </Link>
                 </div>
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Add Care Home Modal mock */}
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t border-ink/10 text-xs text-ink/70">
+          <span>
+            Showing Page {page + 1} of {totalPages} ({totalElements} care homes)
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="p-2 rounded-md border border-ink/15 disabled:opacity-40 hover:bg-cream cursor-pointer"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+              className="p-2 rounded-md border border-ink/15 disabled:opacity-40 hover:bg-cream cursor-pointer"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Add Care Home Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="w-full max-w-lg bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-5 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-4">
-              <div>
+            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
+              <div className="flex items-center gap-2">
+                <Home className="h-5 w-5 text-teal-brand" />
                 <h3 className="text-lg font-bold text-ink font-heading">
-                  Register New Care Home
+                  Register Care Home Facility
                 </h3>
-                <p className="text-xs text-ink/60">
-                  Add a new residential facility under your care organisation
-                </p>
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-xs p-1 rounded-md text-ink/50 hover:text-ink cursor-pointer"
+                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-4 text-xs">
-              <div>
-                <label className="font-semibold text-ink block mb-1">
-                  Facility Name
+            <form
+              onSubmit={handleCreateSubmit}
+              className="space-y-4 text-xs sm:text-sm"
+            >
+              <div className="space-y-1">
+                <label className="font-semibold text-ink">
+                  Parent Care Organisation *
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Primrose Court Nursing Centre"
-                  className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
-                />
+                <select
+                  required
+                  value={selectedOrgId}
+                  onChange={(e) => setSelectedOrgId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                >
+                  <option value="">-- Select Organisation --</option>
+                  {organisations
+                    .filter((org) => org.status?.toUpperCase() === "ACTIVE")
+                    .map((org) => (
+                      <option key={org.publicId} value={org.publicId}>
+                        {org.name}
+                      </option>
+                    ))}
+                </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-ink block mb-1">
-                    Total Bed Capacity
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 40"
-                    className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-ink block mb-1">
-                    Facility Code
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="font-semibold text-ink">
+                    Facility Name *
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. PCN-05"
-                    className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
+                    required
+                    placeholder="e.g. St. Jude's Residential Home"
+                    value={createForm.name}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, name: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="font-semibold text-ink block mb-1">
-                  Address & Postcode
-                </label>
-                <input
-                  type="text"
-                  placeholder="Street, City, Postal Code"
-                  className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-ink block mb-1">
-                    Assigned Manager
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">
+                    Official Email *
                   </label>
                   <input
-                    type="text"
-                    placeholder="Manager full name"
-                    className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
+                    type="email"
+                    required
+                    placeholder="stjudes@apexcare.co.uk"
+                    value={createForm.email}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, email: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
                   />
                 </div>
-                <div>
-                  <label className="font-semibold text-ink block mb-1">
-                    Direct Phone
-                  </label>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">Phone</label>
                   <input
                     type="tel"
-                    placeholder="+44 (0) ..."
-                    className="w-full px-3 py-2 rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20"
+                    placeholder="+44 117 496 0281"
+                    value={createForm.phone}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, phone: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
                   />
                 </div>
+
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="font-semibold text-ink">
+                    Street Address
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="14 Primrose Crescent"
+                    value={createForm.address}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, address: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">City</label>
+                  <input
+                    type="text"
+                    placeholder="Bristol"
+                    value={createForm.city}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, city: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">
+                    State / County
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Somerset"
+                    value={createForm.state}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, state: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">Postal Code</label>
+                  <input
+                    type="text"
+                    placeholder="BS8 4HG"
+                    value={createForm.postalCode}
+                    onChange={(e) =>
+                      setCreateForm({
+                        ...createForm,
+                        postalCode: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">Country</label>
+                  <input
+                    type="text"
+                    placeholder="United Kingdom"
+                    value={createForm.country}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, country: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-ink/10">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 rounded-md border border-ink/15 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createMutation.isPending}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {createMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Register Facility</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Care Home Modal */}
+      {editingHome && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-5 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
+              <div className="flex items-center gap-2">
+                <Edit2 className="h-5 w-5 text-teal-brand" />
+                <h3 className="text-lg font-bold text-ink font-heading">
+                  Edit Care Home Facility
+                </h3>
+              </div>
+              <button
+                onClick={() => setEditingHome(null)}
+                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleUpdateSubmit}
+              className="space-y-4 text-xs sm:text-sm"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="font-semibold text-ink">
+                    Facility Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingHome.name}
+                    onChange={(e) =>
+                      setEditingHome({ ...editingHome, name: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">Email *</label>
+                  <input
+                    type="email"
+                    required
+                    value={editingHome.email}
+                    onChange={(e) =>
+                      setEditingHome({ ...editingHome, email: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">Phone</label>
+                  <input
+                    type="tel"
+                    value={editingHome.phone || ""}
+                    onChange={(e) =>
+                      setEditingHome({ ...editingHome, phone: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                  />
+                </div>
+
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="font-semibold text-ink">Address</label>
+                  <input
+                    type="text"
+                    value={editingHome.address || ""}
+                    onChange={(e) =>
+                      setEditingHome({
+                        ...editingHome,
+                        address: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">City</label>
+                  <input
+                    type="text"
+                    value={editingHome.city || ""}
+                    onChange={(e) =>
+                      setEditingHome({ ...editingHome, city: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">State</label>
+                  <input
+                    type="text"
+                    value={editingHome.state || ""}
+                    onChange={(e) =>
+                      setEditingHome({ ...editingHome, state: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">Postal Code</label>
+                  <input
+                    type="text"
+                    value={editingHome.postalCode || ""}
+                    onChange={(e) =>
+                      setEditingHome({
+                        ...editingHome,
+                        postalCode: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">Country</label>
+                  <input
+                    type="text"
+                    value={editingHome.country || ""}
+                    onChange={(e) =>
+                      setEditingHome({
+                        ...editingHome,
+                        country: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-ink/10">
+                <button
+                  type="button"
+                  onClick={() => setEditingHome(null)}
+                  className="px-4 py-2 rounded-md border border-ink/15 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updateMutation.isPending}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {updateMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Changes</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Change Status Modal */}
+      {statusHome && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
+              <h3 className="text-base font-bold text-ink">
+                Update Care Home Status
+              </h3>
+              <button
+                onClick={() => setStatusHome(null)}
+                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-ink/70">
+              Select status for{" "}
+              <strong className="text-ink">{statusHome.name}</strong>:
+            </p>
+
+            <div className="space-y-2">
+              {(["ACTIVE", "SUSPENDED", "INACTIVE"] as CareHomeStatus[]).map(
+                (st) => (
+                  <button
+                    key={st}
+                    onClick={() => {
+                      if (statusHome.status === st) return;
+                      setConfirmStatusHome({
+                        home: statusHome,
+                        targetStatus: st,
+                      });
+                    }}
+                    disabled={statusMutation.isPending}
+                    className={`w-full p-2.5 rounded-md text-left text-xs font-semibold border transition-all cursor-pointer flex items-center justify-between ${
+                      statusHome.status === st
+                        ? "border-teal-brand bg-teal-brand/10 text-teal-deep"
+                        : "border-ink/10 hover:border-ink/30 text-ink/80"
+                    }`}
+                  >
+                    <span>{st}</span>
+                    {statusHome.status === st && (
+                      <Check className="h-4 w-4 text-teal-brand" />
+                    )}
+                  </button>
+                ),
+              )}
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => setStatusHome(null)}
+                className="px-3 py-1.5 rounded-md border border-ink/15 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Care Home Status Change */}
+      {confirmStatusHome && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20 shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-ink">
+                  Confirm Status Change
+                </h3>
+                <p className="text-xs text-ink/50">
+                  Facility operational update
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-ink/10">
+            <p className="text-xs text-ink/70 leading-relaxed">
+              Are you sure you want to change the status of{" "}
+              <strong className="text-ink">
+                {confirmStatusHome.home.name}
+              </strong>{" "}
+              from{" "}
+              <span className="font-semibold text-ink">
+                {confirmStatusHome.home.status}
+              </span>{" "}
+              to{" "}
+              <span className="font-bold text-teal-deep">
+                {confirmStatusHome.targetStatus}
+              </span>
+              ?
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-ink/10">
               <button
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 rounded-md border border-ink/10 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
+                type="button"
+                onClick={() => setConfirmStatusHome(null)}
+                disabled={statusMutation.isPending}
+                className="px-3.5 py-2 rounded-md border border-ink/15 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep cursor-pointer"
+                type="button"
+                onClick={async () => {
+                  await handleStatusChange(
+                    confirmStatusHome.home,
+                    confirmStatusHome.targetStatus,
+                  );
+                  setConfirmStatusHome(null);
+                }}
+                disabled={statusMutation.isPending}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer disabled:opacity-50 shadow-sm"
               >
-                Save Facility
+                {statusMutation.isPending ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    <span>Updating...</span>
+                  </>
+                ) : (
+                  <span>Confirm & Update</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Details View Modal */}
+      {viewingHome && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
+              <div className="flex items-center gap-2">
+                <Home className="h-5 w-5 text-teal-brand" />
+                <h3 className="text-lg font-bold text-ink">
+                  {viewingHome.name}
+                </h3>
+              </div>
+              <button
+                onClick={() => setViewingHome(null)}
+                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded-md bg-cream/40 border border-ink/10 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-ink/50">
+                  Care Home Public ID
+                </span>
+                <div className="flex items-center justify-between font-mono text-[11px] text-ink break-all">
+                  <span>{viewingHome.publicId}</span>
+                  <button
+                    onClick={() =>
+                      handleCopy(viewingHome.publicId, viewingHome.publicId)
+                    }
+                    className="p-1 text-teal-brand hover:text-teal-deep cursor-pointer shrink-0"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-2.5 rounded-md bg-cream/30 border border-ink/10">
+                  <span className="text-[10px] uppercase font-bold text-ink/50 block">
+                    Status
+                  </span>
+                  <span className="font-semibold text-ink">
+                    {viewingHome.status}
+                  </span>
+                </div>
+                <div className="p-2.5 rounded-md bg-cream/30 border border-ink/10">
+                  <span className="text-[10px] uppercase font-bold text-ink/50 block">
+                    Registered
+                  </span>
+                  <span className="font-semibold text-ink">
+                    {new Date(viewingHome.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2 border-t border-ink/10 pt-3">
+                <div className="flex justify-between">
+                  <span className="text-ink/60">Email:</span>
+                  <span className="font-medium text-ink">
+                    {viewingHome.email}
+                  </span>
+                </div>
+                {viewingHome.phone && (
+                  <div className="flex justify-between">
+                    <span className="text-ink/60">Phone:</span>
+                    <span className="font-medium text-ink">
+                      {viewingHome.phone}
+                    </span>
+                  </div>
+                )}
+                {viewingHome.address && (
+                  <div className="flex justify-between">
+                    <span className="text-ink/60">Address:</span>
+                    <span className="font-medium text-ink text-right">
+                      {[
+                        viewingHome.address,
+                        viewingHome.city,
+                        viewingHome.state,
+                        viewingHome.country,
+                        viewingHome.postalCode,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-ink/10 flex justify-end">
+              <button
+                onClick={() => setViewingHome(null)}
+                className="px-4 py-1.5 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep cursor-pointer"
+              >
+                Close
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+export default function CareHomesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-12 text-center text-ink/50 text-sm">
+          <RefreshCw className="h-5 w-5 animate-spin mx-auto mb-2 text-teal-brand" />
+          Loading Care Homes...
+        </div>
+      }
+    >
+      <CareHomesContent />
+    </Suspense>
   );
 }

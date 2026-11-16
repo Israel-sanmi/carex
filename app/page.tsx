@@ -9,47 +9,53 @@ import Testimonials from "@/components/landing/testimonials";
 import Faq from "@/components/landing/faq";
 import Cta from "@/components/landing/cta";
 import Footer from "@/components/landing/footer";
+import Reveal from "@/components/landing/reveal";
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen bg-slate-50 dark:bg-[#040e0f] font-sans text-ink dark:text-slate-100 antialiased overflow-x-hidden selection:bg-emerald-500/30 transition-colors duration-300">
-      {/* Aurora Gradient Background strictly from Sample 2 */}
+    <div className="relative min-h-screen bg-slate-50 dark:bg-[#040e0f] font-sans text-ink dark:text-slate-100 antialiased overflow-x-clip selection:bg-emerald-500/30 transition-colors duration-300">
+      {/* Ambient background layers */}
       <div className="aurora-bg" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[900px] bg-grid z-0" aria-hidden="true" />
 
-      {/* Navigation */}
       <Navbar />
 
-      {/* Main Content Sections arranged strictly per Sample 1 */}
       <main className="relative z-10">
-        {/* 1. Hero Section */}
         <Hero />
 
-        {/* 2. Trust Bar */}
-        <TrustBar />
+        <Reveal>
+          <TrustBar />
+        </Reveal>
 
-        {/* 3. Features (Before & After) */}
-        <BeforeAfter />
+        <Reveal>
+          <BeforeAfter />
+        </Reveal>
 
-        {/* 4. Solutions (Role-Based Tabs) */}
-        <RoleTabs />
+        <Reveal>
+          <RoleTabs />
+        </Reveal>
 
-        {/* 5. Offline Feature Spotlight */}
-        <OfflineSpotlight />
+        <Reveal from="scale">
+          <OfflineSpotlight />
+        </Reveal>
 
-        {/* 6. Impact / Measurable ROI Stats */}
-        <ImpactStats />
+        <Reveal>
+          <ImpactStats />
+        </Reveal>
 
-        {/* 7. Loved By Caregivers (Testimonials) */}
-        <Testimonials />
+        <Reveal>
+          <Testimonials />
+        </Reveal>
 
-        {/* 8. FAQ Accordion */}
-        <Faq />
+        <Reveal>
+          <Faq />
+        </Reveal>
 
-        {/* 9. Final Call to Action */}
-        <Cta />
+        <Reveal from="scale">
+          <Cta />
+        </Reveal>
       </main>
 
-      {/* Footer */}
       <Footer />
     </div>
   );

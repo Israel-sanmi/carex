@@ -1,0 +1,5730 @@
+openapi: 3.0.1
+info:
+  title: CarerLoop API
+  description: Multi-tenant care management platform API.
+  version: 1.0.0
+tags:
+- name: Authentication
+  description: "Registration, login and authentication"
+- name: Organisations
+  description: Organisation management
+- name: Care Homes
+  description: Care home management
+- name: Residents
+  description: "Resident profiles, admission and placement"
+- name: User Management
+  description: "User, role and permission management"
+- name: Invitations
+  description: Organisation and user invitations
+- name: Resident Registrations
+  description: Review and manage resident registrations
+- name: Resident Admissions
+  description: Review and admit residents
+- name: Audit Logs
+  description: Audit trail and activity records
+- name: System Administration
+  description: Platform administration
+- name: Assistance Management
+  description: Manage assistance requests and support services for residents within
+    a care home
+- name: Care Plans
+  description: "Care Plan Management for Creating a resident care plan, Retrieving\
+    \ a care plan, Changing its status, Adding and listing goals, Adding and listing\
+    \ interventions"
+- name: Care Plan Templates
+  description: Care Plan Management for managing both system and organisation's care
+    plan templates
+- name: Testing
+  description: Testing some functionalities
+- name: Resident Registration
+  description: "Self-service resident registration, verification, admission review\
+    \ and rejection"
+- name: Resident Safety
+  description: "Manage resident safety, safeguarding incidents, risk monitoring, and\
+    \ safety-related operations"
+paths:
+  /api/resident/safety/help:
+    post:
+      tags:
+      - Resident Safety
+      operationId: requestHelp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssistanceRequest"
+        required: true
+      responses:
+        "200":
+          description: requestHelp 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistanceRequestResponse"
+  /api/resident/safety/im-okay:
+    post:
+      tags:
+      - Resident Safety
+      operationId: imOkay
+      responses:
+        "200":
+          description: imOkay 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WellbeingCheckResponse"
+  /api/resident/safety/requests:
+    get:
+      tags:
+      - Resident Safety
+      operationId: getRequests
+      parameters:
+      - name: page
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "200":
+          description: getRequests 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page_AssistanceRequestResponse_"
+  /api/resident/safety/requests/{publicId}:
+    get:
+      tags:
+      - Resident Safety
+      operationId: getRequest
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getRequest 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistanceRequestDetailResponse"
+  /api/resident/safety/wellbeing:
+    get:
+      tags:
+      - Resident Safety
+      operationId: getWellbeing
+      parameters:
+      - name: page
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "200":
+          description: getWellbeing 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page_WellbeingCheckResponse_"
+  /api/v1/admin/resident-registrations:
+    get:
+      tags:
+      - Resident Registration
+      summary: Get pending resident registrations
+      description: Returns self-registered residents awaiting administrative review.
+      operationId: getRegistrations
+      parameters:
+      - name: page
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - name: status
+        in: query
+        required: true
+        explode: false
+        schema:
+          $ref: "#/components/schemas/ResidentOnboardingStatus"
+      responses:
+        "200":
+          description: getRegistrations 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page_ResidentRegistrationResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/admin/resident-registrations/{residentPublicId}/admit:
+    post:
+      tags:
+      - Resident Registration
+      operationId: admit
+      parameters:
+      - name: residentPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdmitResidentRequest"
+        required: true
+      responses:
+        "200":
+          description: admit 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResidentRegistrationResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/admin/resident-registrations/{residentPublicId}/reject:
+    post:
+      tags:
+      - Resident Registration
+      operationId: reject
+      parameters:
+      - name: residentPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectResidentRequest"
+        required: true
+      responses:
+        "200":
+          description: reject 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResidentRegistrationResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/audit-logs:
+    get:
+      tags:
+      - Audit Logs
+      operationId: getAuditLogs
+      parameters:
+      - name: page
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - name: action
+        in: query
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: entityType
+        in: query
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: entityPublicId
+        in: query
+        explode: false
+        schema:
+          type: string
+          format: uuid
+          nullable: true
+      - name: actorUserPublicId
+        in: query
+        explode: false
+        schema:
+          type: string
+          format: uuid
+          nullable: true
+      - name: fromDate
+        in: query
+        explode: false
+        schema:
+          type: string
+          format: date-time
+          nullable: true
+      - name: toDate
+        in: query
+        explode: false
+        schema:
+          type: string
+          format: date-time
+          nullable: true
+      responses:
+        "200":
+          description: getAuditLogs 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_AuditLogPageResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/audit-logs/{publicId}:
+    get:
+      tags:
+      - Audit Logs
+      operationId: getAuditLog
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getAuditLog 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_AuditLogResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/auth/change-password:
+    post:
+      tags:
+      - Authentication
+      operationId: changePassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+        required: true
+      responses:
+        "200":
+          description: changePassword 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_Void_"
+  /api/v1/auth/forgot-password:
+    post:
+      tags:
+      - Authentication
+      operationId: forgotPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordRequest"
+        required: true
+      responses:
+        "200":
+          description: forgotPassword 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_Void_"
+  /api/v1/auth/login:
+    post:
+      tags:
+      - Authentication
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: login 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_LoginResponse_"
+  /api/v1/auth/logout:
+    post:
+      tags:
+      - Authentication
+      operationId: logout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+        required: true
+      responses:
+        "200":
+          description: logout 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_Void_"
+  /api/v1/auth/logout-all:
+    post:
+      tags:
+      - Authentication
+      operationId: logoutAll
+      responses:
+        "200":
+          description: logoutAll 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_Void_"
+  /api/v1/auth/refresh:
+    post:
+      tags:
+      - Authentication
+      operationId: refresh
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+        required: true
+      responses:
+        "200":
+          description: refresh 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_TokenRefreshResponse_"
+  /api/v1/auth/register:
+    post:
+      tags:
+      - Authentication
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResidentSelfRegistrationRequest"
+        required: true
+      responses:
+        "200":
+          description: register 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_ResidentSelfRegistrationResponse_"
+  /api/v1/auth/resend-verification:
+    post:
+      tags:
+      - Authentication
+      operationId: resendVerification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResendVerificationRequest"
+        required: true
+      responses:
+        "200":
+          description: resendVerification 200 response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  /api/v1/auth/reset-password:
+    post:
+      tags:
+      - Authentication
+      operationId: resetPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+        required: true
+      responses:
+        "200":
+          description: resetPassword 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_Void_"
+  /api/v1/auth/verify-email:
+    post:
+      tags:
+      - Authentication
+      operationId: verifyEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyEmailRequest"
+        required: true
+      responses:
+        "200":
+          description: verifyEmail 200 response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  /api/v1/care-homes/me:
+    get:
+      tags:
+      - Care Homes
+      operationId: getMyCareHomes
+      responses:
+        "200":
+          description: getMyCareHomes 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_List_CareHomeResponse__"
+      security:
+      - bearerAuth: []
+  /api/v1/invitations:
+    get:
+      tags:
+      - Invitations
+      operationId: listInvitations
+      parameters:
+      - name: page
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - name: status
+        in: query
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/InvitationStatus"
+      - name: role
+        in: query
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UserRole"
+      responses:
+        "200":
+          description: listInvitations 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitationPageResponse"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Invitations
+      operationId: createInvitation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvitationRequest"
+        required: true
+      responses:
+        "200":
+          description: createInvitation 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateInvitationResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/invitations/accept:
+    post:
+      tags:
+      - Invitations
+      operationId: acceptInvitation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptInvitationRequest"
+        required: true
+      responses:
+        "200":
+          description: acceptInvitation 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptInvitationResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/invitations/{invitationPublicId}:
+    get:
+      tags:
+      - Invitations
+      operationId: getInvitation
+      parameters:
+      - name: invitationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getInvitation 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitationResponse"
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Invitations
+      operationId: revokeInvitation
+      parameters:
+      - name: invitationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: revokeInvitation 200 response
+          content:
+            application/json:
+              schema:
+                type: object
+      security:
+      - bearerAuth: []
+  /api/v1/organisations:
+    get:
+      tags:
+      - Organisations
+      operationId: getOrganisations
+      parameters:
+      - name: page
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - name: search
+        in: query
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: status
+        in: query
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/OrganisationStatus"
+      responses:
+        "200":
+          description: getOrganisations 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_OrganisationPageResponse_"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Organisations
+      operationId: createOrganisation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrganisationRequest"
+        required: true
+      responses:
+        "200":
+          description: createOrganisation 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_OrganisationResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes:
+    get:
+      tags:
+      - Care Homes
+      operationId: getCareHomes
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "200":
+          description: getCareHomes 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CareHomePageResponse_"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Care Homes
+      operationId: createCareHome
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCareHomeRequest"
+        required: true
+      responses:
+        "200":
+          description: createCareHome 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CareHomeResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}:
+    get:
+      tags:
+      - Care Homes
+      operationId: getCareHome
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getCareHome 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CareHomeResponse_"
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Care Homes
+      operationId: updateCareHome
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCareHomeRequest"
+        required: true
+      responses:
+        "200":
+          description: updateCareHome 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CareHomeResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/assistance:
+    get:
+      tags:
+      - Assistance Management
+      operationId: getRequests_1
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getRequests_1 200 response
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/assistance/{requestPublicId}:
+    get:
+      tags:
+      - Assistance Management
+      operationId: getRequest_1
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: requestPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getRequest_1 200 response
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/assistance/{requestPublicId}/acknowledge:
+    post:
+      tags:
+      - Assistance Management
+      operationId: acknowledge
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: requestPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: acknowledge 200 response
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/assistance/{requestPublicId}/assignment-history:
+    get:
+      tags:
+      - Assistance Management
+      operationId: getAssignmentHistory
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: requestPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getAssignmentHistory 200 response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssistanceAssignmentHistoryResponse"
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/assistance/{requestPublicId}/reassign:
+    post:
+      tags:
+      - Assistance Management
+      summary: Reassign assistance request
+      description: |
+        Reassigns an acknowledged or responding assistance request
+        to another active staff member within the same care home.
+
+        Access is restricted to:
+        - Super Administrators
+        - System Administrators
+        - Organisation Administrators assigned to the organisation
+        - Care Home Administrators assigned to the care home
+        - Care Home Managers assigned to the care home
+
+        The request status remains unchanged after reassignment.
+        The previous assignment, new assignment, supervisor and
+        reassignment reason are recorded in assignment history.
+
+        The target staff member must have an active role assignment
+        within the specified organisation and care home.
+      operationId: reassign
+      parameters:
+      - name: organisationPublicId
+        in: path
+        description: Public UUID of the organisation
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        description: Public UUID of the care home
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: requestPublicId
+        in: path
+        description: Public UUID of the assistance request
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        description: New staff assignment and reason for reassignment
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignAssistanceRequest"
+        required: true
+      responses:
+        "200":
+          description: Assistance request successfully reassigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistanceResponse"
+        "400":
+          description: Invalid reassignment request or inactive staff member
+        "401":
+          description: Authentication required
+        "403":
+          description: User does not have permission to reassign assistance requests
+        "404":
+          description: "Organisation, care home, request or staff member not found"
+        "409":
+          description: Request cannot be reassigned in its current status
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/assistance/{requestPublicId}/resolve:
+    post:
+      tags:
+      - Assistance Management
+      operationId: resolve
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: requestPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteAssistanceRequest"
+        required: true
+      responses:
+        "200":
+          description: resolve 200 response
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/assistance/{requestPublicId}/respond:
+    post:
+      tags:
+      - Assistance Management
+      operationId: respond
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: requestPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteAssistanceRequest"
+        required: true
+      responses:
+        "200":
+          description: respond 200 response
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/care-plans/{carePlanPublicId}:
+    get:
+      tags:
+      - Care Plans
+      summary: Get a resident care plan
+      operationId: get
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: get 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanResponse_"
+      security:
+      - bearerAuth: []
+    put:
+      tags:
+      - Care Plans
+      summary: Update care plan details
+      operationId: update
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCarePlanRequest"
+        required: true
+      responses:
+        "200":
+          description: update 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/care-plans/{carePlanPublicId}/approve:
+    post:
+      tags:
+      - Care Plans
+      summary: Approve a pending care plan
+      operationId: approve
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: approve 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/care-plans/{carePlanPublicId}/cancel:
+    post:
+      tags:
+      - Care Plans
+      summary: Cancel a care plan
+      operationId: cancel
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: cancel 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/care-plans/{carePlanPublicId}/goals:
+    get:
+      tags:
+      - Care Plans
+      summary: List goals in a care plan
+      operationId: getGoals
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getGoals 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_List_CarePlanGoalResponse__"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Care Plans
+      summary: Add a goal to a care plan
+      operationId: addGoal
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCarePlanGoalRequest"
+        required: true
+      responses:
+        "200":
+          description: addGoal 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanGoalResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/care-plans/{carePlanPublicId}/goals/{goalPublicId}:
+    put:
+      tags:
+      - Care Plans
+      summary: Update a care plan goal and its progress
+      operationId: updateGoal
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: goalPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCarePlanGoalRequest"
+        required: true
+      responses:
+        "200":
+          description: updateGoal 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanGoalResponse_"
+      security:
+      - bearerAuth: []
+  ? /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/care-plans/{carePlanPublicId}/goals/{goalPublicId}/interventions
+  : post:
+      tags:
+      - Care Plans
+      summary: Add an intervention to a care plan goal
+      operationId: addIntervention
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: goalPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCarePlanInterventionRequest"
+        required: true
+      responses:
+        "200":
+          description: addIntervention 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanInterventionResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/care-plans/{carePlanPublicId}/interventions:
+    get:
+      tags:
+      - Care Plans
+      summary: List interventions in a care plan
+      operationId: getInterventions
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getInterventions 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_List_CarePlanInterventionResponse__"
+      security:
+      - bearerAuth: []
+  ? /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/care-plans/{carePlanPublicId}/interventions/{interventionPublicId}
+  : put:
+      tags:
+      - Care Plans
+      summary: Update a care plan intervention
+      operationId: updateIntervention
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: interventionPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCarePlanInterventionRequest"
+        required: true
+      responses:
+        "200":
+          description: updateIntervention 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanInterventionResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/care-plans/{carePlanPublicId}/status:
+    patch:
+      tags:
+      - Care Plans
+      summary: Change care plan status
+      operationId: changeStatus
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeCarePlanStatusRequest"
+        required: true
+      responses:
+        "200":
+          description: changeStatus 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/care-plans/{carePlanPublicId}/submit:
+    post:
+      tags:
+      - Care Plans
+      summary: Submit a care plan for approval
+      operationId: submitForApproval
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: submitForApproval 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/residents/{residentPublicId}/care-plans:
+    get:
+      tags:
+      - Care Plans
+      summary: List care plans for a resident
+      operationId: getResidentCarePlans
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: residentPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getResidentCarePlans 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_List_CarePlanResponse__"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Care Plans
+      summary: Create a resident care plan
+      description: "Creates a care plan for a resident, optionally using an available\
+        \ template."
+      operationId: create
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: residentPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCarePlanRequest"
+        required: true
+      responses:
+        "200":
+          description: create 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/status:
+    patch:
+      tags:
+      - Care Homes
+      operationId: updateCareHomeStatus
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCareHomeStatusRequest"
+        required: true
+      responses:
+        "200":
+          description: updateCareHomeStatus 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CareHomeResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/{carePlanPublicId}/executions:
+    get:
+      tags:
+      - Care Plans
+      operationId: getCarePlanExecutionHistory
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getCarePlanExecutionHistory 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_List_InterventionExecutionResponse__"
+      security:
+      - bearerAuth: []
+  ? /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/{carePlanPublicId}/interventions/{interventionPublicId}/executions
+  : get:
+      tags:
+      - Care Plans
+      operationId: getInterventionHistory
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: interventionPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getInterventionHistory 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_List_InterventionExecutionResponse__"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Care Plans
+      operationId: recordExecution
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: interventionPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordInterventionExecutionRequest"
+        required: true
+      responses:
+        "200":
+          description: recordExecution 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_InterventionExecutionResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/{carePlanPublicId}/reviews:
+    get:
+      tags:
+      - Care Plans
+      operationId: getReviewHistory
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getReviewHistory 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_List_CarePlanReviewResponse__"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Care Plans
+      operationId: scheduleReview
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCarePlanReviewRequest"
+        required: true
+      responses:
+        "200":
+          description: scheduleReview 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanReviewResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/{carePlanPublicId}/reviews/{reviewPublicId}/cancel:
+    post:
+      tags:
+      - Care Plans
+      operationId: cancelReview
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: reviewPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: cancelReview 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanReviewResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-homes/{careHomePublicId}/{carePlanPublicId}/reviews/{reviewPublicId}/complete:
+    post:
+      tags:
+      - Care Plans
+      operationId: completeReview
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: careHomePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: carePlanPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: reviewPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteCarePlanReviewRequest"
+        required: true
+      responses:
+        "200":
+          description: completeReview 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanReviewResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-plan-templates:
+    get:
+      tags:
+      - Care Plan Templates
+      summary: List available care plan templates
+      description: Returns active system templates and active templates belonging
+        to the organisation.
+      operationId: list
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: list 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_List_CarePlanTemplateResponse__"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Care Plan Templates
+      summary: Create an organisation care plan template
+      description: Creates a reusable care plan template owned by an organisation.
+      operationId: create_1
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCarePlanTemplateRequest"
+        required: true
+      responses:
+        "200":
+          description: create_1 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanTemplateResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-plan-templates/{templatePublicId}:
+    put:
+      tags:
+      - Care Plan Templates
+      summary: Update an organisation care plan template
+      operationId: update_1
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: templatePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCarePlanTemplateRequest"
+        required: true
+      responses:
+        "200":
+          description: update_1 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanTemplateResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-plan-templates/{templatePublicId}/duplicate:
+    post:
+      tags:
+      - Care Plan Templates
+      summary: Duplicate a system template
+      description: Creates an organisation-owned copy of an active system template.
+      operationId: duplicate
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: templatePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DuplicateCarePlanTemplateRequest"
+        required: true
+      responses:
+        "200":
+          description: duplicate 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanTemplateResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/care-plan-templates/{templatePublicId}/status:
+    patch:
+      tags:
+      - Care Plan Templates
+      summary: Change an organisation template status
+      operationId: changeStatus_1
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: templatePublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeCarePlanTemplateStatusRequest"
+        required: true
+      responses:
+        "200":
+          description: changeStatus_1 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CarePlanTemplateResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/residents:
+    get:
+      tags:
+      - Residents
+      operationId: getResidents
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - name: status
+        in: query
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/ResidentStatus"
+      responses:
+        "200":
+          description: getResidents 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_ResidentPageResponse_"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Residents
+      operationId: createResident
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateResidentRequest"
+        required: true
+      responses:
+        "200":
+          description: createResident 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_ResidentResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/residents/{residentPublicId}:
+    get:
+      tags:
+      - Residents
+      operationId: getResident
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: residentPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getResident 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_ResidentResponse_"
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Residents
+      operationId: updateResident
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: residentPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateResidentRequest"
+        required: true
+      responses:
+        "200":
+          description: updateResident 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_ResidentResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/residents/{residentPublicId}/placements:
+    get:
+      tags:
+      - Residents
+      operationId: getPlacementHistory
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: residentPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getPlacementHistory 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_List_PlacementHistoryResponse__"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{organisationPublicId}/residents/{residentPublicId}/transfer:
+    post:
+      tags:
+      - Residents
+      operationId: transferResident
+      parameters:
+      - name: organisationPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: residentPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferResidentRequest"
+        required: true
+      responses:
+        "200":
+          description: transferResident 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_ResidentResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{publicId}:
+    get:
+      tags:
+      - Organisations
+      operationId: getOrganisation
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getOrganisation 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_OrganisationResponse_"
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Organisations
+      operationId: updateOrganisation
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrganisationRequest"
+        required: true
+      responses:
+        "200":
+          description: updateOrganisation 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_OrganisationResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/organisations/{publicId}/status:
+    patch:
+      tags:
+      - Organisations
+      operationId: updateOrganisationStatus
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrganisationStatusRequest"
+        required: true
+      responses:
+        "200":
+          description: updateOrganisationStatus 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_OrganisationResponse_"
+      security:
+      - bearerAuth: []
+  /api/v1/resident-admissions:
+    get:
+      tags:
+      - Resident Admissions
+      operationId: listAdmissions
+      parameters:
+      - name: page
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - name: status
+        in: query
+        required: true
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: listAdmissions 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page_ResidentAdmission_"
+      security:
+      - bearerAuth: []
+  /api/v1/resident-admissions/{publicId}:
+    get:
+      tags:
+      - Resident Admissions
+      operationId: getAdmission
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getAdmission 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResidentAdmission"
+      security:
+      - bearerAuth: []
+  /api/v1/resident-admissions/{publicId}/approve:
+    post:
+      tags:
+      - Resident Admissions
+      operationId: approveAdmission
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: approveAdmission 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResidentAdmission"
+      security:
+      - bearerAuth: []
+  /api/v1/resident-admissions/{publicId}/reject:
+    post:
+      tags:
+      - Resident Admissions
+      operationId: rejectAdmission
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectAdmissionRequest"
+        required: true
+      responses:
+        "200":
+          description: rejectAdmission 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResidentAdmission"
+      security:
+      - bearerAuth: []
+  /api/v1/test/email:
+    post:
+      tags:
+      - Testing
+      operationId: sendTestEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailTestController.TestEmailRequest"
+        required: true
+      responses:
+        "200":
+          description: sendTestEmail 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_Void_"
+  /api/v1/test/protected:
+    get:
+      tags:
+      - Testing
+      operationId: protectedEndpoint
+      responses:
+        "200":
+          description: protectedEndpoint 200 response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  /api/v1/users:
+    get:
+      tags:
+      - User Management
+      summary: Search and list users
+      operationId: searchUsers
+      parameters:
+      - name: search
+        in: query
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: status
+        in: query
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UserStatus"
+      - name: role
+        in: query
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UserRole"
+      - name: page
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "200":
+          description: searchUsers 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPageResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/users/{publicId}:
+    get:
+      tags:
+      - User Management
+      summary: Get user details
+      operationId: getUser
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getUser 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+      security:
+      - bearerAuth: []
+    put:
+      tags:
+      - User Management
+      summary: Update user profile
+      operationId: updateUser
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+        required: true
+      responses:
+        "200":
+          description: updateUser 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/users/{publicId}/roles:
+    get:
+      tags:
+      - User Management
+      summary: Get user role assignments
+      operationId: getUserRoles
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: getUserRoles 200 response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserRoleResponse"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - User Management
+      summary: Assign a role to a user
+      operationId: assignRole
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignUserRoleRequest"
+        required: true
+      responses:
+        "200":
+          description: assignRole 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRoleResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/users/{publicId}/roles/{assignmentPublicId}:
+    delete:
+      tags:
+      - User Management
+      summary: Revoke a user role assignment
+      operationId: revokeRole
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: assignmentPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: revokeRole 200 response
+          content:
+            application/json:
+              schema:
+                type: object
+      security:
+      - bearerAuth: []
+  /api/v1/users/{publicId}/status:
+    patch:
+      tags:
+      - User Management
+      summary: Update user account status
+      operationId: updateUserStatus
+      parameters:
+      - name: publicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserStatusRequest"
+        required: true
+      responses:
+        "200":
+          description: updateUserStatus 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/{residentPublicId}/movement-history:
+    get:
+      tags:
+      - Residents
+      operationId: getResidentMovementHistory
+      parameters:
+      - name: residentPublicId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "200":
+          description: getResidentMovementHistory 200 response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page_ResidentAdmission_"
+      security:
+      - bearerAuth: []
+components:
+  schemas:
+    AcceptInvitationRequest:
+      required:
+      - firstName
+      - lastName
+      - middleName
+      - password
+      - token
+      type: object
+      properties:
+        token:
+          minLength: 1
+          type: string
+        password:
+          maxLength: 72
+          minLength: 12
+          type: string
+        firstName:
+          maxLength: 100
+          type: string
+        middleName:
+          maxLength: 100
+          type: string
+        lastName:
+          maxLength: 100
+          type: string
+    AcceptInvitationResponse:
+      required:
+      - email
+      - invitationPublicId
+      - message
+      - role
+      - userPublicId
+      type: object
+      properties:
+        userPublicId:
+          type: string
+          format: uuid
+        invitationPublicId:
+          type: string
+          format: uuid
+        email:
+          type: string
+        role:
+          type: string
+        message:
+          type: string
+    AdmitResidentRequest:
+      required:
+      - admissionDate
+      - careHomePublicId
+      - organisationPublicId
+      type: object
+      properties:
+        organisationPublicId:
+          type: string
+          format: uuid
+        careHomePublicId:
+          type: string
+          format: uuid
+        admissionDate:
+          type: string
+          format: date
+    ApiResponse_AuditLogPageResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/AuditLogPageResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_AuditLogResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/AuditLogResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_CareHomePageResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/CareHomePageResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_CareHomeResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/CareHomeResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_CarePlanGoalResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/CarePlanGoalResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_CarePlanInterventionResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/CarePlanInterventionResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_CarePlanResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/CarePlanResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_CarePlanReviewResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/CarePlanReviewResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_CarePlanTemplateResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/CarePlanTemplateResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_InterventionExecutionResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/InterventionExecutionResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_List_CareHomeResponse__:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CareHomeResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_List_CarePlanGoalResponse__:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CarePlanGoalResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_List_CarePlanInterventionResponse__:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CarePlanInterventionResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_List_CarePlanResponse__:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CarePlanResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_List_CarePlanReviewResponse__:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CarePlanReviewResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_List_CarePlanTemplateResponse__:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CarePlanTemplateResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_List_InterventionExecutionResponse__:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterventionExecutionResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_List_PlacementHistoryResponse__:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlacementHistoryResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_LoginResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/LoginResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_OrganisationPageResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/OrganisationPageResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_OrganisationResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/OrganisationResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_ResidentPageResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ResidentPageResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_ResidentResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ResidentResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_ResidentSelfRegistrationResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ResidentSelfRegistrationResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_TokenRefreshResponse_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/TokenRefreshResponse"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponse_Void_:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/Void"
+        errors:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    AssignAssistanceRequest:
+      required:
+      - assignedToPublicId
+      - reason
+      type: object
+      properties:
+        assignedToPublicId:
+          type: string
+          description: Public UUID of the staff member receiving the assignment
+          format: uuid
+          example: 9e3a8d65-2c4b-4a9b-8e12-7c1a2b3d4e5f
+        reason:
+          maxLength: 1000
+          minLength: 1
+          type: string
+          description: Reason for changing the existing staff assignment
+          example: Previous staff member has completed their shift.
+    AssignUserRoleRequest:
+      required:
+      - careHomePublicId
+      - organisationPublicId
+      - role
+      type: object
+      properties:
+        role:
+          $ref: "#/components/schemas/UserRole"
+        organisationPublicId:
+          type: string
+          format: uuid
+        careHomePublicId:
+          type: string
+          format: uuid
+    AssistanceAssignmentHistoryResponse:
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        previousAssigneePublicId:
+          type: string
+          format: uuid
+        previousAssigneeName:
+          type: string
+        newAssigneePublicId:
+          type: string
+          format: uuid
+        newAssigneeName:
+          type: string
+        reassignedByPublicId:
+          type: string
+          format: uuid
+        reassignedByName:
+          type: string
+        reason:
+          type: string
+        reassignedAt:
+          type: string
+          format: date-time
+    AssistancePriority:
+      type: string
+      enum:
+      - NORMAL
+      - HIGH
+      - CRITICAL
+    AssistanceRequestDetailResponse:
+      required:
+      - request
+      - responses
+      type: object
+      properties:
+        request:
+          $ref: "#/components/schemas/AssistanceRequestResponse"
+        responses:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistanceResponseDto"
+    AssistanceRequestResponse:
+      required:
+      - acknowledgedAt
+      - assistanceType
+      - description
+      - priority
+      - publicId
+      - requestedAt
+      - resolvedAt
+      - status
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        assistanceType:
+          $ref: "#/components/schemas/AssistanceType"
+        priority:
+          $ref: "#/components/schemas/AssistancePriority"
+        status:
+          $ref: "#/components/schemas/AssistanceStatus"
+        description:
+          type: string
+        requestedAt:
+          type: string
+          format: date-time
+        acknowledgedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+    AssistanceResponse:
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        residentPublicId:
+          type: string
+          format: uuid
+        careHomePublicId:
+          type: string
+          format: uuid
+        assignedToPublicId:
+          type: string
+          format: uuid
+        assistanceType:
+          $ref: "#/components/schemas/AssistanceType"
+        priority:
+          $ref: "#/components/schemas/AssistancePriority"
+        status:
+          $ref: "#/components/schemas/AssistanceStatus"
+        description:
+          type: string
+        requestedAt:
+          type: string
+          format: date-time
+        acknowledgedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+    AssistanceResponseDto:
+      required:
+      - notes
+      - publicId
+      - respondedAt
+      - responseType
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        responseType:
+          $ref: "#/components/schemas/AssistanceResponseType"
+        notes:
+          type: string
+        respondedAt:
+          type: string
+          format: date-time
+    AssistanceResponseType:
+      type: string
+      enum:
+      - ACKNOWLEDGED
+      - RESPONDING
+      - RESOLVED
+      - CANCELLED
+      - NOTE
+    AssistanceStatus:
+      type: string
+      enum:
+      - OPEN
+      - ACKNOWLEDGED
+      - RESPONDING
+      - RESOLVED
+      - CANCELLED
+    AssistanceType:
+      type: string
+      enum:
+      - MEDICAL
+      - FALL
+      - MEDICATION
+      - UNWELL
+      - CARER
+      - EMERGENCY
+    AuditLogPageResponse:
+      required:
+      - content
+      - first
+      - last
+      - page
+      - size
+      - totalElements
+      - totalPages
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLogResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    AuditLogResponse:
+      required:
+      - action
+      - actorUserId
+      - careHomeId
+      - createdAt
+      - details
+      - entityPublicId
+      - entityType
+      - ipAddress
+      - organisationId
+      - publicId
+      - userAgent
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        organisationId:
+          type: integer
+          format: int64
+        careHomeId:
+          type: integer
+          format: int64
+        actorUserId:
+          type: integer
+          format: int64
+        action:
+          type: string
+        entityType:
+          type: string
+        entityPublicId:
+          type: string
+          format: uuid
+        details:
+          type: object
+          additionalProperties:
+            type: object
+        ipAddress:
+          type: string
+        userAgent:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    BaseEntity:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CareHome:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/BaseEntity"
+      - type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+            nullable: true
+          publicId:
+            type: string
+            format: uuid
+          organisation:
+            $ref: "#/components/schemas/Organisation"
+          name:
+            type: string
+          email:
+            type: string
+          phone:
+            type: string
+          address:
+            type: string
+          city:
+            type: string
+          state:
+            type: string
+          country:
+            type: string
+          postalCode:
+            type: string
+          status:
+            $ref: "#/components/schemas/CareHomeStatus"
+          systemDefault:
+            type: boolean
+    CareHomePageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/CareHomeResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    CareHomeResponse:
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        organisationPublicId:
+          type: string
+          format: uuid
+        organisationName:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        country:
+          type: string
+        postalCode:
+          type: string
+        status:
+          $ref: "#/components/schemas/CareHomeStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CareHomeStatus:
+      type: string
+      enum:
+      - ACTIVE
+      - INACTIVE
+      - SUSPENDED
+    CarePlanGoalPriority:
+      type: string
+      enum:
+      - LOW
+      - MEDIUM
+      - HIGH
+      - CRITICAL
+    CarePlanGoalResponse:
+      required:
+      - carePlanPublicId
+      - description
+      - expectedOutcome
+      - priority
+      - publicId
+      - sortOrder
+      - status
+      - targetDate
+      - title
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        carePlanPublicId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        expectedOutcome:
+          type: string
+        priority:
+          $ref: "#/components/schemas/CarePlanGoalPriority"
+        status:
+          $ref: "#/components/schemas/CarePlanGoalStatus"
+        targetDate:
+          type: string
+          format: date
+        sortOrder:
+          type: integer
+          format: int32
+    CarePlanGoalStatus:
+      type: string
+      enum:
+      - NOT_STARTED
+      - IN_PROGRESS
+      - ACHIEVED
+      - NOT_ACHIEVED
+      - CANCELLED
+    CarePlanInterventionResponse:
+      required:
+      - carePlanPublicId
+      - description
+      - endDate
+      - frequency
+      - goalPublicId
+      - instructions
+      - publicId
+      - responsibleRole
+      - sortOrder
+      - startDate
+      - status
+      - title
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        carePlanPublicId:
+          type: string
+          format: uuid
+        goalPublicId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        frequency:
+          type: string
+        responsibleRole:
+          type: string
+        status:
+          $ref: "#/components/schemas/CarePlanInterventionStatus"
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        sortOrder:
+          type: integer
+          format: int32
+    CarePlanInterventionStatus:
+      type: string
+      enum:
+      - ACTIVE
+      - INACTIVE
+      - COMPLETED
+      - CANCELLED
+    CarePlanResponse:
+      required:
+      - careHomePublicId
+      - createdAt
+      - description
+      - endDate
+      - organisationPublicId
+      - publicId
+      - residentPublicId
+      - reviewDate
+      - startDate
+      - status
+      - templatePublicId
+      - templateVersion
+      - title
+      - updatedAt
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        organisationPublicId:
+          type: string
+          format: uuid
+        careHomePublicId:
+          type: string
+          format: uuid
+        residentPublicId:
+          type: string
+          format: uuid
+        templatePublicId:
+          type: string
+          format: uuid
+        templateVersion:
+          type: integer
+          format: int32
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: "#/components/schemas/CarePlanStatus"
+        startDate:
+          type: string
+          format: date
+        reviewDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CarePlanReviewResponse:
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        carePlanPublicId:
+          type: string
+          format: uuid
+        careHomePublicId:
+          type: string
+          format: uuid
+        reviewedByPublicId:
+          type: string
+          format: uuid
+        reviewDate:
+          type: string
+          format: date
+        completedAt:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/CarePlanReviewStatus"
+        summary:
+          type: string
+        progressNotes:
+          type: string
+        recommendations:
+          type: string
+        nextReviewDate:
+          type: string
+          format: date
+        overdue:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    CarePlanReviewStatus:
+      type: string
+      enum:
+      - SCHEDULED
+      - COMPLETED
+      - CANCELLED
+    CarePlanStatus:
+      type: string
+      enum:
+      - DRAFT
+      - PENDING_APPROVAL
+      - ACTIVE
+      - ON_HOLD
+      - COMPLETED
+      - CANCELLED
+    CarePlanTemplateResponse:
+      required:
+      - category
+      - createdAt
+      - definition
+      - description
+      - name
+      - organisationPublicId
+      - publicId
+      - source
+      - status
+      - updatedAt
+      - version
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        organisationPublicId:
+          type: string
+          format: uuid
+        source:
+          $ref: "#/components/schemas/CarePlanTemplateSource"
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        definition:
+          type: object
+          additionalProperties:
+            type: object
+        version:
+          type: integer
+          format: int32
+        status:
+          $ref: "#/components/schemas/CarePlanTemplateStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CarePlanTemplateSource:
+      type: string
+      enum:
+      - SYSTEM
+      - ORGANISATION
+    CarePlanTemplateStatus:
+      type: string
+      enum:
+      - DRAFT
+      - ACTIVE
+      - INACTIVE
+      - ARCHIVED
+    ChangeCarePlanStatusRequest:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/CarePlanStatus"
+    ChangeCarePlanTemplateStatusRequest:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/CarePlanTemplateStatus"
+    ChangePasswordRequest:
+      required:
+      - confirmPassword
+      - currentPassword
+      - newPassword
+      type: object
+      properties:
+        currentPassword:
+          minLength: 1
+          type: string
+          x-size-message: Current password is required
+        newPassword:
+          maxLength: 72
+          minLength: 12
+          type: string
+          x-size-message: Password must be between 12 and 72 characters
+        confirmPassword:
+          maxLength: 72
+          minLength: 12
+          type: string
+          x-size-message: Password confirmation must be between 12 and 72 characters
+    CompleteAssistanceRequest:
+      type: object
+      properties:
+        notes:
+          maxLength: 2000
+          type: string
+    CompleteCarePlanReviewRequest:
+      required:
+      - summary
+      type: object
+      properties:
+        summary:
+          minLength: 1
+          type: string
+        progressNotes:
+          type: string
+        recommendations:
+          type: string
+        nextReviewDate:
+          type: string
+          format: date
+    CreateAssistanceRequest:
+      required:
+      - assistanceType
+      type: object
+      properties:
+        assistanceType:
+          $ref: "#/components/schemas/AssistanceType"
+        description:
+          maxLength: 2000
+          type: string
+    CreateCareHomeRequest:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          maxLength: 150
+          minLength: 1
+          type: string
+        email:
+          maxLength: 255
+          type: string
+          format: email
+        phone:
+          maxLength: 30
+          type: string
+        address:
+          maxLength: 255
+          type: string
+        city:
+          maxLength: 100
+          type: string
+        state:
+          maxLength: 100
+          type: string
+        country:
+          maxLength: 100
+          type: string
+        postalCode:
+          maxLength: 20
+          type: string
+    CreateCarePlanGoalRequest:
+      required:
+      - description
+      - expectedOutcome
+      - priority
+      - sortOrder
+      - targetDate
+      - title
+      type: object
+      properties:
+        title:
+          maxLength: 200
+          minLength: 1
+          type: string
+        description:
+          type: string
+        expectedOutcome:
+          type: string
+        priority:
+          $ref: "#/components/schemas/CarePlanGoalPriority"
+        targetDate:
+          type: string
+          format: date
+        sortOrder:
+          type: integer
+          format: int32
+    CreateCarePlanInterventionRequest:
+      required:
+      - description
+      - endDate
+      - frequency
+      - instructions
+      - responsibleRole
+      - sortOrder
+      - startDate
+      - title
+      type: object
+      properties:
+        title:
+          maxLength: 200
+          minLength: 1
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        frequency:
+          type: string
+        responsibleRole:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        sortOrder:
+          type: integer
+          format: int32
+    CreateCarePlanRequest:
+      required:
+      - description
+      - reviewDate
+      - startDate
+      - templatePublicId
+      - title
+      type: object
+      properties:
+        templatePublicId:
+          type: string
+          format: uuid
+        title:
+          maxLength: 200
+          minLength: 1
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+          format: date
+        reviewDate:
+          type: string
+          format: date
+    CreateCarePlanReviewRequest:
+      required:
+      - reviewDate
+      type: object
+      properties:
+        reviewDate:
+          type: string
+          format: date
+    CreateCarePlanTemplateRequest:
+      required:
+      - category
+      - definition
+      - description
+      - name
+      type: object
+      properties:
+        name:
+          maxLength: 200
+          minLength: 1
+          type: string
+        description:
+          type: string
+        category:
+          maxLength: 100
+          type: string
+        definition:
+          minProperties: 1
+          type: object
+          additionalProperties:
+            type: object
+    CreateInvitationRequest:
+      required:
+      - careHomePublicId
+      - email
+      - organisationPublicId
+      - registrationReference
+      - role
+      type: object
+      properties:
+        email:
+          maxLength: 150
+          minLength: 1
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/UserRole"
+        organisationPublicId:
+          type: string
+          format: uuid
+        careHomePublicId:
+          type: string
+          format: uuid
+        registrationReference:
+          type: string
+    CreateInvitationResponse:
+      required:
+      - email
+      - expiresAt
+      - invitationPublicId
+      - message
+      - role
+      - status
+      type: object
+      properties:
+        invitationPublicId:
+          type: string
+          format: uuid
+        email:
+          type: string
+        role:
+          type: string
+        status:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        message:
+          type: string
+    CreateOrganisationRequest:
+      required:
+      - email
+      - name
+      type: object
+      properties:
+        name:
+          maxLength: 150
+          minLength: 1
+          type: string
+          x-size-message: Organisation name is required
+        email:
+          maxLength: 150
+          minLength: 1
+          type: string
+          format: email
+          x-pattern-message: Invalid organisation contact email
+          x-size-message: Organisation email is required
+        phone:
+          maxLength: 30
+          type: string
+        website:
+          maxLength: 255
+          type: string
+        address:
+          maxLength: 500
+          type: string
+        city:
+          maxLength: 100
+          type: string
+        state:
+          maxLength: 100
+          type: string
+        country:
+          maxLength: 100
+          type: string
+        postalCode:
+          maxLength: 20
+          type: string
+    CreateResidentRequest:
+      required:
+      - admissionDate
+      - careHomePublicId
+      - firstName
+      - lastName
+      type: object
+      properties:
+        firstName:
+          maxLength: 100
+          minLength: 1
+          type: string
+        middleName:
+          maxLength: 100
+          type: string
+        lastName:
+          maxLength: 100
+          minLength: 1
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          maxLength: 20
+          type: string
+        email:
+          maxLength: 150
+          type: string
+          format: email
+        phone:
+          maxLength: 30
+          type: string
+        address:
+          type: string
+        admissionDate:
+          type: string
+          format: date
+        careHomePublicId:
+          type: string
+          format: uuid
+        medicalNotes:
+          type: string
+    DuplicateCarePlanTemplateRequest:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          maxLength: 200
+          minLength: 1
+          type: string
+    EmailTestController.TestEmailRequest:
+      required:
+      - email
+      type: object
+      properties:
+        email:
+          minLength: 1
+          type: string
+          format: email
+    ForgotPasswordRequest:
+      required:
+      - email
+      type: object
+      properties:
+        email:
+          maxLength: 150
+          minLength: 1
+          type: string
+          format: email
+          x-pattern-message: Invalid email address
+          x-size-message: Email is required
+    InterventionExecutionResponse:
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        interventionPublicId:
+          type: string
+          format: uuid
+        carePlanPublicId:
+          type: string
+          format: uuid
+        careHomePublicId:
+          type: string
+          format: uuid
+        performedByPublicId:
+          type: string
+          format: uuid
+        scheduledAt:
+          type: string
+          format: date-time
+        performedAt:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/InterventionExecutionStatus"
+        outcome:
+          type: string
+        notes:
+          type: string
+        exceptionReason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    InterventionExecutionStatus:
+      type: string
+      enum:
+      - COMPLETED
+      - PARTIALLY_COMPLETED
+      - NOT_COMPLETED
+      - REFUSED
+      - MISSED
+    Invitation:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/BaseEntity"
+      - type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+            nullable: true
+          publicId:
+            type: string
+            format: uuid
+          email:
+            type: string
+          role:
+            $ref: "#/components/schemas/UserRole"
+          organisation:
+            nullable: true
+            allOf:
+            - $ref: "#/components/schemas/Organisation"
+          careHome:
+            nullable: true
+            allOf:
+            - $ref: "#/components/schemas/CareHome"
+          resident:
+            nullable: true
+            allOf:
+            - $ref: "#/components/schemas/Resident"
+          invitedBy:
+            $ref: "#/components/schemas/User"
+          acceptedBy:
+            nullable: true
+            allOf:
+            - $ref: "#/components/schemas/User"
+          tokenHash:
+            type: string
+          status:
+            $ref: "#/components/schemas/InvitationStatus"
+          expiresAt:
+            type: string
+            format: date-time
+          acceptedAt:
+            type: string
+            format: date-time
+          rejectedAt:
+            type: string
+            format: date-time
+          revokedBy:
+            nullable: true
+            allOf:
+            - $ref: "#/components/schemas/User"
+          revokedAt:
+            type: string
+            format: date-time
+          verifiedAt:
+            type: string
+            format: date-time
+    InvitationPageResponse:
+      required:
+      - content
+      - page
+      - size
+      - totalElements
+      - totalPages
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvitationResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    InvitationResponse:
+      required:
+      - acceptedAt
+      - careHomeName
+      - careHomePublicId
+      - createdAt
+      - email
+      - expiresAt
+      - organisationName
+      - organisationPublicId
+      - publicId
+      - revokedAt
+      - role
+      - status
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        email:
+          type: string
+        role:
+          type: string
+        status:
+          type: string
+        organisationPublicId:
+          type: string
+          format: uuid
+        organisationName:
+          type: string
+        careHomePublicId:
+          type: string
+          format: uuid
+        careHomeName:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        acceptedAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    InvitationStatus:
+      type: string
+      enum:
+      - PENDING
+      - ACCEPTED
+      - VERIFIED
+      - REJECTED
+      - EXPIRED
+      - REVOKED
+    LoginRequest:
+      required:
+      - email
+      - password
+      type: object
+      properties:
+        email:
+          maxLength: 150
+          minLength: 1
+          type: string
+          format: email
+          x-pattern-message: Invalid email address
+          x-size-message: Email is required
+        password:
+          maxLength: 72
+          minLength: 1
+          type: string
+          x-size-message: Password is required
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+        expiresIn:
+          type: integer
+          format: int64
+        expiresAt:
+          type: string
+          format: date-time
+        userPublicId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        organisationPublicId:
+          type: string
+          format: uuid
+        roles:
+          type: array
+          items:
+            type: string
+        refreshToken:
+          type: string
+        refreshExpiresIn:
+          type: integer
+          format: int64
+        refreshExpiresAt:
+          type: string
+          format: date-time
+        roleAssignments:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoleAssignmentResponse"
+    LogoutRequest:
+      required:
+      - refreshToken
+      type: object
+      properties:
+        refreshToken:
+          minLength: 1
+          type: string
+          x-size-message: Refresh token is required
+    Organisation:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/BaseEntity"
+      - type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+            nullable: true
+          publicId:
+            type: string
+            format: uuid
+          name:
+            type: string
+          email:
+            type: string
+          phone:
+            type: string
+          address:
+            type: string
+          website:
+            type: string
+          city:
+            type: string
+          state:
+            type: string
+          country:
+            type: string
+          postalCode:
+            type: string
+          status:
+            $ref: "#/components/schemas/OrganisationStatus"
+          systemDefault:
+            type: boolean
+    OrganisationPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrganisationResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    OrganisationResponse:
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        website:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        country:
+          type: string
+        postalCode:
+          type: string
+        status:
+          $ref: "#/components/schemas/OrganisationStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    OrganisationStatus:
+      type: string
+      enum:
+      - PENDING
+      - ACTIVE
+      - SUSPENDED
+      - INACTIVE
+    Page_AssistanceRequestResponse_:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/Slice_AssistanceRequestResponse_"
+      - type: object
+        properties:
+          totalSize:
+            type: integer
+            format: int64
+          totalPages:
+            type: integer
+            format: int32
+    Page_ResidentAdmission_:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/Slice_ResidentAdmission_"
+      - type: object
+        properties:
+          totalSize:
+            type: integer
+            format: int64
+          totalPages:
+            type: integer
+            format: int32
+    Page_ResidentRegistrationResponse_:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/Slice_ResidentRegistrationResponse_"
+      - type: object
+        properties:
+          totalSize:
+            type: integer
+            format: int64
+          totalPages:
+            type: integer
+            format: int32
+    Page_WellbeingCheckResponse_:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/Slice_WellbeingCheckResponse_"
+      - type: object
+        properties:
+          totalSize:
+            type: integer
+            format: int64
+          totalPages:
+            type: integer
+            format: int32
+    Pageable:
+      required:
+      - size
+      - sort
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/Sort"
+      - type: object
+        properties:
+          number:
+            type: integer
+            format: int32
+          size:
+            type: integer
+            format: int32
+          mode:
+            $ref: "#/components/schemas/Pageable.Mode"
+          sort:
+            $ref: "#/components/schemas/Sort"
+    Pageable.Mode:
+      type: string
+      enum:
+      - CURSOR_NEXT
+      - CURSOR_PREVIOUS
+      - OFFSET
+    PlacementHistoryResponse:
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        careHomePublicId:
+          type: string
+          format: uuid
+        careHomeName:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        status:
+          $ref: "#/components/schemas/PlacementStatus"
+        transferReason:
+          type: string
+    PlacementStatus:
+      type: string
+      enum:
+      - ACTIVE
+      - TRANSFERRED
+      - ENDED
+    RecordInterventionExecutionRequest:
+      required:
+      - status
+      type: object
+      properties:
+        scheduledAt:
+          type: string
+          format: date-time
+        performedAt:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/InterventionExecutionStatus"
+        outcome:
+          type: string
+        notes:
+          type: string
+        exceptionReason:
+          type: string
+    RefreshTokenRequest:
+      required:
+      - refreshToken
+      type: object
+      properties:
+        refreshToken:
+          minLength: 1
+          type: string
+          x-size-message: Refresh token is required
+    RejectAdmissionRequest:
+      required:
+      - reason
+      type: object
+      properties:
+        reason:
+          maxLength: 1000
+          minLength: 1
+          type: string
+    RejectResidentRequest:
+      required:
+      - reason
+      type: object
+      properties:
+        reason:
+          maxLength: 1000
+          minLength: 1
+          type: string
+    ResendVerificationRequest:
+      required:
+      - email
+      type: object
+      properties:
+        email:
+          minLength: 1
+          type: string
+          format: email
+    ResetPasswordRequest:
+      required:
+      - confirmPassword
+      - newPassword
+      - token
+      type: object
+      properties:
+        token:
+          minLength: 1
+          type: string
+          x-size-message: Reset token is required
+        newPassword:
+          maxLength: 72
+          minLength: 12
+          type: string
+          x-size-message: Password must be between 12 and 72 characters
+        confirmPassword:
+          maxLength: 72
+          minLength: 12
+          type: string
+          x-size-message: Password confirmation must be between 12 and 72 characters
+    Resident:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/BaseEntity"
+      - type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+            nullable: true
+          publicId:
+            type: string
+            format: uuid
+          organisation:
+            $ref: "#/components/schemas/Organisation"
+          firstName:
+            type: string
+          middleName:
+            type: string
+          lastName:
+            type: string
+          dateOfBirth:
+            type: string
+            format: date
+          gender:
+            type: string
+          email:
+            type: string
+          phone:
+            type: string
+          address:
+            type: string
+          admissionDate:
+            type: string
+            format: date
+          status:
+            $ref: "#/components/schemas/ResidentStatus"
+          rejectionReason:
+            type: string
+          medicalNotes:
+            type: string
+          user:
+            nullable: true
+            allOf:
+            - $ref: "#/components/schemas/User"
+          onboardingStatus:
+            $ref: "#/components/schemas/ResidentOnboardingStatus"
+          registrationSource:
+            $ref: "#/components/schemas/ResidentRegistrationSource"
+          registrationReferenceHash:
+            type: string
+    ResidentAdmission:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/BaseEntity"
+      - type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+            nullable: true
+          publicId:
+            type: string
+            format: uuid
+          resident:
+            $ref: "#/components/schemas/Resident"
+          invitation:
+            $ref: "#/components/schemas/Invitation"
+          admissionType:
+            $ref: "#/components/schemas/ResidentAdmissionType"
+          requestedAt:
+            type: string
+            format: date-time
+          sourceOrganisation:
+            nullable: true
+            allOf:
+            - $ref: "#/components/schemas/Organisation"
+          sourceCareHome:
+            nullable: true
+            allOf:
+            - $ref: "#/components/schemas/CareHome"
+          destinationOrganisation:
+            $ref: "#/components/schemas/Organisation"
+          destinationCareHome:
+            nullable: true
+            allOf:
+            - $ref: "#/components/schemas/CareHome"
+          status:
+            $ref: "#/components/schemas/ResidentAdmissionStatus"
+          reviewedAt:
+            type: string
+            format: date-time
+          reviewedBy:
+            nullable: true
+            allOf:
+            - $ref: "#/components/schemas/User"
+          rejectionReason:
+            type: string
+          transferReason:
+            type: string
+    ResidentAdmissionStatus:
+      type: string
+      enum:
+      - PENDING
+      - APPROVED
+      - REJECTED
+      - CANCELLED
+    ResidentAdmissionType:
+      type: string
+      enum:
+      - NEW_ADMISSION
+      - TRANSFER
+    ResidentOnboardingStatus:
+      type: string
+      enum:
+      - PENDING_VERIFICATION
+      - VERIFIED
+      - PLACED
+      - REJECTED
+    ResidentPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResidentResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    ResidentRegistrationResponse:
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+        address:
+          type: string
+        onboardingStatus:
+          $ref: "#/components/schemas/ResidentOnboardingStatus"
+        registrationSource:
+          $ref: "#/components/schemas/ResidentRegistrationSource"
+        rejectionReason:
+          type: string
+    ResidentRegistrationSource:
+      type: string
+      enum:
+      - SELF_REGISTRATION
+      - CARE_HOME_INVITATION
+    ResidentResponse:
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        organisationPublicId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        admissionDate:
+          type: string
+          format: date
+        status:
+          $ref: "#/components/schemas/ResidentStatus"
+        currentCareHomePublicId:
+          type: string
+          format: uuid
+        currentCareHomeName:
+          type: string
+        medicalNotes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ResidentSelfRegistrationRequest:
+      required:
+      - dateOfBirth
+      - email
+      - firstName
+      - gender
+      - lastName
+      - password
+      type: object
+      properties:
+        firstName:
+          maxLength: 100
+          minLength: 1
+          type: string
+        middleName:
+          maxLength: 100
+          type: string
+        lastName:
+          maxLength: 100
+          minLength: 1
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          minLength: 1
+          type: string
+        email:
+          maxLength: 150
+          minLength: 1
+          type: string
+          format: email
+        phone:
+          maxLength: 30
+          type: string
+        address:
+          maxLength: 500
+          type: string
+        password:
+          maxLength: 100
+          minLength: 8
+          type: string
+    ResidentSelfRegistrationResponse:
+      required:
+      - email
+      - firstName
+      - lastName
+      - message
+      - onboardingStatus
+      - registrationReference
+      - residentPublicId
+      - userPublicId
+      type: object
+      properties:
+        userPublicId:
+          type: string
+          format: uuid
+        residentPublicId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        onboardingStatus:
+          type: string
+        registrationReference:
+          type: string
+        message:
+          type: string
+    ResidentStatus:
+      type: string
+      enum:
+      - ACTIVE
+      - INACTIVE
+      - DISCHARGED
+      - DECEASED
+    RoleAssignmentResponse:
+      type: object
+      properties:
+        role:
+          type: string
+        organisationPublicId:
+          type: string
+          format: uuid
+        organisationName:
+          type: string
+        careHomePublicId:
+          type: string
+          format: uuid
+        careHomeName:
+          type: string
+    Slice_AssistanceRequestResponse_:
+      required:
+      - content
+      - pageable
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistanceRequestResponse"
+        pageable:
+          $ref: "#/components/schemas/Pageable"
+        pageNumber:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int32
+        empty:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+    Slice_ResidentAdmission_:
+      required:
+      - content
+      - pageable
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResidentAdmission"
+        pageable:
+          $ref: "#/components/schemas/Pageable"
+        pageNumber:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int32
+        empty:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+    Slice_ResidentRegistrationResponse_:
+      required:
+      - content
+      - pageable
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResidentRegistrationResponse"
+        pageable:
+          $ref: "#/components/schemas/Pageable"
+        pageNumber:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int32
+        empty:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+    Slice_WellbeingCheckResponse_:
+      required:
+      - content
+      - pageable
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/WellbeingCheckResponse"
+        pageable:
+          $ref: "#/components/schemas/Pageable"
+        pageNumber:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int32
+        empty:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+    Sort:
+      required:
+      - orderBy
+      type: object
+      properties:
+        orderBy:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sort.Order"
+    Sort.Order:
+      required:
+      - direction
+      - ignoreCase
+      - property
+      type: object
+      properties:
+        ignoreCase:
+          type: boolean
+        direction:
+          $ref: "#/components/schemas/Sort.Order.Direction"
+        property:
+          type: string
+        ascending:
+          type: boolean
+    Sort.Order.Direction:
+      type: string
+      enum:
+      - ASC
+      - DESC
+    TokenRefreshResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+        expiresIn:
+          type: integer
+          format: int64
+        expiresAt:
+          type: string
+          format: date-time
+        refreshExpiresIn:
+          type: integer
+          format: int64
+        refreshExpiresAt:
+          type: string
+          format: date-time
+        userPublicId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        organisationPublicId:
+          type: string
+          format: uuid
+        roles:
+          type: array
+          items:
+            type: string
+        roleAssignments:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoleAssignmentResponse"
+    TransferResidentRequest:
+      required:
+      - destinationCareHomePublicId
+      - transferDate
+      type: object
+      properties:
+        destinationCareHomePublicId:
+          type: string
+          format: uuid
+        transferDate:
+          type: string
+          format: date
+        transferReason:
+          maxLength: 2000
+          type: string
+    UpdateCareHomeRequest:
+      type: object
+      properties:
+        name:
+          maxLength: 150
+          minLength: 2
+          type: string
+        email:
+          maxLength: 255
+          type: string
+          format: email
+        phone:
+          maxLength: 30
+          type: string
+        address:
+          maxLength: 255
+          type: string
+        city:
+          maxLength: 100
+          type: string
+        state:
+          maxLength: 100
+          type: string
+        country:
+          maxLength: 100
+          type: string
+        postalCode:
+          maxLength: 20
+          type: string
+    UpdateCareHomeStatusRequest:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/CareHomeStatus"
+    UpdateCarePlanGoalRequest:
+      required:
+      - description
+      - expectedOutcome
+      - priority
+      - sortOrder
+      - status
+      - targetDate
+      - title
+      type: object
+      properties:
+        title:
+          maxLength: 200
+          minLength: 1
+          type: string
+        description:
+          type: string
+        expectedOutcome:
+          type: string
+        priority:
+          $ref: "#/components/schemas/CarePlanGoalPriority"
+        status:
+          $ref: "#/components/schemas/CarePlanGoalStatus"
+        targetDate:
+          type: string
+          format: date
+        sortOrder:
+          type: integer
+          format: int32
+    UpdateCarePlanInterventionRequest:
+      required:
+      - description
+      - endDate
+      - frequency
+      - instructions
+      - responsibleRole
+      - sortOrder
+      - startDate
+      - status
+      - title
+      type: object
+      properties:
+        title:
+          maxLength: 200
+          minLength: 1
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        frequency:
+          type: string
+        responsibleRole:
+          type: string
+        status:
+          $ref: "#/components/schemas/CarePlanInterventionStatus"
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        sortOrder:
+          type: integer
+          format: int32
+    UpdateCarePlanRequest:
+      required:
+      - description
+      - reviewDate
+      - startDate
+      - title
+      type: object
+      properties:
+        title:
+          maxLength: 200
+          minLength: 1
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+          format: date
+        reviewDate:
+          type: string
+          format: date
+    UpdateCarePlanTemplateRequest:
+      required:
+      - category
+      - definition
+      - description
+      - name
+      type: object
+      properties:
+        name:
+          maxLength: 200
+          minLength: 1
+          type: string
+        description:
+          type: string
+        category:
+          maxLength: 100
+          type: string
+        definition:
+          minProperties: 1
+          type: object
+          additionalProperties:
+            type: object
+    UpdateOrganisationRequest:
+      type: object
+      properties:
+        name:
+          maxLength: 150
+          minLength: 2
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        website:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        country:
+          type: string
+        postalCode:
+          type: string
+    UpdateOrganisationStatusRequest:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/OrganisationStatus"
+    UpdateResidentRequest:
+      type: object
+      properties:
+        firstName:
+          maxLength: 100
+          type: string
+        middleName:
+          maxLength: 100
+          type: string
+        lastName:
+          maxLength: 100
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          maxLength: 20
+          type: string
+        email:
+          maxLength: 150
+          type: string
+          format: email
+        phone:
+          maxLength: 30
+          type: string
+        address:
+          type: string
+    UpdateUserRequest:
+      required:
+      - firstName
+      - lastName
+      - middleName
+      - phone
+      type: object
+      properties:
+        firstName:
+          maxLength: 100
+          minLength: 1
+          type: string
+        lastName:
+          maxLength: 100
+          minLength: 1
+          type: string
+        middleName:
+          maxLength: 100
+          type: string
+        phone:
+          maxLength: 30
+          type: string
+    UpdateUserStatusRequest:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/UserStatus"
+    User:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/BaseEntity"
+      - type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+            nullable: true
+          publicId:
+            type: string
+            format: uuid
+          organisation:
+            nullable: true
+            allOf:
+            - $ref: "#/components/schemas/Organisation"
+          firstName:
+            type: string
+          lastName:
+            type: string
+          middleName:
+            type: string
+          email:
+            type: string
+          phone:
+            type: string
+          passwordHash:
+            type: string
+          status:
+            $ref: "#/components/schemas/UserStatus"
+          roleAssignments:
+            type: array
+            items:
+              $ref: "#/components/schemas/UserRoleAssignment"
+          tokenVersion:
+            type: integer
+            format: int32
+          emailVerifiedAt:
+            type: string
+            format: date-time
+          emailVerified:
+            type: boolean
+    UserPageResponse:
+      required:
+      - content
+      - page
+      - size
+      - totalElements
+      - totalPages
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    UserResponse:
+      required:
+      - createdAt
+      - email
+      - emailVerified
+      - firstName
+      - lastName
+      - middleName
+      - organisationName
+      - organisationPublicId
+      - phone
+      - publicId
+      - status
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        status:
+          $ref: "#/components/schemas/UserStatus"
+        emailVerified:
+          type: boolean
+        organisationPublicId:
+          type: string
+          format: uuid
+        organisationName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    UserRole:
+      type: string
+      enum:
+      - SUPER_ADMIN
+      - SYSTEM_ADMIN
+      - SYSTEM_SUPPORT
+      - ORGANISATION_ADMIN
+      - ORGANISATION_SUPPORT
+      - CARE_HOME_ADMIN
+      - CARE_HOME_MANAGER
+      - CAREGIVER
+      - RESIDENT
+    UserRoleAssignment:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/BaseEntity"
+      - type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+            nullable: true
+          publicId:
+            type: string
+            format: uuid
+          user:
+            $ref: "#/components/schemas/User"
+          role:
+            $ref: "#/components/schemas/UserRole"
+          organisation:
+            nullable: true
+            allOf:
+            - $ref: "#/components/schemas/Organisation"
+          assignedAt:
+            type: string
+            format: date-time
+          careHome:
+            nullable: true
+            allOf:
+            - $ref: "#/components/schemas/CareHome"
+          revokedAt:
+            type: string
+            format: date-time
+          active:
+            type: boolean
+    UserRoleResponse:
+      required:
+      - assignedAt
+      - assignmentPublicId
+      - careHomeName
+      - careHomePublicId
+      - organisationName
+      - organisationPublicId
+      - revokedAt
+      - role
+      type: object
+      properties:
+        assignmentPublicId:
+          type: string
+          format: uuid
+        role:
+          type: string
+        organisationPublicId:
+          type: string
+          format: uuid
+        organisationName:
+          type: string
+        careHomePublicId:
+          type: string
+          format: uuid
+        careHomeName:
+          type: string
+        assignedAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+    UserStatus:
+      type: string
+      enum:
+      - ACTIVE
+      - INACTIVE
+      - PENDING
+      - SUSPENDED
+    VerifyEmailRequest:
+      required:
+      - token
+      type: object
+      properties:
+        token:
+          minLength: 1
+          type: string
+    Void:
+      type: object
+    WellbeingCheckResponse:
+      required:
+      - checkedAt
+      - publicId
+      - status
+      type: object
+      properties:
+        publicId:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/WellbeingStatus"
+        checkedAt:
+          type: string
+          format: date-time
+    WellbeingStatus:
+      type: string
+      enum:
+      - OK
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: Enter your CarerLoop JWT access token.
+      scheme: bearer
+      bearerFormat: JWT

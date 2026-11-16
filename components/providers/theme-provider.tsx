@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  Suspense,
+} from "react";
 import { usePathname } from "next/navigation";
 
 type Theme = "light" | "dark";
@@ -9,33 +15,16 @@ interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
   setTheme: (theme: Theme) => void;
-  isLandingPage: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
-  const [mounted, setMounted] = useState(false);
+function PathnameThemeSynchronizer() {
   const pathname = usePathname();
   const isLandingPage = pathname === "/";
+  const { theme } = useTheme();
 
-  // Initial load: retrieve user preference
   useEffect(() => {
-    setMounted(true);
-    const stored = localStorage.getItem("carerloop-theme") as Theme | null;
-    if (stored === "dark" || stored === "light") {
-      setThemeState(stored);
-    } else {
-      setThemeState("dark");
-    }
-  }, []);
-
-  // Sync .dark class ONLY when on the landing page ("/")
-  // Every other page (auth, onboarding, dashboards) always stays in standard light mode
-  useEffect(() => {
-    if (!mounted) return;
-
     if (isLandingPage) {
       if (theme === "dark") {
         document.documentElement.classList.add("dark");
@@ -46,18 +35,26 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       // Strictly remove dark class outside the landing page
       document.documentElement.classList.remove("dark");
     }
-  }, [theme, isLandingPage, mounted]);
+  }, [theme, isLandingPage]);
+
+  return null;
+}
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setThemeState] = useState<Theme>("dark");
+
+  useEffect(() => {
+    const stored = localStorage.getItem("carerloop-theme") as Theme | null;
+    if (stored === "dark" || stored === "light") {
+      setThemeState(stored);
+    } else {
+      setThemeState("dark");
+    }
+  }, []);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem("carerloop-theme", newTheme);
-    if (isLandingPage) {
-      if (newTheme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    }
   };
 
   const toggleTheme = () => {
@@ -65,9 +62,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ThemeContext.Provider
-      value={{ theme, toggleTheme, setTheme, isLandingPage }}
-    >
+    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+      <Suspense fallback={null}>
+        <PathnameThemeSynchronizer />
+      </Suspense>
       {children}
     </ThemeContext.Provider>
   );

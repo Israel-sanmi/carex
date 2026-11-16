@@ -1,268 +1,250 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useState, useEffect, useRef } from "react";
+import { useSearchParams, useParams } from "next/navigation";
+import Link from "next/link";
 import AuthCard from "@/components/auth/auth-card";
+import {
+  useVerifyEmailMutation,
+  useResendVerificationMutation,
+} from "@/lib/hooks/use-auth-mutations";
 import {
   CheckCircle2,
   XCircle,
-  Clock,
   Mail,
   ArrowRight,
-  RotateCcw,
-  ShieldCheck,
   Send,
+  AlertCircle,
+  Clock,
 } from "lucide-react";
 
-function VerifyEmailContent() {
+export function VerifyEmailContent({ tokenProp }: { tokenProp?: string }) {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const urlParams = useParams();
+
+  const token =
+    tokenProp ||
+    (typeof urlParams?.token === "string" ? urlParams.token : null) ||
+    searchParams.get("token") ||
+    searchParams.get("t") ||
+    "";
+
   const emailParam = searchParams.get("email") || "";
 
-  const [status, setStatus] = useState<
-    "verifying" | "success" | "expired" | "failed" | "resend_form"
-  >(token ? "verifying" : "resend_form");
+  const [resendEmail, setResendEmail] = useState(emailParam);
+  const [resendSuccessMessage, setResendSuccessMessage] = useState("");
 
-  const [emailInput, setEmailInput] = useState(emailParam);
-  const [resendSuccess, setResendSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const verifyMutation = useVerifyEmailMutation();
+  const resendMutation = useResendVerificationMutation();
+  const hasTriggeredRef = useRef(false);
 
+  // Automatically trigger email verification when token is present on mount
   useEffect(() => {
-    if (token) {
-      // Simulate token validation against /api/v1/auth/verify-email
-      const timer = setTimeout(() => {
-        if (token.includes("expired")) {
-          setStatus("expired");
-        } else if (token.includes("invalid")) {
-          setStatus("failed");
-        } else {
-          setStatus("success");
-        }
-      }, 900);
-      return () => clearTimeout(timer);
+    if (token && !hasTriggeredRef.current) {
+      hasTriggeredRef.current = true;
+      verifyMutation.mutate({ token });
     }
   }, [token]);
 
   const handleResend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailInput) return;
-    setLoading(true);
+    if (!resendEmail) return;
+    setResendSuccessMessage("");
 
-    // Simulate /api/v1/auth/resend-verification
-    setTimeout(() => {
-      setLoading(false);
-      setResendSuccess(true);
-    }, 700);
+    resendMutation.mutate(
+      { email: resendEmail.trim() },
+      {
+        onSuccess: (data) => {
+          setResendSuccessMessage(
+            data?.message ||
+              "If an account exists with this email address, a new verification link has been sent.",
+          );
+        },
+      },
+    );
   };
 
+  // State 1: Verifying token in progress (token present and awaiting API result)
+  if (token && !verifyMutation.isSuccess && !verifyMutation.isError) {
+    return (
+      <div className="py-8 text-center space-y-4 animate-fade-in">
+        <div className="relative mx-auto h-14 w-14">
+          <div className="h-14 w-14 rounded-full border-4 border-teal-brand/20 border-t-teal-brand animate-spin" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-ink">
+            Verifying Your Email Address
+          </h2>
+          <p className="text-xs text-ink/70 mt-1 max-w-xs mx-auto leading-relaxed">
+            Validating your email verification token with CarerLoop
+            authentication servers...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // State 2: Verification Successful
+  if (token && verifyMutation.isSuccess) {
+    const successMessage =
+      verifyMutation.data?.message || "Email verified successfully.";
+
+    return (
+      <div className="py-4 text-center space-y-5 animate-fade-in">
+        <div className="grid h-16 w-16 place-items-center rounded-md bg-emerald-100 text-emerald-600 mx-auto shadow-sm">
+          <CheckCircle2 className="h-9 w-9" />
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-bold text-ink font-heading">
+            {successMessage}
+          </h2>
+          <p className="text-xs sm:text-sm text-ink/70 mt-1.5 max-w-sm mx-auto leading-relaxed">
+            Your email has been confirmed. Your account is now active and ready
+            for use.
+          </p>
+        </div>
+
+        <div className="pt-2">
+          <Link
+            href="/login"
+            className="w-full py-3.5 rounded-full bg-teal-brand text-white font-medium text-sm sm:text-base hover:bg-teal-deep shadow-[0_10px_25px_-8px_rgba(15,118,110,0.5)] transition-all cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span>Sign In to CarerLoop</span>
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const isAlreadyUsed =
+    verifyMutation.error?.message?.toLowerCase().includes("already") ||
+    verifyMutation.error?.status === 409;
+
+  // State 3: Verification Failed OR No Token in URL (Resend form)
   return (
-    <div className="space-y-6 text-ink">
-      {/* 1. VERIFYING STATE */}
-      {status === "verifying" && (
-        <div className="py-8 text-center space-y-4 animate-fade-in">
-          <div className="relative mx-auto h-14 w-14">
-            <div className="h-14 w-14 rounded-full border-4 border-teal-brand/20 border-t-teal-brand animate-spin" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-ink">
-              Verifying Email Address
-            </h2>
-            <p className="text-xs text-ink/65 mt-1">
-              Contacting CarerLoop authentication servers to validate your
-              cryptographic token...
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* 2. SUCCESS STATE (Section 4.8) */}
-      {status === "success" && (
-        <div className="py-4 text-center space-y-5 animate-fade-in">
-          <div className="grid h-16 w-16 place-items-center rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 mx-auto shadow-sm">
-            <CheckCircle2 className="h-9 w-9" />
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-ink dark:text-white font-heading">
-              Email Verified Successfully
-            </h2>
-            <p className="text-xs sm:text-sm text-ink/65 dark:text-slate-300 mt-1.5 max-w-sm mx-auto leading-relaxed">
-              Your email ownership is confirmed. Your resident registration is now officially queued for administrative review.
-            </p>
-          </div>
-
-          <div className="p-4 rounded-md bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-500/20 text-xs text-left text-purple-900 dark:text-purple-300 space-y-1">
-            <p className="font-bold flex items-center gap-1.5">
-              <Clock className="w-4 h-4" /> Next Stage: Awaiting Administrative Review
-            </p>
-            <p className="text-[11px] leading-relaxed">
-              The care organisation administrator will evaluate your dossier and either admit or reject your request. You can check your live progress anytime on the Admission Status screen.
-            </p>
-          </div>
-
-          <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
-            <a
-              href="/admission-status?status=PENDING_ADMISSION"
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 px-6 py-3 text-xs sm:text-sm font-semibold text-white transition-all shadow-md"
-            >
-              <span>Track Admission Status →</span>
-            </a>
-            <a
-              href="/login"
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-ink/15 dark:border-white/15 px-6 py-3 text-xs sm:text-sm font-semibold text-ink dark:text-white hover:bg-cream dark:hover:bg-slate-800 transition-all"
-            >
-              <span>Sign In to Portal</span>
-            </a>
-          </div>
-        </div>
-      )}
-
-      {/* 3. EXPIRED STATE (Section 4.8) */}
-      {status === "expired" && (
-        <div className="py-4 text-center space-y-5 animate-fade-in">
-          <div className="grid h-16 w-16 place-items-center rounded-full bg-sun-soft text-[#8b6100] mx-auto shadow-sm">
-            <Clock className="h-9 w-9" />
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-ink">
-              Verification Link Expired
-            </h2>
-            <p className="text-xs sm:text-sm text-ink/65 mt-1.5 max-w-sm mx-auto leading-relaxed">
-              For security, email verification links expire after 24 hours.
-              Request a new link below to continue.
-            </p>
-          </div>
-
-          <button
-            onClick={() => setStatus("resend_form")}
-            className="inline-flex items-center gap-2 rounded-full bg-teal-brand px-6 py-2.5 text-xs font-semibold text-white hover:bg-teal-deep transition-all cursor-pointer"
-          >
-            <RotateCcw className="h-4 w-4" />
-            <span>Request New Verification Link</span>
-          </button>
-        </div>
-      )}
-
-      {/* 4. FAILED STATE (Section 4.8) */}
-      {status === "failed" && (
-        <div className="py-4 text-center space-y-5 animate-fade-in">
-          <div className="grid h-16 w-16 place-items-center rounded-full bg-destructive/10 text-destructive mx-auto shadow-sm">
-            <XCircle className="h-9 w-9" />
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-ink">Verification Failed</h2>
-            <p className="text-xs sm:text-sm text-ink/65 mt-1.5 max-w-sm mx-auto leading-relaxed">
-              This verification link is invalid or has already been used. Please
-              request a fresh link.
-            </p>
-          </div>
-
-          <button
-            onClick={() => setStatus("resend_form")}
-            className="inline-flex items-center gap-2 rounded-full bg-ink text-white px-6 py-2.5 text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer"
-          >
-            <span>Resend Verification Email</span>
-          </button>
-        </div>
-      )}
-
-      {/* 5. RESEND FORM (Section 4.8) */}
-      {status === "resend_form" && (
-        <div className="space-y-4 animate-fade-in">
-          {resendSuccess ? (
-            <div className="p-4 rounded-md bg-mint/60 border border-teal-brand/30 text-center space-y-2">
-              <CheckCircle2 className="h-8 w-8 text-teal-brand mx-auto" />
-              <p className="text-sm font-bold text-teal-deep">
-                Fresh Link Dispatched
+    <div className="space-y-5 text-ink animate-fade-in">
+      {token && verifyMutation.isError && (
+        <div className="p-4 rounded-md border border-coral/30 bg-coral-soft/50 text-ink space-y-3">
+          <div className="flex items-start gap-2 text-coral">
+            <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-sm">
+                {verifyMutation.error.message ||
+                  "Invalid or expired verification token"}
               </p>
-              <p className="text-xs text-ink/70">
-                We sent a new verification link to{" "}
-                <span className="font-semibold text-ink">{emailInput}</span>.
-                Please check your inbox.
+              <p className="text-xs text-ink/70 mt-1 leading-relaxed">
+                {isAlreadyUsed
+                  ? "This verification link has already been used. If you have already verified your email, you can proceed directly to sign in."
+                  : "The link may have expired. Please enter your email below to request a new link."}
               </p>
-              <div className="pt-2">
-                <a
-                  href="/login"
-                  className="text-xs font-semibold text-teal-brand underline decoration-teal-brand/40 underline-offset-2"
-                >
-                  Return to Sign In →
-                </a>
+            </div>
+          </div>
+
+          {isAlreadyUsed && (
+            <div className="pt-1">
+              <Link
+                href="/login"
+                className="w-full py-2.5 rounded-md bg-teal-brand text-white font-medium text-xs sm:text-sm hover:bg-teal-deep transition-all flex items-center justify-center gap-2 shadow-sm"
+              >
+                <span>Proceed to Sign In</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!token && (
+        <div className="text-center space-y-1.5 pb-2">
+          <div className="grid h-12 w-12 place-items-center rounded-full bg-mint text-teal-brand mx-auto mb-2">
+            <Mail className="h-6 w-6" />
+          </div>
+          <h2 className="text-lg font-bold text-ink">
+            Resend Email Verification
+          </h2>
+          <p className="text-xs text-ink/70 max-w-xs mx-auto leading-relaxed">
+            Enter your email address to receive a fresh verification link.
+          </p>
+        </div>
+      )}
+
+      {resendSuccessMessage ? (
+        <div className="py-4 text-center space-y-4">
+          <div className="grid h-12 w-12 place-items-center rounded-full bg-mint text-teal-brand mx-auto">
+            <CheckCircle2 className="h-6 w-6" />
+          </div>
+          <p className="text-xs text-ink/80 leading-relaxed max-w-sm mx-auto font-medium">
+            {resendSuccessMessage}
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-teal-brand hover:underline pt-2"
+          >
+            <span>Return to Sign In</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      ) : (
+        (!isAlreadyUsed || !token) && (
+          <form
+            onSubmit={handleResend}
+            className="space-y-4 text-xs sm:text-sm"
+          >
+            {resendMutation.isError && (
+              <div className="p-3 rounded-md border border-coral/30 bg-coral-soft/50 text-coral text-xs flex items-center gap-1.5">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>
+                  {resendMutation.error.message ||
+                    "Unable to resend verification email"}
+                </span>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="font-semibold text-ink">Email Address</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink/40">
+                  <Mail className="h-4 w-4" />
+                </div>
+                <input
+                  type="email"
+                  required
+                  value={resendEmail}
+                  onChange={(e) => setResendEmail(e.target.value)}
+                  placeholder="name@carehome.com"
+                  className="w-full rounded-md border border-ink/15 bg-cream/30 pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
+                />
               </div>
             </div>
-          ) : (
-            <form
-              onSubmit={handleResend}
-              className="space-y-4 text-xs sm:text-sm"
-            >
-              <div className="space-y-1.5">
-                <label className="font-semibold text-ink">
-                  Your Registered Email Address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink/40">
-                    <Mail className="h-4 w-4" />
-                  </div>
-                  <input
-                    type="email"
-                    required
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="name@carehome.co.uk"
-                    className="w-full rounded-md border border-ink/15 bg-cream/30 pl-10 pr-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
-                  />
-                </div>
-              </div>
 
+            <div className="pt-2">
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full py-3 rounded-full bg-teal-brand text-white font-medium text-xs sm:text-sm hover:bg-teal-deep transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                disabled={resendMutation.isPending}
+                className="w-full py-3.5 rounded-full bg-teal-brand text-white font-medium text-sm sm:text-base hover:bg-teal-deep shadow-[0_10px_25px_-8px_rgba(15,118,110,0.5)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
               >
+                <span>
+                  {resendMutation.isPending
+                    ? "Sending..."
+                    : "Send Verification Link"}
+                </span>
                 <Send className="h-4 w-4" />
-                <span>{loading ? "Sending..." : "Send Verification Link"}</span>
               </button>
-
-              <div className="pt-2 text-center">
-                <a
-                  href="/login"
-                  className="text-xs text-ink/65 hover:text-ink font-medium underline underline-offset-4"
-                >
-                  Remember your credentials? Sign in
-                </a>
-              </div>
-            </form>
-          )}
-
-          {/* Quick simulation pills for testing */}
-          <div className="pt-4 border-t border-ink/10 text-[11px] text-ink/50 space-y-1 text-center">
-            <p className="font-semibold text-ink/70">
-              Test different verification states:
-            </p>
-            <div className="flex justify-center gap-2 pt-1 flex-wrap">
-              <a
-                href="/verify-email?token=valid_test_token"
-                className="px-2 py-0.5 rounded bg-cream border border-ink/10 hover:border-teal-brand text-teal-brand"
-              >
-                Simulate Valid
-              </a>
-              <a
-                href="/verify-email?token=expired_test_token"
-                className="px-2 py-0.5 rounded bg-cream border border-ink/10 hover:border-sun text-[#8b6100]"
-              >
-                Simulate Expired
-              </a>
-              <a
-                href="/verify-email?token=invalid_test_token"
-                className="px-2 py-0.5 rounded bg-cream border border-ink/10 hover:border-destructive text-destructive"
-              >
-                Simulate Failed
-              </a>
             </div>
-          </div>
-        </div>
+          </form>
+        )
       )}
+
+      <div className="pt-2 text-center">
+        <Link
+          href="/login"
+          className="text-xs text-ink/60 hover:text-ink font-medium"
+        >
+          Back to sign in
+        </Link>
+      </div>
     </div>
   );
 }
@@ -271,13 +253,13 @@ export default function VerifyEmailPage() {
   return (
     <AuthCard
       title="Email Verification"
-      subtitle="Confirming your email identity for secure care home portal access."
-      badge="Identity Security"
+      subtitle="Confirm your identity to access CarerLoop"
+      badge="Verification Portal"
     >
       <Suspense
         fallback={
           <div className="p-8 text-center text-xs text-ink/50">
-            Processing verification request...
+            Loading verification parameters...
           </div>
         }
       >

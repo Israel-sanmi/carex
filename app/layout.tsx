@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import QueryProvider from "@/components/providers/query-provider";
 import { RoleProvider } from "@/lib/role-context";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { Toaster } from "@/components/ui/toast";
 import PwaRegister from "@/components/pwa/pwa-register";
 import "./globals.css";
 
@@ -93,6 +94,7 @@ export default function RootLayout({
           <QueryProvider>
             <RoleProvider>
               {children}
+              <Toaster />
               <PwaRegister />
             </RoleProvider>
           </QueryProvider>
