@@ -643,12 +643,12 @@
 .dash-main table tbody tr:hover { background-color: rgba(217, 242, 236, 0.45); }
 
 /* Modals: blurred backdrop fade + dialog pop */
-.dash-scope .fixed.inset-0 {
+.dash-scope .fixed.inset-0.z-50:not(.opacity-0):not(.pointer-events-none) {
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   animation: backdrop-in 0.2s ease both;
 }
-.dash-scope .fixed.inset-0 > div {
+.dash-scope .fixed.inset-0.z-50:not(.opacity-0):not(.pointer-events-none) > div {
   animation: pop-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
   box-shadow: 0 30px 80px -20px rgba(19, 48, 45, 0.35);
 }
@@ -681,7 +681,7 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-rise, .animate-scale-in, .animate-pop-in, .animate-float-slow, .animate-ring, .animate-grow-x,
   .stagger > *, .gradient-text-animated, .marquee-track, .border-glow::after, .skeleton,
-  .auth-scope form > *, .dash-page > * > *, .dash-scope .fixed.inset-0, .dash-scope .fixed.inset-0 > div {
+  .auth-scope form > *, .dash-page > * > *, .dash-scope .fixed.inset-0.z-50, .dash-scope .fixed.inset-0.z-50 > div {
     animation: none !important;
   }
   .shine::after, .auth-scope button[type="submit"]::after, .dash-main .bg-teal-brand::after { display: none; }

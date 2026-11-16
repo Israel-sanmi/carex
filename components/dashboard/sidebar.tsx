@@ -148,14 +148,14 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile backdrop */}
-      <div
-        onClick={onCloseMobile}
-        className={`fixed inset-0 z-40 bg-ink/40 lg:hidden transition-opacity duration-300 ${
-          mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-        aria-hidden="true"
-      />
+      {/* Mobile backdrop - only rendered when mobileOpen is true */}
+      {mobileOpen && (
+        <div
+          onClick={onCloseMobile}
+          className="fixed inset-0 z-40 bg-ink/50 backdrop-blur-xs lg:hidden transition-opacity duration-300 animate-in fade-in cursor-pointer"
+          aria-hidden="true"
+        />
+      )}
 
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-72 flex flex-col text-white overflow-hidden bg-[linear-gradient(180deg,#073b38_0%,#062b29_55%,#05201f_100%)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] lg:translate-x-0 ${
