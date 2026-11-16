@@ -16,28 +16,58 @@ import {
   CreateInvitationPayload,
 } from "@/lib/api-invitations";
 import { toast } from "@/components/ui/toast";
+import StatCard from "@/components/dashboard/stat-card";
+import {
+  btn,
+  field,
+  table,
+  PageHeader,
+  Panel,
+  Toolbar,
+  SearchField,
+  Segmented,
+  Badge,
+  StatusBadge,
+  EmptyState,
+  ErrorState,
+  SkeletonRows,
+  Spinner,
+  DataItem,
+  Modal,
+  type BadgeTone,
+} from "@/components/dashboard/ui";
 import {
   Mail,
   Send,
   Copy,
   Check,
   Clock,
-  RefreshCw,
   Trash2,
   Building2,
   Home,
   CheckCircle2,
   AlertTriangle,
-  Search,
   Filter,
   Eye,
   Calendar,
-  X,
-  ExternalLink,
   ChevronLeft,
   ChevronRight,
   ShieldAlert,
+  ShieldCheck,
+  RotateCcw,
+  Hash,
+  XCircle,
 } from "lucide-react";
+
+/** Presentation-only: maps an invitation role to a badge colour. */
+const roleTone = (role?: string | null): BadgeTone =>
+  role?.includes("SUPER")
+    ? "violet"
+    : role?.includes("ORGANISATION")
+      ? "teal"
+      : role?.includes("MANAGER")
+        ? "sky"
+        : "slate";
 
 const STATUS_FILTERS: { label: string; value: InvitationStatus | "" }[] = [
   { label: "All Statuses", value: "" },
@@ -249,161 +279,123 @@ export default function InvitationsPage() {
 
   if (!canInvite) {
     return (
-      <div className="p-8 rounded-md bg-white border border-ink/10 text-center max-w-xl mx-auto space-y-4 my-12 shadow-xs">
-        <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
-          <AlertTriangle className="h-6 w-6" />
+      <div className="space-y-6">
+        <div className="max-w-xl mx-auto my-12 bg-white border border-ink/[0.08] rounded-md">
+          <EmptyState
+            icon={AlertTriangle}
+            title="Restricted Invitation Domain"
+            description="The Invitation workflow is restricted strictly to Super Administrators, System Administrators, Organisation Administrators, Care Home Administrators, and Care Home Managers."
+          />
         </div>
-        <h2 className="text-xl font-bold text-ink font-heading">
-          Restricted Invitation Domain
-        </h2>
-        <p className="text-xs text-ink/70 leading-relaxed">
-          The Invitation workflow is restricted strictly to Super
-          Administrators, System Administrators, Organisation Administrators,
-          Care Home Administrators, and Care Home Managers.
-        </p>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-ink font-heading">
-              Invitations Management
-            </h1>
-            {/* <span className="text-xs px-2.5 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
-              {isLoading ? "—" : totalElements} Dispatched
-            </span> */}
-          </div>
-          <p className="text-sm text-ink/70 mt-1">
-            Dispatch, track, and manage role-assigned onboarding invitations
-            across care organisations and facilities.
-          </p>
-        </div>
+  const hasFilters = Boolean(selectedStatus || selectedRole || search);
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleOpenInviteModal}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-teal-brand text-white text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
-          >
-            <Send className="h-4 w-4" />
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <PageHeader
+        icon={Mail}
+        title="Invitations Management"
+        description="Dispatch, track, and manage role-assigned onboarding invitations across care organisations and facilities."
+        actions={
+          <button onClick={handleOpenInviteModal} className={`${btn.primary} group`}>
+            <Send className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             <span>Send Invitation</span>
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs">
-          <span className="text-xs font-semibold text-ink/60 uppercase tracking-wider">
-            Total Invitations
-          </span>
-          <p className="text-3xl font-bold text-ink mt-1">
-            {isLoading ? "—" : totalElements}
-          </p>
-          <span className="text-xs text-ink/60">Dispatched records</span>
-        </div>
-        <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs">
-          <span className="text-xs font-semibold text-ink/60 uppercase tracking-wider">
-            Pending Onboarding
-          </span>
-          <p className="text-3xl font-bold text-amber-700 mt-1">
-            {isLoading
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatCard
+          className="col-span-2 lg:col-span-1"
+          label="Total Invitations"
+          value={isLoading ? "—" : totalElements}
+          icon={Mail}
+          tone="teal"
+          hint="Dispatched records"
+          hintMuted
+        />
+        <StatCard
+          label="Pending Onboarding"
+          value={
+            isLoading
               ? "—"
               : rawInvitations.filter(
                   (i) => i.status?.toUpperCase() === "PENDING",
-                ).length}
-          </p>
-          <span className="text-xs text-ink/60">Awaiting user acceptance</span>
-        </div>
-        <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs">
-          <span className="text-xs font-semibold text-ink/60 uppercase tracking-wider">
-            Accepted / Verified
-          </span>
-          <p className="text-3xl font-bold text-emerald-700 mt-1">
-            {isLoading
+                ).length
+          }
+          icon={Clock}
+          tone="sun"
+          hint="Awaiting user acceptance"
+          hintMuted
+        />
+        <StatCard
+          label="Accepted / Verified"
+          value={
+            isLoading
               ? "—"
               : rawInvitations.filter(
                   (i) =>
                     i.status?.toUpperCase() === "ACCEPTED" ||
                     i.status?.toUpperCase() === "VERIFIED",
-                ).length}
-          </p>
-          <span className="text-xs text-teal-deep font-semibold">
-            Active onboarding completed
-          </span>
-        </div>
+                ).length
+          }
+          icon={CheckCircle2}
+          tone="sky"
+          hint="Active onboarding completed"
+        />
       </div>
 
       {/* Filters Bar */}
       <div className="space-y-3">
         {/* Status Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink/[0.04] border border-ink/[0.07] overflow-x-auto scrollbar-none">
-          {STATUS_FILTERS.map((st) => {
-            const count = st.value
-              ? rawInvitations.filter(
-                  (i) => i.status?.toUpperCase() === st.value.toUpperCase(),
-                ).length
-              : rawInvitations.length;
-
-            const isActive = selectedStatus === st.value;
-
-            return (
-              <button
-                key={st.value}
-                onClick={() => {
-                  setSelectedStatus(st.value);
-                  setPage(0);
-                }}
-                className={`tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
-                  isActive
-                    ? "bg-teal-brand text-white shadow-xs"
-                    : "text-ink/65 hover:text-ink hover:bg-white/60"
-                }`}
-              >
-                <span>{st.label}</span>
-                {!isLoading && rawInvitations.length > 0 && (
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      isActive
-                        ? "bg-white/20 text-white"
-                        : "bg-ink/10 text-ink/70"
-                    }`}
-                  >
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <Segmented
+          value={selectedStatus}
+          onChange={(v) => {
+            setSelectedStatus(v);
+            setPage(0);
+          }}
+          options={STATUS_FILTERS.map((st) => ({
+            value: st.value,
+            label: st.label,
+            count:
+              !isLoading && rawInvitations.length > 0
+                ? st.value
+                  ? rawInvitations.filter(
+                      (i) => i.status?.toUpperCase() === st.value.toUpperCase(),
+                    ).length
+                  : rawInvitations.length
+                : undefined,
+          }))}
+          className="w-full sm:w-auto"
+        />
 
         {/* Search & Role Filter */}
-        <div className="p-4 rounded-md bg-white border border-ink/10 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
-            <input
-              type="text"
-              placeholder="Search by email, organisation or facility..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all text-ink"
-            />
-          </div>
+        <Toolbar>
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by email, organisation or facility..."
+            className="md:max-w-md"
+          />
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Filter className="h-4 w-4 text-ink/40" />
-            <span className="text-xs text-ink/60 font-medium">Role:</span>
+          <div className="flex items-center gap-2 w-full md:w-auto md:ml-auto">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-ink/55 font-medium shrink-0">
+              <Filter className="h-3.5 w-3.5" />
+              Role
+            </span>
             <select
               value={selectedRole}
               onChange={(e) => {
                 setSelectedRole(e.target.value as InvitationRole | "");
                 setPage(0);
               }}
-              className="text-xs rounded-md border border-ink/10 px-3 py-2 bg-cream/30 focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium text-ink cursor-pointer"
+              aria-label="Filter by role"
+              className={`${field.input} md:w-56 cursor-pointer`}
             >
               <option value="">All Roles</option>
               {AVAILABLE_ROLES.map((r) => (
@@ -420,109 +412,230 @@ export default function InvitationsPage() {
                   setSelectedRole("");
                   setSelectedStatus("");
                 }}
-                className="text-xs text-ink/60 hover:text-ink ml-2 cursor-pointer whitespace-nowrap"
+                className={`${btn.ghost} shrink-0`}
               >
+                <RotateCcw className="h-3.5 w-3.5" />
                 Reset Filters
               </button>
             )}
           </div>
-        </div>
+        </Toolbar>
       </div>
 
       {/* Invitations Table Content */}
-      {isLoading ? (
-        <div className="rounded-md bg-white border border-ink/10 p-6 space-y-4 animate-pulse">
-          <div className="h-6 bg-ink/10 rounded w-1/4" />
-          <div className="h-12 bg-cream rounded" />
-          <div className="h-12 bg-cream rounded" />
-          <div className="h-12 bg-cream rounded" />
-        </div>
-      ) : isError ? (
-        <div className="p-8 rounded-md bg-red-50 border border-red-200 text-center space-y-3">
-          <AlertTriangle className="h-8 w-8 text-red-600 mx-auto" />
-          <p className="text-sm font-semibold text-red-800">
-            Failed to load invitations
-          </p>
-          <p className="text-xs text-red-600 font-mono">
-            {error instanceof Error ? error.message : "Unknown error"}
-          </p>
-          <button
-            onClick={() => refetch()}
-            className="px-4 py-2 rounded-md bg-red-600 text-white text-xs font-semibold hover:bg-red-700 cursor-pointer"
-          >
-            Try Again
-          </button>
-        </div>
-      ) : filteredInvitations.length === 0 ? (
-        <div className="p-12 rounded-md bg-white border border-ink/10 text-center space-y-4 shadow-xs">
-          <div className="w-14 h-14 rounded-full bg-cream text-teal-brand flex items-center justify-center mx-auto">
-            <Mail className="h-7 w-7" />
+      <Panel
+        flush
+        icon={Send}
+        title="Dispatched invitations"
+        description="Track onboarding links, their status and validity"
+      >
+        {isLoading ? (
+          <SkeletonRows rows={4} />
+        ) : isError ? (
+          <div className="p-5">
+            <ErrorState
+              title="Failed to load invitations"
+              message={
+                <span className="font-mono">
+                  {error instanceof Error ? error.message : "Unknown error"}
+                </span>
+              }
+              onRetry={() => refetch()}
+              retrying={isFetching}
+            />
           </div>
-          <div className="max-w-md mx-auto space-y-1">
-            <h3 className="text-base font-bold text-ink">
-              {selectedStatus || selectedRole || search
+        ) : filteredInvitations.length === 0 ? (
+          <EmptyState
+            icon={Mail}
+            title={
+              hasFilters
                 ? "No matching invitations found"
-                : "No invitations dispatched yet"}
-            </h3>
-            <p className="text-xs text-ink/60">
-              {selectedStatus || selectedRole || search
+                : "No invitations dispatched yet"
+            }
+            description={
+              hasFilters
                 ? "No invitation records matched your active filter criteria."
-                : "Dispatch your first role-assigned invitation to onboard care staff or colleagues."}
-            </p>
-          </div>
-          <div className="flex items-center justify-center gap-3">
-            {(selectedStatus || selectedRole || search) && (
-              <button
-                onClick={() => {
-                  setSelectedStatus("");
-                  setSelectedRole("");
-                  setSearch("");
-                }}
-                className="px-4 py-2 rounded-md border border-ink/15 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
-              >
-                Clear Filters
-              </button>
-            )}
-            <button
-              onClick={handleOpenInviteModal}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer"
-            >
-              <Send className="h-3.5 w-3.5" />
-              <span>Send New Invitation</span>
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-md bg-white border border-ink/10 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="whitespace-nowrap w-full text-left text-xs text-ink">
-              <thead className="bg-cream/40 border-b border-ink/10 text-ink/60 font-semibold uppercase tracking-wider text-[11px]">
-                <tr>
-                  <th className="py-3.5 px-6">Recipient Email</th>
-                  <th className="py-3.5 px-4">Assigned Role</th>
-                  <th className="py-3.5 px-4">Organisation & Facility</th>
-                  <th className="py-3.5 px-4">Status & Validity</th>
-                  <th className="py-3.5 px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink/5">
-                {filteredInvitations.map((inv) => (
-                  <tr
-                    key={inv.publicId}
-                    className="hover:bg-cream/20 transition-colors"
+                : "Dispatch your first role-assigned invitation to onboard care staff or colleagues."
+            }
+            action={
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                {hasFilters && (
+                  <button
+                    onClick={() => {
+                      setSelectedStatus("");
+                      setSelectedRole("");
+                      setSearch("");
+                    }}
+                    className={btn.secondary}
                   >
-                    <td className="py-4 px-6">
-                      <div className="font-bold text-sm text-ink">
-                        {inv.email}
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Clear Filters
+                  </button>
+                )}
+                <button onClick={handleOpenInviteModal} className={`${btn.primary} group`}>
+                  <Send className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  <span>Send New Invitation</span>
+                </button>
+              </div>
+            }
+          />
+        ) : (
+          <>
+            {/* Desktop table */}
+            <div className={`hidden md:block ${table.wrap}`}>
+              <table className={table.table}>
+                <thead>
+                  <tr>
+                    <th className={table.th}>Recipient Email</th>
+                    <th className={table.th}>Assigned Role</th>
+                    <th className={table.th}>Organisation & Facility</th>
+                    <th className={table.th}>Status & Validity</th>
+                    <th className={`${table.th} text-right`}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredInvitations.map((inv) => (
+                    <tr key={inv.publicId} className={table.tr}>
+                      <td className={table.td}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="grid place-items-center w-9 h-9 rounded-md bg-mint text-teal-brand shrink-0 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105">
+                            <Mail className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-sm text-ink truncate max-w-[16rem]">
+                              {inv.email}
+                            </div>
+                            <div className="text-[10px] text-ink/45 flex items-center gap-2 font-mono mt-0.5">
+                              <span>
+                                Sent: {new Date(inv.createdAt).toLocaleDateString()}
+                              </span>
+                              <span className="text-ink/25">•</span>
+                              <button
+                                onClick={() => handleCopy(inv.publicId, inv.publicId)}
+                                className="hover:text-ink cursor-pointer flex items-center gap-1 transition-colors"
+                                title="Copy Invitation ID"
+                              >
+                                {copiedId === inv.publicId ? (
+                                  <Check className="h-3 w-3 text-emerald-600" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                                <span>{inv.publicId.slice(0, 8)}...</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className={table.td}>
+                        <Badge tone={roleTone(inv.role)}>
+                          {inv.role?.replace(/_/g, " ")}
+                        </Badge>
+                      </td>
+
+                      <td className={table.td}>
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-ink">
+                          <Building2 className="h-3.5 w-3.5 text-teal-brand shrink-0" />
+                          <span className="truncate max-w-[14rem]">
+                            {inv.organisationName || "—"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-ink/55 mt-0.5">
+                          <Home className="h-3 w-3 text-ink/35 shrink-0" />
+                          <span className="truncate max-w-[14rem]">
+                            {inv.careHomeName || "No specific care home"}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className={table.td}>
+                        <div className="flex flex-col items-start gap-1">
+                          <StatusBadge status={inv.status} />
+                          {inv.expiresAt && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-ink/50 font-medium">
+                              <Calendar className="h-3 w-3" />
+                              Exp: {new Date(inv.expiresAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className={`${table.td} text-right`}>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => setViewingInvitation(inv)}
+                            className={btn.icon}
+                            title="View Details"
+                            aria-label="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+
+                          {inv.status?.toUpperCase() === "PENDING" && (
+                            <button
+                              onClick={() => setRevokingId(inv.publicId)}
+                              className={`${btn.icon} text-red-600 hover:text-red-700 hover:bg-red-50`}
+                              title="Revoke Invitation"
+                              aria-label="Revoke Invitation"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <ul className="md:hidden divide-y divide-ink/[0.06]">
+              {filteredInvitations.map((inv) => (
+                <li key={inv.publicId} className="p-4 transition-colors hover:bg-mint/20">
+                  <div className="flex items-start gap-3">
+                    <span className="grid place-items-center w-9 h-9 rounded-md bg-mint text-teal-brand shrink-0">
+                      <Mail className="h-4 w-4" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-semibold text-sm text-ink truncate min-w-0">
+                          {inv.email}
+                        </div>
+                        <StatusBadge status={inv.status} className="shrink-0" />
                       </div>
-                      <div className="text-[10px] text-ink/50 flex items-center gap-2 font-mono mt-0.5">
-                        <span>
-                          Sent: {new Date(inv.createdAt).toLocaleDateString()}
-                        </span>
-                        <span>•</span>
+
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <Badge tone={roleTone(inv.role)}>
+                          {inv.role?.replace(/_/g, " ")}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-2 space-y-0.5 text-[11px] text-ink/60">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Building2 className="h-3 w-3 text-teal-brand shrink-0" />
+                          <span className="truncate">{inv.organisationName || "—"}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Home className="h-3 w-3 text-ink/35 shrink-0" />
+                          <span className="truncate">
+                            {inv.careHomeName || "No specific care home"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-ink/45 font-mono">
+                        <span>Sent: {new Date(inv.createdAt).toLocaleDateString()}</span>
+                        {inv.expiresAt && (
+                          <>
+                            <span className="text-ink/25">•</span>
+                            <span>Exp: {new Date(inv.expiresAt).toLocaleDateString()}</span>
+                          </>
+                        )}
+                        <span className="text-ink/25">•</span>
                         <button
                           onClick={() => handleCopy(inv.publicId, inv.publicId)}
-                          className="hover:text-ink cursor-pointer flex items-center gap-1"
+                          className="hover:text-ink cursor-pointer inline-flex items-center gap-1"
                           title="Copy Invitation ID"
                         >
                           {copiedId === inv.publicId ? (
@@ -533,496 +646,429 @@ export default function InvitationsPage() {
                           <span>{inv.publicId.slice(0, 8)}...</span>
                         </button>
                       </div>
-                    </td>
 
-                    <td className="py-4 px-4">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                          inv.role?.includes("SUPER")
-                            ? "bg-purple-100 text-purple-800"
-                            : inv.role?.includes("ORGANISATION")
-                              ? "bg-teal-brand text-white"
-                              : inv.role?.includes("MANAGER")
-                                ? "bg-mint text-teal-deep"
-                                : "bg-ink/5 text-ink/80"
-                        }`}
-                      >
-                        {inv.role?.replace(/_/g, " ")}
-                      </span>
-                    </td>
-
-                    <td className="py-4 px-4">
-                      <div className="font-medium text-ink">
-                        {inv.organisationName || "—"}
-                      </div>
-                      <div className="text-[11px] text-ink/60">
-                        {inv.careHomeName || "No specific care home"}
-                      </div>
-                    </td>
-
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                            inv.status?.toUpperCase() === "PENDING"
-                              ? "bg-amber-50 text-amber-800 border border-amber-200"
-                              : inv.status?.toUpperCase() === "ACCEPTED" ||
-                                  inv.status?.toUpperCase() === "VERIFIED"
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : "bg-gray-100 text-gray-700 border border-gray-200"
-                          }`}
-                        >
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              inv.status?.toUpperCase() === "PENDING"
-                                ? "bg-amber-600"
-                                : inv.status?.toUpperCase() === "ACCEPTED" ||
-                                    inv.status?.toUpperCase() === "VERIFIED"
-                                  ? "bg-emerald-600"
-                                  : "bg-gray-500"
-                            }`}
-                          />
-                          {inv.status}
-                        </span>
-
-                        {inv.expiresAt && (
-                          <span className="text-[10px] text-ink/50 font-medium">
-                            Exp: {new Date(inv.expiresAt).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="mt-3 flex items-center gap-2">
                         <button
                           onClick={() => setViewingInvitation(inv)}
-                          className="p-1.5 rounded-md border border-ink/10 hover:bg-cream text-ink/70 hover:text-ink text-xs font-semibold cursor-pointer"
+                          className={`${btn.secondary} ${btn.sm} flex-1`}
                           title="View Details"
                         >
                           <Eye className="h-3.5 w-3.5" />
+                          Details
                         </button>
-
                         {inv.status?.toUpperCase() === "PENDING" && (
                           <button
                             onClick={() => setRevokingId(inv.publicId)}
-                            className="p-1.5 rounded-md border border-red-200 hover:bg-red-50 text-red-600 text-xs font-semibold cursor-pointer"
+                            className={`${btn.dangerSoft} ${btn.sm} flex-1`}
                             title="Revoke Invitation"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
+                            Revoke
                           </button>
                         )}
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </Panel>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 border-t border-ink/10 text-xs text-ink/70">
-          <span>
-            Showing Page {page + 1} of {totalPages} ({totalElements}{" "}
-            invitations)
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 rounded-md bg-white border border-ink/[0.08] text-xs text-ink/60">
+          <span className="tabular-nums">
+            Showing Page <span className="font-semibold text-ink">{page + 1}</span> of{" "}
+            {totalPages} ({totalElements} invitations)
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="p-2 rounded-md border border-ink/15 disabled:opacity-40 hover:bg-cream cursor-pointer"
+              className={`${btn.secondary} ${btn.sm} group`}
+              aria-label="Previous page"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="p-2 rounded-md border border-ink/15 disabled:opacity-40 hover:bg-cream cursor-pointer"
+              className={`${btn.secondary} ${btn.sm} group`}
+              aria-label="Next page"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </button>
           </div>
         </div>
       )}
 
       {/* Send Invitation Modal */}
-      {showInviteModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-5 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-              <div className="flex items-center gap-2">
-                <Send className="h-5 w-5 text-teal-brand" />
-                <h3 className="text-lg font-bold text-ink font-heading">
-                  Dispatch New Invitation
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowInviteModal(false)}
-                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={handleSendInviteSubmit}
-              className="space-y-4 text-xs sm:text-sm"
+      <Modal
+        open={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        icon={Send}
+        title="Dispatch New Invitation"
+        description="Invite a colleague and pre-assign their platform role and scope."
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setShowInviteModal(false)}
+              className={btn.secondary}
             >
-              {/* Recipient Email */}
-              <div className="space-y-1">
-                <label className="font-semibold text-ink block">
-                  Work / Recipient Email Address *
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="colleague@careorganisation.co.uk"
-                    value={formEmail}
-                    onChange={(e) => setFormEmail(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-              </div>
-
-              {/* Assigned Role */}
-              <div className="space-y-1">
-                <label className="font-semibold text-ink block">
-                  Assigned Platform Role *
-                </label>
-                <select
-                  required
-                  value={formRole}
-                  onChange={(e) =>
-                    setFormRole(e.target.value as InvitationRole)
-                  }
-                  className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30 font-medium cursor-pointer"
-                >
-                  {invitableRoles.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Destination Organisation Dropdown */}
-              <div className="space-y-1">
-                <label className="font-semibold text-ink flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Building2 className="h-4 w-4 text-teal-brand" />
-                    <span>Destination Organisation</span>
-                  </span>
-                  {isLoadingOrgs && (
-                    <span className="text-xs text-ink/50 flex items-center gap-1">
-                      <RefreshCw className="h-3 w-3 animate-spin text-teal-brand" />{" "}
-                      Loading...
-                    </span>
-                  )}
-                </label>
-                <select
-                  value={formOrgId}
-                  onChange={(e) => {
-                    setFormOrgId(e.target.value);
-                    setFormCareHomeId("");
-                  }}
-                  className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30 font-medium cursor-pointer"
-                >
-                  <option value="">-- Select Organisation --</option>
-                  {organisations
-                    .filter((org) => org.status?.toUpperCase() === "ACTIVE")
-                    .map((org) => (
-                      <option key={org.publicId} value={org.publicId}>
-                        {org.name}
-                      </option>
-                    ))}
-                  {roleAssignments
-                    .filter(
-                      (ra) =>
-                        ra.organisationPublicId &&
-                        !organisations.some(
-                          (o) => o.publicId === ra.organisationPublicId,
-                        ),
-                    )
-                    .map((ra) => (
-                      <option
-                        key={ra.organisationPublicId}
-                        value={ra.organisationPublicId!}
-                      >
-                        {ra.organisationName || ra.organisationPublicId}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              {/* Destination Care Home Dropdown */}
-              <div className="space-y-1">
-                <label className="font-semibold text-ink flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Home className="h-4 w-4 text-teal-brand" />
-                    <span>Care Home Facility</span>
-                  </span>
-                  {isLoadingHomes && (
-                    <span className="text-xs text-ink/50 flex items-center gap-1">
-                      <RefreshCw className="h-3 w-3 animate-spin text-teal-brand" />{" "}
-                      Loading...
-                    </span>
-                  )}
-                </label>
-                <select
-                  value={formCareHomeId}
-                  onChange={(e) => setFormCareHomeId(e.target.value)}
-                  disabled={!formOrgId || isLoadingHomes}
-                  className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30 font-medium cursor-pointer disabled:opacity-60"
-                >
-                  <option value="">
-                    {!formOrgId
-                      ? "Select an organisation above first..."
-                      : isLoadingHomes
-                        ? "Loading care homes..."
-                        : careHomes.filter((h) => h.status?.toUpperCase() === "ACTIVE").length === 0
-                          ? "No active care homes under this organisation"
-                          : "-- Select Care Home Facility --"}
-                  </option>
-                  {careHomes
-                    .filter((home) => home.status?.toUpperCase() === "ACTIVE")
-                    .map((home) => (
-                      <option key={home.publicId} value={home.publicId}>
-                        {home.name} {home.city ? `(${home.city})` : ""}
-                      </option>
-                    ))}
-                  {roleAssignments
-                    .filter(
-                      (ra) =>
-                        ra.careHomePublicId &&
-                        !careHomes.some(
-                          (h) => h.publicId === ra.careHomePublicId,
-                        ),
-                    )
-                    .map((ra) => (
-                      <option
-                        key={ra.careHomePublicId}
-                        value={ra.careHomePublicId!}
-                      >
-                        {ra.careHomeName || ra.careHomePublicId}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              {/* Registration Reference */}
-              <div className="space-y-1">
-                <label className="font-semibold text-ink block">
-                  Registration Reference (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. REF-2026-NURSE-04"
-                  value={formRef}
-                  onChange={(e) => setFormRef(e.target.value)}
-                  className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30 font-mono text-xs"
-                />
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-ink/10">
-                <button
-                  type="button"
-                  onClick={() => setShowInviteModal(false)}
-                  className="px-4 py-2 rounded-md border border-ink/15 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={sendMutation.isPending}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {sendMutation.isPending ? (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                      <span>Sending...</span>
-                    </>
-                  ) : (
-                    <span>Dispatch Invitation</span>
-                  )}
-                </button>
-              </div>
-            </form>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="send-invitation-form"
+              disabled={sendMutation.isPending}
+              className={`${btn.primary} group`}
+            >
+              {sendMutation.isPending ? (
+                <>
+                  <Spinner className="h-3.5 w-3.5" />
+                  <span>Sending...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  <span>Dispatch Invitation</span>
+                </>
+              )}
+            </button>
+          </>
+        }
+      >
+        <form
+          id="send-invitation-form"
+          onSubmit={handleSendInviteSubmit}
+          className="space-y-5"
+        >
+          {/* Recipient Email */}
+          <div>
+            <label className={field.label}>Work / Recipient Email Address *</label>
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/35 pointer-events-none" />
+              <input
+                type="email"
+                required
+                placeholder="colleague@careorganisation.co.uk"
+                value={formEmail}
+                onChange={(e) => setFormEmail(e.target.value)}
+                className={`${field.input} pl-10`}
+              />
+            </div>
           </div>
-        </div>
-      )}
+
+          {/* Assigned Role */}
+          <fieldset>
+            <legend className={field.label}>Assigned Platform Role *</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {invitableRoles.map((r) => {
+                const selected = formRole === r.value;
+                return (
+                  <label
+                    key={r.value}
+                    className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-md border cursor-pointer transition-all hover:-translate-y-0.5 ${
+                      selected
+                        ? "border-teal-brand bg-mint/60 ring-4 ring-teal-brand/10"
+                        : "border-ink/12 bg-white hover:border-teal-brand/40"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="invite-role"
+                      required
+                      value={r.value}
+                      checked={selected}
+                      onChange={() => setFormRole(r.value)}
+                      className="sr-only"
+                    />
+                    <span
+                      className={`grid place-items-center w-7 h-7 rounded-md shrink-0 transition-colors ${
+                        selected ? "bg-teal-brand text-white" : "bg-ink/[0.04] text-ink/45"
+                      }`}
+                    >
+                      {selected ? (
+                        <Check className="h-3.5 w-3.5" />
+                      ) : (
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                      )}
+                    </span>
+                    <span
+                      className={`text-sm font-medium ${selected ? "text-teal-deep" : "text-ink/80"}`}
+                    >
+                      {r.label}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          {/* Destination Organisation Dropdown */}
+          <div>
+            <label className={`${field.label} flex items-center justify-between`}>
+              <span className="flex items-center gap-1.5">
+                <Building2 className="h-3.5 w-3.5 text-teal-brand" />
+                <span>Destination Organisation</span>
+              </span>
+              {isLoadingOrgs && (
+                <span className="text-[11px] font-medium text-ink/50 flex items-center gap-1">
+                  <Spinner className="h-3 w-3 text-teal-brand" /> Loading...
+                </span>
+              )}
+            </label>
+            <select
+              value={formOrgId}
+              onChange={(e) => {
+                setFormOrgId(e.target.value);
+                setFormCareHomeId("");
+              }}
+              className={`${field.input} cursor-pointer`}
+            >
+              <option value="">-- Select Organisation --</option>
+              {organisations
+                .filter((org) => org.status?.toUpperCase() === "ACTIVE")
+                .map((org) => (
+                  <option key={org.publicId} value={org.publicId}>
+                    {org.name}
+                  </option>
+                ))}
+              {roleAssignments
+                .filter(
+                  (ra) =>
+                    ra.organisationPublicId &&
+                    !organisations.some(
+                      (o) => o.publicId === ra.organisationPublicId,
+                    ),
+                )
+                .map((ra) => (
+                  <option
+                    key={ra.organisationPublicId}
+                    value={ra.organisationPublicId!}
+                  >
+                    {ra.organisationName || ra.organisationPublicId}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          {/* Destination Care Home Dropdown */}
+          <div>
+            <label className={`${field.label} flex items-center justify-between`}>
+              <span className="flex items-center gap-1.5">
+                <Home className="h-3.5 w-3.5 text-teal-brand" />
+                <span>Care Home Facility</span>
+              </span>
+              {isLoadingHomes && (
+                <span className="text-[11px] font-medium text-ink/50 flex items-center gap-1">
+                  <Spinner className="h-3 w-3 text-teal-brand" /> Loading...
+                </span>
+              )}
+            </label>
+            <select
+              value={formCareHomeId}
+              onChange={(e) => setFormCareHomeId(e.target.value)}
+              disabled={!formOrgId || isLoadingHomes}
+              className={`${field.input} cursor-pointer`}
+            >
+              <option value="">
+                {!formOrgId
+                  ? "Select an organisation above first..."
+                  : isLoadingHomes
+                    ? "Loading care homes..."
+                    : careHomes.filter((h) => h.status?.toUpperCase() === "ACTIVE").length === 0
+                      ? "No active care homes under this organisation"
+                      : "-- Select Care Home Facility --"}
+              </option>
+              {careHomes
+                .filter((home) => home.status?.toUpperCase() === "ACTIVE")
+                .map((home) => (
+                  <option key={home.publicId} value={home.publicId}>
+                    {home.name} {home.city ? `(${home.city})` : ""}
+                  </option>
+                ))}
+              {roleAssignments
+                .filter(
+                  (ra) =>
+                    ra.careHomePublicId &&
+                    !careHomes.some(
+                      (h) => h.publicId === ra.careHomePublicId,
+                    ),
+                )
+                .map((ra) => (
+                  <option
+                    key={ra.careHomePublicId}
+                    value={ra.careHomePublicId!}
+                  >
+                    {ra.careHomeName || ra.careHomePublicId}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          {/* Registration Reference */}
+          <div>
+            <label className={field.label}>Registration Reference (Optional)</label>
+            <div className="relative">
+              <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/35 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="e.g. REF-2026-NURSE-04"
+                value={formRef}
+                onChange={(e) => setFormRef(e.target.value)}
+                className={`${field.input} pl-10 font-mono`}
+              />
+            </div>
+          </div>
+        </form>
+      </Modal>
 
       {/* Revoke Confirmation Dialog */}
-      {revokingId && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center gap-2 text-red-600">
-              <ShieldAlert className="h-6 w-6" />
-              <h3 className="text-base font-bold text-ink">
-                Revoke Invitation
-              </h3>
-            </div>
-            <p className="text-xs text-ink/70 leading-relaxed">
-              Are you sure you want to revoke this invitation? The recipient
-              will no longer be able to use their onboarding link to activate
-              their account.
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                onClick={() => setRevokingId(null)}
-                className="px-3 py-1.5 rounded-md border border-ink/15 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
-              >
-                Keep Active
-              </button>
-              <button
-                onClick={handleConfirmRevoke}
-                disabled={revokeMutation.isPending}
-                className="px-4 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-semibold cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-              >
-                {revokeMutation.isPending ? (
-                  <>
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                    <span>Revoking...</span>
-                  </>
-                ) : (
-                  <span>Revoke Invitation</span>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={Boolean(revokingId)}
+        onClose={() => setRevokingId(null)}
+        size="sm"
+        tone="danger"
+        icon={ShieldAlert}
+        title="Revoke Invitation"
+        footer={
+          <>
+            <button onClick={() => setRevokingId(null)} className={btn.secondary}>
+              Keep Active
+            </button>
+            <button
+              onClick={handleConfirmRevoke}
+              disabled={revokeMutation.isPending}
+              className={btn.danger}
+            >
+              {revokeMutation.isPending ? (
+                <>
+                  <Spinner className="h-3.5 w-3.5" />
+                  <span>Revoking...</span>
+                </>
+              ) : (
+                <span>Revoke Invitation</span>
+              )}
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-ink/70 leading-relaxed">
+          Are you sure you want to revoke this invitation? The recipient will no
+          longer be able to use their onboarding link to activate their account.
+        </p>
+      </Modal>
 
       {/* Details View Modal */}
       {viewingInvitation && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-              <div className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-teal-brand" />
-                <h3 className="text-lg font-bold text-ink">
-                  Invitation Details
-                </h3>
+        <Modal
+          open
+          onClose={() => setViewingInvitation(null)}
+          size="sm"
+          icon={Mail}
+          title="Invitation Details"
+          description={viewingInvitation.email}
+          footer={
+            <button onClick={() => setViewingInvitation(null)} className={btn.primary}>
+              Close
+            </button>
+          }
+        >
+          <div className="space-y-4">
+            <dl className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-md bg-ink/[0.02] border border-ink/[0.08]">
+                <DataItem label="Status">
+                  <StatusBadge status={viewingInvitation.status} />
+                </DataItem>
               </div>
-              <button
-                onClick={() => setViewingInvitation(null)}
-                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              {/* <div className="p-3 rounded-md bg-cream/40 border border-ink/10 space-y-1">
-                <span className="text-[10px] uppercase font-bold text-ink/50">
-                  Invitation Public ID
-                </span>
-                <div className="flex items-center justify-between font-mono text-[11px] text-ink break-all">
-                  <span>{viewingInvitation.publicId}</span>
-                  <button
-                    onClick={() =>
-                      handleCopy(
-                        viewingInvitation.publicId,
-                        viewingInvitation.publicId,
-                      )
-                    }
-                    className="p-1 text-teal-brand hover:text-teal-deep cursor-pointer shrink-0"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div> */}
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="p-2.5 rounded-md bg-cream/30 border border-ink/10">
-                  <span className="text-[10px] uppercase font-bold text-ink/50 block">
-                    Status
-                  </span>
-                  <span className="font-semibold text-ink">
-                    {viewingInvitation.status}
-                  </span>
-                </div>
-                <div className="p-2.5 rounded-md bg-cream/30 border border-ink/10">
-                  <span className="text-[10px] uppercase font-bold text-ink/50 block">
-                    Assigned Role
-                  </span>
-                  <span className="font-semibold text-teal-deep">
-                    {viewingInvitation.role}
-                  </span>
-                </div>
+              <div className="p-3 rounded-md bg-ink/[0.02] border border-ink/[0.08]">
+                <DataItem label="Assigned Role">
+                  <span className="text-teal-deep">{viewingInvitation.role}</span>
+                </DataItem>
               </div>
+            </dl>
 
-              <div className="space-y-2 border-t border-ink/10 pt-3">
-                <div className="flex justify-between">
-                  <span className="text-ink/60">Recipient:</span>
-                  <span className="font-medium text-ink">
-                    {viewingInvitation.email}
-                  </span>
-                </div>
-                {viewingInvitation.organisationName && (
-                  <div className="flex justify-between">
-                    <span className="text-ink/60">Organisation:</span>
-                    <span className="font-medium text-ink">
-                      {viewingInvitation.organisationName}
-                    </span>
-                  </div>
-                )}
-                {viewingInvitation.careHomeName && (
-                  <div className="flex justify-between">
-                    <span className="text-ink/60">Care Home:</span>
-                    <span className="font-medium text-ink">
-                      {viewingInvitation.careHomeName}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-ink/60">Dispatched:</span>
-                  <span className="font-medium text-ink">
-                    {new Date(viewingInvitation.createdAt).toLocaleString()}
-                  </span>
-                </div>
-                {viewingInvitation.expiresAt && (
-                  <div className="flex justify-between">
-                    <span className="text-ink/60">Expires:</span>
-                    <span className="font-medium text-ink">
-                      {new Date(viewingInvitation.expiresAt).toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                {viewingInvitation.acceptedAt && (
-                  <div className="flex justify-between text-emerald-700">
-                    <span>Accepted:</span>
-                    <span className="font-semibold">
-                      {new Date(viewingInvitation.acceptedAt).toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                {viewingInvitation.revokedAt && (
-                  <div className="flex justify-between text-red-600">
-                    <span>Revoked:</span>
-                    <span className="font-semibold">
-                      {new Date(viewingInvitation.revokedAt).toLocaleString()}
-                    </span>
-                  </div>
-                )}
+            <dl className="divide-y divide-ink/[0.06] rounded-md border border-ink/[0.08] text-xs">
+              <div className="flex items-start justify-between gap-4 px-3.5 py-2.5">
+                <dt className="flex items-center gap-1.5 text-ink/55 shrink-0">
+                  <Mail className="h-3.5 w-3.5" />
+                  Recipient
+                </dt>
+                <dd className="font-medium text-ink text-right break-all">
+                  {viewingInvitation.email}
+                </dd>
               </div>
-            </div>
-
-            <div className="pt-3 border-t border-ink/10 flex justify-end">
-              <button
-                onClick={() => setViewingInvitation(null)}
-                className="px-4 py-1.5 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
+              {viewingInvitation.organisationName && (
+                <div className="flex items-start justify-between gap-4 px-3.5 py-2.5">
+                  <dt className="flex items-center gap-1.5 text-ink/55 shrink-0">
+                    <Building2 className="h-3.5 w-3.5" />
+                    Organisation
+                  </dt>
+                  <dd className="font-medium text-ink text-right">
+                    {viewingInvitation.organisationName}
+                  </dd>
+                </div>
+              )}
+              {viewingInvitation.careHomeName && (
+                <div className="flex items-start justify-between gap-4 px-3.5 py-2.5">
+                  <dt className="flex items-center gap-1.5 text-ink/55 shrink-0">
+                    <Home className="h-3.5 w-3.5" />
+                    Care Home
+                  </dt>
+                  <dd className="font-medium text-ink text-right">
+                    {viewingInvitation.careHomeName}
+                  </dd>
+                </div>
+              )}
+              <div className="flex items-start justify-between gap-4 px-3.5 py-2.5">
+                <dt className="flex items-center gap-1.5 text-ink/55 shrink-0">
+                  <Send className="h-3.5 w-3.5" />
+                  Dispatched
+                </dt>
+                <dd className="font-medium text-ink text-right">
+                  {new Date(viewingInvitation.createdAt).toLocaleString()}
+                </dd>
+              </div>
+              {viewingInvitation.expiresAt && (
+                <div className="flex items-start justify-between gap-4 px-3.5 py-2.5">
+                  <dt className="flex items-center gap-1.5 text-ink/55 shrink-0">
+                    <Calendar className="h-3.5 w-3.5" />
+                    Expires
+                  </dt>
+                  <dd className="font-medium text-ink text-right">
+                    {new Date(viewingInvitation.expiresAt).toLocaleString()}
+                  </dd>
+                </div>
+              )}
+              {viewingInvitation.acceptedAt && (
+                <div className="flex items-start justify-between gap-4 px-3.5 py-2.5 bg-emerald-50/50 text-emerald-700">
+                  <dt className="flex items-center gap-1.5 shrink-0">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Accepted
+                  </dt>
+                  <dd className="font-semibold text-right">
+                    {new Date(viewingInvitation.acceptedAt).toLocaleString()}
+                  </dd>
+                </div>
+              )}
+              {viewingInvitation.revokedAt && (
+                <div className="flex items-start justify-between gap-4 px-3.5 py-2.5 bg-red-50/50 text-red-600">
+                  <dt className="flex items-center gap-1.5 shrink-0">
+                    <XCircle className="h-3.5 w-3.5" />
+                    Revoked
+                  </dt>
+                  <dd className="font-semibold text-right">
+                    {new Date(viewingInvitation.revokedAt).toLocaleString()}
+                  </dd>
+                </div>
+              )}
+            </dl>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

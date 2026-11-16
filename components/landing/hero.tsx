@@ -13,15 +13,16 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { Tilt } from "@/components/ui/motion";
+import LiveFeed from "./live-feed";
 
 export default function Hero() {
   return (
-    <section id="top" className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 z-10">
+    <section id="top" className="relative pt-28 pb-16 sm:pt-32 sm:pb-20 lg:pt-40 lg:pb-28 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-12 gap-14 lg:gap-10 items-center">
           {/* Left: copy */}
           <div className="lg:col-span-7 space-y-8 stagger">
-            <h1 className="text-[2.75rem] sm:text-6xl lg:text-7xl leading-[1.04] tracking-tight text-slate-900 dark:text-white font-heading">
+            <h1 className="text-[2.5rem] sm:text-6xl lg:text-7xl leading-[1.04] tracking-tight text-slate-900 dark:text-white font-heading">
               <span className="font-serif italic font-normal text-slate-700 dark:text-slate-200">
                 Give your team
               </span>
@@ -95,7 +96,7 @@ export default function Hero() {
 
             <Tilt max={5}>
               <div className="relative rounded-md overflow-hidden glass-card border border-white/60 dark:border-white/10 shadow-2xl shadow-emerald-900/20">
-                <div className="relative h-[440px] sm:h-[500px] w-full overflow-hidden group">
+                <div className="relative h-[380px] sm:h-[500px] w-full overflow-hidden group">
                   <Image
                     src="/images/hero-care.jpg"
                     alt="Compassionate caregiver interacting warmly with an elderly resident"
@@ -128,24 +129,7 @@ export default function Hero() {
                 {/* Bottom HUD */}
                 <div className="absolute bottom-4 left-4 right-4">
                   <div className="glass dark:bg-slate-900/90 rounded-md p-4 border border-white/50 dark:border-white/15 shadow-2xl space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-700 text-white font-bold text-xs flex flex-none items-center justify-center shadow-sm">
-                          EV
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-xs font-bold text-slate-900 dark:text-white">
-                            Eleanor Vance, 84
-                          </div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                            BP 124/82 mmHg • Metformin 500mg taken
-                          </div>
-                        </div>
-                      </div>
-                      <span className="text-[10px] whitespace-nowrap font-mono text-emerald-600 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10">
-                        09:15 AM
-                      </span>
-                    </div>
+                    <LiveFeed />
 
                     {/* Round progress */}
                     <div className="space-y-1.5">

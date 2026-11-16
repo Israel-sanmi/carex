@@ -7,9 +7,10 @@ import Logo from "./logo";
 import ThemeToggle from "./theme-toggle";
 
 const links = [
-  { label: "Features", href: "#features" },
+  { label: "Platform", href: "#platform" },
   { label: "Solutions", href: "#roles" },
   { label: "Impact", href: "#impact" },
+  { label: "How it works", href: "#how-it-works" },
   { label: "Reviews", href: "#reviews" },
   { label: "FAQ", href: "#faq" },
 ];

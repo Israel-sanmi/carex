@@ -14,33 +14,47 @@ import {
 import { useOrganisations } from "@/lib/hooks/use-organisations";
 import { useCareHomesByOrganisation } from "@/lib/hooks/use-care-homes";
 import { UserItem, UserRole, UserStatus, UserRoleAssignment } from "@/lib/api-users";
-import { toast } from "@/components/ui/toast";
+import StatCard from "@/components/dashboard/stat-card";
+import {
+  btn,
+  field,
+  table,
+  PageHeader,
+  Panel,
+  Toolbar,
+  SearchField,
+  Segmented,
+  Badge,
+  StatusBadge,
+  Avatar,
+  EmptyState,
+  ErrorState,
+  Skeleton,
+  SkeletonRows,
+  Spinner,
+  Modal,
+} from "@/components/dashboard/ui";
 import {
   Users,
-  Search,
   Filter,
   CheckCircle2,
-  XCircle,
   Building2,
   Home,
   AlertCircle,
   AlertTriangle,
-  Eye,
   Mail,
   Phone,
-  Calendar,
   ShieldCheck,
-  ShieldAlert,
   Shield,
   Edit2,
   Plus,
   Trash2,
   RefreshCw,
-  X,
-  Check,
   ChevronLeft,
   ChevronRight,
   UserCheck,
+  Clock,
+  RotateCcw,
 } from "lucide-react";
 
 const ALLOWED_VIEWER_ROLES = [
@@ -225,157 +239,131 @@ export default function UsersPage() {
 
   if (!isAuthorized) {
     return (
-      <div className="p-8 rounded-md bg-white border border-ink/10 text-center max-w-xl mx-auto space-y-4 my-12 shadow-xs">
-        <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
-          <AlertTriangle className="h-6 w-6" />
+      <div className="space-y-6">
+        <div className="max-w-xl mx-auto my-12 bg-white border border-ink/[0.08] rounded-md">
+          <EmptyState
+            icon={AlertTriangle}
+            title="Restricted Administration Domain"
+            description="User management and role provisioning are restricted to platform and organisation administrators."
+          />
         </div>
-        <h2 className="text-xl font-bold text-ink font-heading">
-          Restricted Administration Domain
-        </h2>
-        <p className="text-xs text-ink/70 leading-relaxed">
-          User management and role provisioning are restricted to platform and
-          organisation administrators.
-        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-ink font-heading">
-              User Directory & Identity
-            </h1>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
-              {isLoading ? "—" : totalElements} Accounts
-            </span>
-          </div>
-          <p className="text-sm text-ink/70 mt-1">
-            Manage user accounts, assign facility roles, and configure identity
-            credentials.
-          </p>
-        </div>
+      <PageHeader
+        icon={Users}
+        eyebrow={
+          <Badge tone="teal" dot>
+            {isLoading ? "—" : totalElements} Accounts
+          </Badge>
+        }
+        title="User Directory & Identity"
+        description="Manage user accounts, assign facility roles, and configure identity credentials."
+        actions={
+          <>
+            <button
+              onClick={() => refetch()}
+              disabled={isLoading}
+              className={`${btn.secondary} group`}
+            >
+              <RefreshCw
+                className={`h-4 w-4 transition-transform duration-500 group-hover:rotate-180 ${
+                  isLoading ? "animate-spin" : ""
+                }`}
+              />
+              Refresh
+            </button>
 
-        <div className="flex items-center gap-2 self-start md:self-auto">
-          <button
-            onClick={() => refetch()}
-            disabled={isLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-md border border-ink/10 bg-white hover:bg-cream text-ink/80 hover:text-ink transition-all cursor-pointer shadow-xs"
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </button>
-
-          <Link
-            href="/dashboard/invitations"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
-          >
-            <Mail className="h-4 w-4" />
-            <span>Invite New User</span>
-          </Link>
-        </div>
-      </div>
+            <Link href="/dashboard/invitations" className={`${btn.primary} group`}>
+              <Mail className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
+              <span>Invite New User</span>
+            </Link>
+          </>
+        }
+      />
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs">
-          <span className="text-xs font-semibold text-ink/60 uppercase tracking-wider">
-            Total Accounts
-          </span>
-          <p className="text-3xl font-bold text-ink mt-1">
-            {isLoading ? "—" : totalElements}
-          </p>
-          <span className="text-xs text-ink/60">Registered users</span>
-        </div>
-
-        <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs">
-          <span className="text-xs font-semibold text-ink/60 uppercase tracking-wider">
-            Active Accounts
-          </span>
-          <p className="text-3xl font-bold text-emerald-700 mt-1">
-            {isLoading
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatCard
+          className="col-span-2 lg:col-span-1"
+          label="Total Accounts"
+          value={isLoading ? "—" : totalElements}
+          icon={Users}
+          tone="teal"
+          hint="Registered users"
+          hintMuted
+        />
+        <StatCard
+          label="Active Accounts"
+          value={
+            isLoading
               ? "—"
-              : usersList.filter((u) => u.status?.toUpperCase() === "ACTIVE").length}
-          </p>
-          <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1">
-            <CheckCircle2 className="h-3 w-3" />
-            Operational users in view
-          </span>
-        </div>
-
-        <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs">
-          <span className="text-xs font-semibold text-ink/60 uppercase tracking-wider">
-            Pending / Suspended
-          </span>
-          <p className="text-3xl font-bold text-amber-700 mt-1">
-            {isLoading
+              : usersList.filter((u) => u.status?.toUpperCase() === "ACTIVE").length
+          }
+          icon={CheckCircle2}
+          tone="sky"
+          hint="Operational users in view"
+        />
+        <StatCard
+          label="Pending / Suspended"
+          value={
+            isLoading
               ? "—"
               : usersList.filter(
                   (u) =>
                     u.status?.toUpperCase() === "PENDING" ||
                     u.status?.toUpperCase() === "SUSPENDED"
-                ).length}
-          </p>
-          <span className="text-xs text-ink/60">Requires attention</span>
-        </div>
+                ).length
+          }
+          icon={Clock}
+          tone="sun"
+          hint="Requires attention"
+          hintMuted
+        />
       </div>
 
       {/* Filters Bar */}
       <div className="space-y-3">
         {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink/[0.04] border border-ink/[0.07] overflow-x-auto scrollbar-none">
-          {STATUS_FILTERS.map((st) => {
-            const isActive = selectedStatus === st.value;
-            return (
-              <button
-                key={st.value}
-                onClick={() => {
-                  setSelectedStatus(st.value);
-                  setPage(0);
-                }}
-                className={`tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
-                  isActive
-                    ? "bg-teal-brand text-white shadow-xs"
-                    : "text-ink/65 hover:text-ink hover:bg-white/60"
-                }`}
-              >
-                <span>{st.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        <Segmented
+          value={selectedStatus}
+          onChange={(v) => {
+            setSelectedStatus(v);
+            setPage(0);
+          }}
+          options={STATUS_FILTERS.map((st) => ({ value: st.value, label: st.label }))}
+          className="w-full sm:w-auto"
+        />
 
         {/* Search & Role Filter Bar */}
-        <div className="p-4 rounded-md bg-white border border-ink/10 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
-            <input
-              type="text"
-              placeholder="Search by name, email, phone or org..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setPage(0);
-              }}
-              className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all text-ink"
-            />
-          </div>
+        <Toolbar>
+          <SearchField
+            value={searchTerm}
+            onChange={(v) => {
+              setSearchTerm(v);
+              setPage(0);
+            }}
+            placeholder="Search by name, email, phone or org..."
+            className="md:max-w-md"
+          />
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Filter className="h-4 w-4 text-ink/40" />
-            <span className="text-xs text-ink/60 font-medium">Role:</span>
+          <div className="flex items-center gap-2 w-full md:w-auto md:ml-auto">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-ink/55 font-medium shrink-0">
+              <Filter className="h-3.5 w-3.5" />
+              Role
+            </span>
             <select
               value={selectedRole}
               onChange={(e) => {
                 setSelectedRole(e.target.value as UserRole);
                 setPage(0);
               }}
-              className="text-xs rounded-md border border-ink/10 px-3 py-2 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium text-ink"
+              aria-label="Filter by role"
+              className={`${field.input} md:w-56 cursor-pointer`}
             >
               <option value="">All Roles</option>
               {AVAILABLE_ROLES.map((r) => (
@@ -393,297 +381,360 @@ export default function UsersPage() {
                   setSelectedRole("");
                   setPage(0);
                 }}
-                className="text-xs text-teal-deep font-semibold hover:underline cursor-pointer ml-1"
+                className={`${btn.ghost} shrink-0 text-teal-deep`}
               >
+                <RotateCcw className="h-3.5 w-3.5" />
                 Reset
               </button>
             )}
           </div>
-        </div>
+        </Toolbar>
       </div>
 
       {/* Main Table */}
-      <div className="rounded-md bg-white border border-ink/10 shadow-xs overflow-hidden">
+      <Panel
+        flush
+        icon={Users}
+        title="User accounts"
+        description="Select a user to manage their role assignments"
+      >
         {isLoading ? (
-          <div className="p-8 space-y-4">
-            <div className="h-6 w-48 skeleton rounded-md" />
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-12 w-full skeleton rounded-md" />
-              ))}
-            </div>
-          </div>
+          <SkeletonRows rows={5} />
         ) : isError ? (
-          <div className="p-12 text-center space-y-3">
-            <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
-            <p className="font-bold text-ink text-sm">Failed to load users</p>
-            <p className="text-xs text-ink/60">
-              There was an issue retrieving the user directory from the server.
-            </p>
-            <button
-              onClick={() => refetch()}
-              className="px-4 py-1.5 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer"
-            >
-              Retry
-            </button>
+          <div className="p-5">
+            <ErrorState
+              title="Failed to load users"
+              message="There was an issue retrieving the user directory from the server."
+              onRetry={() => refetch()}
+            />
           </div>
         ) : usersList.length === 0 ? (
-          <div className="p-12 text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-cream text-ink/40 flex items-center justify-center mx-auto">
-              <Users className="h-6 w-6" />
-            </div>
-            <h3 className="font-bold text-ink text-sm">No users found</h3>
-            <p className="text-xs text-ink/60 max-w-sm mx-auto">
-              {searchTerm || selectedStatus || selectedRole
+          <EmptyState
+            icon={Users}
+            title="No users found"
+            description={
+              searchTerm || selectedStatus || selectedRole
                 ? "No user records match your search criteria. Try adjusting or clearing filters."
-                : "No registered users exist in this partition."}
-            </p>
-          </div>
+                : "No registered users exist in this partition."
+            }
+          />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="whitespace-nowrap w-full text-left text-xs text-ink">
-              <thead className="bg-cream/40 border-b border-ink/10 text-ink/60 font-semibold uppercase tracking-wider text-[11px]">
-                <tr>
-                  <th className="py-3.5 px-6">User / Identity</th>
-                  <th className="py-3.5 px-4">Contact Details</th>
-                  <th className="py-3.5 px-4">Organisation</th>
-                  <th className="py-3.5 px-4">Email Verification</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink/5">
-                {usersList.map((u) => {
-                  const fullName = `${u.firstName || ""} ${
-                    u.middleName ? u.middleName + " " : ""
-                  }${u.lastName || ""}`.trim() || "Unnamed User";
-                  const initials =
-                    ((u.firstName?.[0] || "") + (u.lastName?.[0] || "")).toUpperCase() ||
-                    "U";
+          <>
+            {/* Desktop table */}
+            <div className={`hidden md:block ${table.wrap}`}>
+              <table className={table.table}>
+                <thead>
+                  <tr>
+                    <th className={table.th}>User / Identity</th>
+                    <th className={table.th}>Contact Details</th>
+                    <th className={table.th}>Organisation</th>
+                    <th className={table.th}>Email Verification</th>
+                    <th className={table.th}>Status</th>
+                    <th className={`${table.th} text-right`}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usersList.map((u) => {
+                    const fullName = `${u.firstName || ""} ${
+                      u.middleName ? u.middleName + " " : ""
+                    }${u.lastName || ""}`.trim() || "Unnamed User";
 
-                  return (
-                    <tr
-                      key={u.publicId}
-                      className="hover:bg-cream/20 transition-colors cursor-pointer"
-                      onClick={() => handleOpenManageRoles(u)}
-                    >
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-teal-deep font-bold text-xs shadow-xs">
-                            {initials}
+                    return (
+                      <tr
+                        key={u.publicId}
+                        className={`${table.tr} cursor-pointer`}
+                        onClick={() => handleOpenManageRoles(u)}
+                      >
+                        <td className={table.td}>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Avatar
+                              name={`${u.firstName || ""} ${u.lastName || ""}`.trim() || "U"}
+                              className="transition-transform duration-300 group-hover:scale-105"
+                            />
+                            <div className="min-w-0">
+                              <div className="font-semibold text-sm text-ink truncate max-w-[16rem]">
+                                {fullName}
+                              </div>
+                              <div className="text-[10px] text-ink/45 font-mono truncate max-w-[16rem]">
+                                {u.publicId}
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="font-bold text-sm text-ink">
+                        </td>
+
+                        <td className={table.td}>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5 text-ink text-xs">
+                              <Mail className="h-3.5 w-3.5 text-ink/35 shrink-0" />
+                              <span className="truncate max-w-[14rem]">{u.email}</span>
+                            </div>
+                            {u.phone && (
+                              <div className="flex items-center gap-1.5 text-ink/55 text-[11px]">
+                                <Phone className="h-3 w-3 text-ink/35 shrink-0" />
+                                <span>{u.phone}</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className={table.td}>
+                          <div className="flex items-center gap-1.5 text-xs font-medium text-ink">
+                            <Building2 className="h-3.5 w-3.5 text-teal-brand shrink-0" />
+                            <span className="truncate max-w-[12rem]">
+                              {u.organisationName || "Unassigned"}
+                            </span>
+                          </div>
+                        </td>
+
+                        <td className={table.td}>
+                          {u.emailVerified ? (
+                            <Badge tone="green" icon={CheckCircle2}>
+                              Verified
+                            </Badge>
+                          ) : (
+                            <Badge tone="amber" icon={AlertCircle}>
+                              Unverified
+                            </Badge>
+                          )}
+                        </td>
+
+                        <td className={table.td}>
+                          <StatusBadge status={u.status} />
+                        </td>
+
+                        <td className={`${table.td} text-right`}>
+                          <div
+                            className="flex items-center justify-end gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={() => handleOpenManageRoles(u)}
+                              className={`${btn.ghost} ${btn.sm} text-teal-deep hover:bg-mint`}
+                              title="Manage user role assignments"
+                            >
+                              <Shield className="h-3.5 w-3.5" />
+                              Roles
+                            </button>
+
+                            <button
+                              onClick={() => handleOpenEdit(u)}
+                              className={btn.icon}
+                              title="Edit user details"
+                              aria-label="Edit user details"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <ul className="md:hidden divide-y divide-ink/[0.06]">
+              {usersList.map((u) => {
+                const fullName = `${u.firstName || ""} ${
+                  u.middleName ? u.middleName + " " : ""
+                }${u.lastName || ""}`.trim() || "Unnamed User";
+
+                return (
+                  <li
+                    key={u.publicId}
+                    className="p-4 cursor-pointer transition-colors active:bg-mint/40 hover:bg-mint/20"
+                    onClick={() => handleOpenManageRoles(u)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Avatar name={`${u.firstName || ""} ${u.lastName || ""}`.trim() || "U"} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="font-semibold text-sm text-ink truncate">
                               {fullName}
                             </div>
-                            <div className="text-[10px] text-ink/50 font-mono">
-                              {u.publicId}
+                            <div className="flex items-center gap-1.5 text-xs text-ink/60 mt-0.5 min-w-0">
+                              <Mail className="h-3 w-3 text-ink/35 shrink-0" />
+                              <span className="truncate">{u.email}</span>
                             </div>
                           </div>
+                          <StatusBadge status={u.status} className="shrink-0" />
                         </div>
-                      </td>
 
-                      <td className="py-4 px-4 space-y-0.5">
-                        <div className="flex items-center gap-1.5 text-ink">
-                          <Mail className="h-3.5 w-3.5 text-ink/40" />
-                          <span>{u.email}</span>
-                        </div>
-                        {u.phone && (
-                          <div className="flex items-center gap-1.5 text-ink/60 text-[11px]">
-                            <Phone className="h-3 w-3 text-ink/40" />
-                            <span>{u.phone}</span>
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-1.5 font-medium text-ink">
-                          <Building2 className="h-3.5 w-3.5 text-teal-brand shrink-0" />
-                          <span>{u.organisationName || "Unassigned"}</span>
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-4">
-                        {u.emailVerified ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Verified
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-ink/60">
+                          {u.phone && (
+                            <span className="inline-flex items-center gap-1">
+                              <Phone className="h-3 w-3 text-ink/35" />
+                              {u.phone}
+                            </span>
+                          )}
+                          <span className="inline-flex items-center gap-1 min-w-0">
+                            <Building2 className="h-3 w-3 text-teal-brand shrink-0" />
+                            <span className="truncate">{u.organisationName || "Unassigned"}</span>
                           </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                            <AlertCircle className="h-3 w-3" />
-                            Unverified
-                          </span>
-                        )}
-                      </td>
+                          {u.emailVerified ? (
+                            <Badge tone="green" icon={CheckCircle2}>
+                              Verified
+                            </Badge>
+                          ) : (
+                            <Badge tone="amber" icon={AlertCircle}>
+                              Unverified
+                            </Badge>
+                          )}
+                        </div>
 
-                      <td className="py-4 px-4">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                            u.status?.toUpperCase() === "ACTIVE"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : u.status?.toUpperCase() === "PENDING"
-                              ? "bg-amber-50 text-amber-700 border border-amber-200"
-                              : u.status?.toUpperCase() === "SUSPENDED"
-                              ? "bg-rose-50 text-rose-700 border border-rose-200"
-                              : "bg-ink/5 text-ink/70 border border-ink/10"
-                          }`}
-                        >
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              u.status?.toUpperCase() === "ACTIVE"
-                                ? "bg-emerald-500"
-                                : u.status?.toUpperCase() === "PENDING"
-                                ? "bg-amber-500"
-                                : "bg-rose-500"
-                            }`}
-                          />
-                          {u.status}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-6 text-right">
                         <div
-                          className="flex items-center justify-end gap-1.5"
+                          className="mt-3 flex items-center gap-2"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <button
                             onClick={() => handleOpenManageRoles(u)}
-                            className="px-2.5 py-1.5 rounded-md bg-cream hover:bg-mint text-teal-deep text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1"
+                            className={`${btn.secondary} ${btn.sm} flex-1`}
                             title="Manage user role assignments"
                           >
-                            <Shield className="h-3.5 w-3.5" />
+                            <Shield className="h-3.5 w-3.5 text-teal-brand" />
                             Roles
                           </button>
-
                           <button
                             onClick={() => handleOpenEdit(u)}
-                            className="px-2.5 py-1.5 rounded-md border border-ink/10 hover:bg-cream text-ink/80 text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1"
+                            className={`${btn.secondary} ${btn.sm} flex-1`}
                             title="Edit user details"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
                             Edit
                           </button>
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="p-4 border-t border-ink/10 flex items-center justify-between text-xs text-ink/60">
-            <span>
-              Page {page + 1} of {totalPages} ({totalElements} users)
+          <div className="px-5 py-3.5 border-t border-ink/[0.06] bg-[#f8faf9] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-ink/60">
+            <span className="tabular-nums">
+              Page <span className="font-semibold text-ink">{page + 1}</span> of {totalPages} (
+              {totalElements} users)
             </span>
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="px-3 py-1.5 rounded-md border border-ink/10 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-cream font-medium cursor-pointer inline-flex items-center gap-1"
+                className={`${btn.secondary} ${btn.sm} group`}
               >
-                <ChevronLeft className="h-3.5 w-3.5" />
+                <ChevronLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
                 Previous
               </button>
               <button
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1.5 rounded-md border border-ink/10 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-cream font-medium cursor-pointer inline-flex items-center gap-1"
+                className={`${btn.secondary} ${btn.sm} group`}
               >
                 Next
-                <ChevronRight className="h-3.5 w-3.5" />
+                <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </button>
             </div>
           </div>
         )}
-      </div>
+      </Panel>
 
       {/* -------------------------------------------------------------------- */}
       {/* MODAL 1: Manage Roles & Permissions                                  */}
       {/* -------------------------------------------------------------------- */}
       {managingRolesUser && (
-        <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95">
-            <div className="flex items-start justify-between border-b border-ink/10 pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
-                    Identity & Access Management
-                  </span>
-                  <span className="text-xs font-mono text-ink/50">
-                    ID: {managingRolesUser.publicId}
-                  </span>
-                </div>
-                <h2 className="text-xl font-bold text-ink font-heading mt-1">
-                  Manage Roles: {managingRolesUser.firstName}{" "}
-                  {managingRolesUser.lastName}
-                </h2>
-                <p className="text-xs text-ink/60">{managingRolesUser.email}</p>
-              </div>
-
-              <button
-                onClick={() => setManagingRolesUser(null)}
-                className="text-ink/40 hover:text-ink p-1 rounded-md cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+        <Modal
+          open
+          onClose={() => setManagingRolesUser(null)}
+          size="lg"
+          icon={Shield}
+          title={
+            <>
+              Manage Roles: {managingRolesUser.firstName} {managingRolesUser.lastName}
+            </>
+          }
+          description={managingRolesUser.email}
+          footer={
+            <button
+              type="button"
+              onClick={() => setManagingRolesUser(null)}
+              className={btn.secondary}
+            >
+              Done
+            </button>
+          }
+        >
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone="teal" icon={ShieldCheck}>
+                Identity & Access Management
+              </Badge>
+              <span className="text-[11px] font-mono text-ink/45 break-all">
+                ID: {managingRolesUser.publicId}
+              </span>
             </div>
 
             {/* Current Assigned Roles */}
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
+              <h3 className="text-xs font-semibold text-ink uppercase tracking-wider flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4 text-teal-brand" />
-                Active Role Assignments ({rolesData?.length ?? 0})
+                Active Role Assignments
+                <span className="px-1.5 rounded-full bg-ink/[0.06] text-[10px] text-ink/60 tabular-nums">
+                  {rolesData?.length ?? 0}
+                </span>
               </h3>
 
               {isLoadingRoles ? (
                 <div className="space-y-2">
-                  <div className="h-12 w-full skeleton rounded-md" />
-                  <div className="h-12 w-full skeleton rounded-md" />
+                  <Skeleton className="h-14 w-full" />
+                  <Skeleton className="h-14 w-full" />
                 </div>
               ) : rolesData && rolesData.length > 0 ? (
-                <div className="space-y-2">
+                <ul className="space-y-2">
                   {rolesData.map((ra) => (
-                    <div
+                    <li
                       key={ra.assignmentPublicId}
-                      className="p-3.5 rounded-md bg-cream/30 border border-ink/10 flex items-center justify-between gap-4 text-xs"
+                      className="p-3.5 rounded-md bg-white border border-ink/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all hover:border-teal-brand/30 hover:shadow-sm"
                     >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded bg-teal-brand text-white font-bold text-[10px]">
-                            {ra.role}
-                          </span>
-                          {ra.assignedAt && (
-                            <span className="text-[10px] text-ink/50">
-                              Assigned: {new Date(ra.assignedAt).toLocaleDateString()}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-ink/80 flex flex-wrap items-center gap-x-3 text-[11px]">
-                          {ra.organisationName && (
-                            <span className="flex items-center gap-1">
-                              <Building2 className="h-3 w-3 text-ink/40" />
-                              {ra.organisationName}
-                            </span>
-                          )}
-                          {ra.careHomeName && (
-                            <span className="flex items-center gap-1">
-                              <Home className="h-3 w-3 text-ink/40" />
-                              {ra.careHomeName}
-                            </span>
-                          )}
+                      <div className="flex items-start gap-3 min-w-0">
+                        <span className="grid place-items-center w-9 h-9 rounded-md bg-mint text-teal-brand shrink-0">
+                          <ShieldCheck className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge tone="teal">{ra.role}</Badge>
+                            {ra.assignedAt && (
+                              <span className="text-[10px] text-ink/50">
+                                Assigned: {new Date(ra.assignedAt).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-ink/70 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
+                            {ra.organisationName && (
+                              <span className="flex items-center gap-1">
+                                <Building2 className="h-3 w-3 text-ink/40" />
+                                {ra.organisationName}
+                              </span>
+                            )}
+                            {ra.careHomeName && (
+                              <span className="flex items-center gap-1">
+                                <Home className="h-3 w-3 text-ink/40" />
+                                {ra.careHomeName}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                         <button
                           onClick={() => handleToggleStatus(managingRolesUser, ra)}
                           disabled={updateRoleStatusMutation.isPending}
-                          className="px-2.5 py-1 rounded border border-ink/15 text-[11px] font-semibold text-ink/70 hover:bg-cream cursor-pointer"
+                          className={`${btn.secondary} ${btn.sm}`}
                         >
                           {managingRolesUser.status === "ACTIVE"
                             ? "Suspend"
@@ -693,17 +744,18 @@ export default function UsersPage() {
                         <button
                           onClick={() => handleRevokeRole(ra.assignmentPublicId)}
                           disabled={revokeRoleMutation.isPending}
-                          className="p-1.5 rounded text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
+                          className={`${btn.icon} text-red-600 hover:text-red-700 hover:bg-red-50`}
                           title="Revoke role assignment"
+                          aria-label="Revoke role assignment"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
               ) : (
-                <div className="p-4 rounded-md bg-cream/20 border border-ink/5 text-center text-xs text-ink/50 italic">
+                <div className="p-5 rounded-md border border-dashed border-ink/15 bg-ink/[0.015] text-center text-xs text-ink/50">
                   No explicit role assignments found for this account.
                 </div>
               )}
@@ -712,20 +764,20 @@ export default function UsersPage() {
             {/* Grant New Role Assignment Section */}
             <form
               onSubmit={handleAssignRole}
-              className="p-4 rounded-md bg-cream/40 border border-ink/10 space-y-3 text-xs"
+              className="p-4 sm:p-5 rounded-md bg-gradient-to-br from-mint/50 to-white border border-teal-brand/15 space-y-4"
             >
-              <h4 className="font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="text-xs font-semibold text-ink uppercase tracking-wider flex items-center gap-1.5">
                 <Plus className="h-4 w-4 text-teal-brand" />
                 Grant New Role Assignment
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">Role *</label>
+                <div>
+                  <label className={field.label}>Role *</label>
                   <select
                     value={assignRole}
                     onChange={(e) => setAssignRole(e.target.value as UserRole)}
-                    className="w-full p-2 rounded-md border border-ink/15 bg-white text-ink text-xs focus:ring-2 focus:ring-teal-brand/20"
+                    className={`${field.input} cursor-pointer`}
                   >
                     {AVAILABLE_ROLES.map((r) => (
                       <option key={r.value} value={r.value}>
@@ -735,15 +787,15 @@ export default function UsersPage() {
                   </select>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">Organisation Scope</label>
+                <div>
+                  <label className={field.label}>Organisation Scope</label>
                   <select
                     value={assignOrgId}
                     onChange={(e) => {
                       setAssignOrgId(e.target.value);
                       setAssignCareHomeId("");
                     }}
-                    className="w-full p-2 rounded-md border border-ink/15 bg-white text-ink text-xs focus:ring-2 focus:ring-teal-brand/20"
+                    className={`${field.input} cursor-pointer`}
                   >
                     <option value="">-- None / System Level --</option>
                     {activeOrganisations.map((org) => (
@@ -754,13 +806,13 @@ export default function UsersPage() {
                   </select>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">Care Facility Scope</label>
+                <div>
+                  <label className={field.label}>Care Facility Scope</label>
                   <select
                     value={assignCareHomeId}
                     onChange={(e) => setAssignCareHomeId(e.target.value)}
                     disabled={!assignOrgId}
-                    className="w-full p-2 rounded-md border border-ink/15 bg-white text-ink text-xs focus:ring-2 focus:ring-teal-brand/20 disabled:opacity-50"
+                    className={`${field.input} cursor-pointer`}
                   >
                     <option value="">-- None / All Homes in Org --</option>
                     {activeCareHomes.map((home) => (
@@ -772,124 +824,119 @@ export default function UsersPage() {
                 </div>
               </div>
 
-              <div className="text-right pt-1">
+              <div className="flex justify-end">
                 <button
                   type="submit"
                   disabled={assignRoleMutation.isPending}
-                  className="px-4 py-2 rounded-md bg-teal-brand text-white font-semibold text-xs hover:bg-teal-deep transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
+                  className={`${btn.primary} w-full sm:w-auto`}
                 >
-                  {assignRoleMutation.isPending && (
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  {assignRoleMutation.isPending ? (
+                    <Spinner className="h-3.5 w-3.5" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
                   )}
                   {assignRoleMutation.isPending ? "Assigning..." : "Grant Role Assignment"}
                 </button>
               </div>
             </form>
-
-            <div className="pt-2 text-right border-t border-ink/10">
-              <button
-                onClick={() => setManagingRolesUser(null)}
-                className="px-4 py-2 rounded-md bg-cream text-ink text-xs font-semibold hover:bg-mint hover:text-teal-deep cursor-pointer"
-              >
-                Done
-              </button>
-            </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* -------------------------------------------------------------------- */}
       {/* MODAL 2: Edit User Profile                                           */}
       {/* -------------------------------------------------------------------- */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-              <div className="flex items-center gap-2 text-teal-brand">
-                <UserCheck className="h-5 w-5" />
-                <h3 className="text-lg font-bold text-ink">Edit User Profile</h3>
-              </div>
+        <Modal
+          open
+          onClose={() => setEditingUser(null)}
+          size="sm"
+          icon={UserCheck}
+          title="Edit User Profile"
+          footer={
+            <>
               <button
+                type="button"
                 onClick={() => setEditingUser(null)}
-                className="text-ink/40 hover:text-ink p-1 rounded-md cursor-pointer"
+                className={btn.secondary}
               >
-                <X className="h-5 w-5" />
+                Cancel
               </button>
-            </div>
-
-            <form onSubmit={handleSaveEdit} className="space-y-3.5 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">First Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={editFirstName}
-                    onChange={(e) => setEditFirstName(e.target.value)}
-                    className="w-full p-2.5 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 text-ink text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">Middle Name</label>
-                  <input
-                    type="text"
-                    value={editMiddleName}
-                    onChange={(e) => setEditMiddleName(e.target.value)}
-                    className="w-full p-2.5 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 text-ink text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-ink">Last Name *</label>
+              <button
+                type="submit"
+                form="edit-user-form"
+                disabled={updateMutation.isPending}
+                className={btn.primary}
+              >
+                {updateMutation.isPending && <Spinner className="h-3.5 w-3.5" />}
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </button>
+            </>
+          }
+        >
+          <form id="edit-user-form" onSubmit={handleSaveEdit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className={field.label}>First Name *</label>
                 <input
                   type="text"
                   required
-                  value={editLastName}
-                  onChange={(e) => setEditLastName(e.target.value)}
-                  className="w-full p-2.5 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 text-ink text-xs"
+                  value={editFirstName}
+                  onChange={(e) => setEditFirstName(e.target.value)}
+                  className={field.input}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="font-semibold text-ink">Phone Number</label>
+              <div>
+                <label className={field.label}>Middle Name</label>
+                <input
+                  type="text"
+                  value={editMiddleName}
+                  onChange={(e) => setEditMiddleName(e.target.value)}
+                  className={field.input}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className={field.label}>Last Name *</label>
+              <input
+                type="text"
+                required
+                value={editLastName}
+                onChange={(e) => setEditLastName(e.target.value)}
+                className={field.input}
+              />
+            </div>
+
+            <div>
+              <label className={field.label}>Phone Number</label>
+              <div className="relative">
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/35 pointer-events-none" />
                 <input
                   type="text"
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
                   placeholder="+44 7700 900123"
-                  className="w-full p-2.5 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 text-ink text-xs"
+                  className={`${field.input} pl-10`}
                 />
               </div>
+            </div>
 
-              <div className="p-3 rounded-md bg-cream/40 border border-ink/10 text-[11px] text-ink/70">
-                <p>Email: <span className="font-semibold text-ink">{editingUser.email}</span></p>
-                <p className="text-[10px] text-ink/50 mt-0.5">Primary email address is bound to identity credentials.</p>
+            <div className="flex items-start gap-3 p-3.5 rounded-md bg-mint/40 border border-teal-brand/15 text-xs text-ink/70">
+              <Mail className="h-4 w-4 text-teal-brand shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p>
+                  Email:{" "}
+                  <span className="font-semibold text-ink break-all">{editingUser.email}</span>
+                </p>
+                <p className="text-[11px] text-ink/50 mt-0.5">
+                  Primary email address is bound to identity credentials.
+                </p>
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setEditingUser(null)}
-                  className="px-4 py-2 rounded-md border border-ink/15 text-ink/70 hover:bg-cream cursor-pointer font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={updateMutation.isPending}
-                  className="px-4 py-2 rounded-md bg-teal-brand text-white font-semibold hover:bg-teal-deep cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
-                >
-                  {updateMutation.isPending && (
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                  )}
-                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );

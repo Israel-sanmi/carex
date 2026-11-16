@@ -6,26 +6,41 @@ import { useAuditLogs } from "@/lib/hooks/use-audit-logs";
 import { AuditLogItem } from "@/lib/api-audit-logs";
 import { toast } from "@/components/ui/toast";
 import {
+  btn,
+  field,
+  table,
+  PageHeader,
+  Panel,
+  Toolbar,
+  SearchField,
+  Segmented,
+  Badge,
+  EmptyState,
+  ErrorState,
+  SkeletonRows,
+  DataItem,
+  Modal,
+  type BadgeTone,
+} from "@/components/dashboard/ui";
+import {
   FileClock,
-  Search,
   Filter,
   ShieldCheck,
-  AlertTriangle,
-  CheckCircle2,
   Download,
-  Calendar,
   Eye,
   Copy,
   Check,
-  X,
   RefreshCw,
-  Server,
-  Layers,
-  Activity,
   Globe,
   ChevronLeft,
   ChevronRight,
   Database,
+  Clock,
+  User,
+  Building2,
+  Home,
+  Hash,
+  Lock,
 } from "lucide-react";
 
 const ALLOWED_ROLES = ["SUPER_ADMIN", "SYSTEM_ADMIN", "ORGANISATION_ADMIN"];
@@ -41,19 +56,64 @@ const ENTITY_TYPE_FILTERS = [
   { label: "Invitation", value: "INVITATION" },
 ];
 
-function getActionColor(action?: string) {
-  if (!action) return "bg-ink/5 text-ink/70 border-ink/10";
+/** Presentational: maps an action name to a badge tone. */
+function getActionTone(action?: string): BadgeTone {
+  if (!action) return "slate";
   const a = action.toUpperCase();
-  if (a.includes("DELETE") || a.includes("REVOKE") || a.includes("REJECT") || a.includes("FAILED")) {
-    return "bg-rose-50 text-rose-700 border-rose-200";
+  if (
+    a.includes("DELETE") ||
+    a.includes("REVOKE") ||
+    a.includes("REJECT") ||
+    a.includes("FAILED") ||
+    a.includes("REMOVE")
+  ) {
+    return "red";
   }
-  if (a.includes("CREATE") || a.includes("APPROVE") || a.includes("ACCEPT") || a.includes("SUCCESS")) {
-    return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (
+    a.includes("CREATE") ||
+    a.includes("APPROVE") ||
+    a.includes("ACCEPT") ||
+    a.includes("SUCCESS")
+  ) {
+    return "green";
   }
   if (a.includes("UPDATE") || a.includes("MODIFY") || a.includes("EDIT")) {
-    return "bg-amber-50 text-amber-800 border-amber-200";
+    return "sky";
   }
-  return "bg-teal-brand/10 text-teal-deep border-teal-brand/20";
+  if (
+    a.includes("LOGIN") ||
+    a.includes("LOGOUT") ||
+    a.includes("AUTH") ||
+    a.includes("PASSWORD") ||
+    a.includes("TOKEN")
+  ) {
+    return "violet";
+  }
+  return "slate";
+}
+
+const toneDot: Record<BadgeTone, string> = {
+  teal: "bg-teal-brand",
+  green: "bg-emerald-500",
+  amber: "bg-amber-500",
+  coral: "bg-coral",
+  red: "bg-red-500",
+  violet: "bg-lilac",
+  sky: "bg-sky",
+  slate: "bg-ink/30",
+};
+
+function formatTimestamp(createdAt?: string) {
+  return createdAt
+    ? new Date(createdAt).toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    : "—";
 }
 
 export default function AuditLogsPage() {
@@ -160,314 +220,354 @@ export default function AuditLogsPage() {
 
   if (!isAuthorized) {
     return (
-      <div className="p-8 rounded-md bg-white border border-ink/10 text-center max-w-xl mx-auto space-y-4 my-12 shadow-xs">
-        <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
-          <AlertTriangle className="h-6 w-6" />
-        </div>
-        <h2 className="text-xl font-bold text-ink font-heading">
-          Restricted Compliance Area
-        </h2>
-        <p className="text-xs text-ink/70 leading-relaxed">
-          The immutable audit ledger is restricted strictly to Organisation
-          Administrators, System Administrators, and Super Administrators for
-          regulatory compliance (CQC Regulation 17).
-        </p>
+      <div className="space-y-6">
+        <Panel className="max-w-xl mx-auto my-6 sm:my-12">
+          <EmptyState
+            icon={Lock}
+            title="Restricted Compliance Area"
+            description="The immutable audit ledger is restricted strictly to Organisation Administrators, System Administrators, and Super Administrators for regulatory compliance (CQC Regulation 17)."
+            className="!py-8"
+          />
+        </Panel>
       </div>
     );
   }
 
+  const hasFilters = Boolean(search || actionFilter || selectedEntityType);
+
+  const resetFilters = () => {
+    setSearch("");
+    setActionFilter("");
+    setSelectedEntityType("");
+    setPage(0);
+  };
+
+  /** Inline copy button for an entity id (stops row click). */
+  const renderEntityCopy = (log: AuditLogItem) => (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        copyToClipboard(log.entityPublicId!, `ent-${log.publicId}`);
+      }}
+      className="grid place-items-center w-6 h-6 rounded-md text-ink/40 hover:text-ink hover:bg-ink/5 transition-colors cursor-pointer shrink-0"
+      title="Copy Entity ID"
+      aria-label="Copy Entity ID"
+    >
+      {copiedKey === `ent-${log.publicId}` ? (
+        <Check className="h-3 w-3 text-emerald-600" />
+      ) : (
+        <Copy className="h-3 w-3" />
+      )}
+    </button>
+  );
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-ink font-heading">
-              Immutable Audit Ledger
-            </h1>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-mint text-teal-deep font-semibold flex items-center gap-1">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              CQC Regulation 17 Compliant
-            </span>
-          </div>
-          <p className="text-sm text-ink/70 mt-1">
-            Tamper-evident activity ledger recording system modifications,
-            administrative events, and security access.
-          </p>
-        </div>
+      <PageHeader
+        icon={FileClock}
+        eyebrow={
+          <Badge tone="teal" icon={ShieldCheck}>
+            CQC Regulation 17 Compliant
+          </Badge>
+        }
+        title="Immutable Audit Ledger"
+        description="Tamper-evident activity ledger recording system modifications, administrative events, and security access."
+        actions={
+          <>
+            <button
+              onClick={() => refetch()}
+              disabled={isLoading}
+              className={btn.secondary}
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
 
-        <div className="flex items-center gap-2 self-start md:self-auto">
-          <button
-            onClick={() => refetch()}
-            disabled={isLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-md border border-ink/10 bg-white hover:bg-cream text-ink/80 hover:text-ink transition-all cursor-pointer shadow-xs"
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </button>
+            <button
+              onClick={handleExportCsv}
+              disabled={filteredLogs.length === 0}
+              className={`${btn.primary} group`}
+            >
+              <Download className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
+              Export CSV
+            </button>
+          </>
+        }
+      />
 
-          <button
-            onClick={handleExportCsv}
-            disabled={filteredLogs.length === 0}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Export CSV
-          </button>
-        </div>
-      </div>
-
-      {/* Filters Bar */}
+      {/* Filters */}
       <div className="space-y-3">
         {/* Entity Type Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink/[0.04] border border-ink/[0.07] overflow-x-auto scrollbar-none">
-          {ENTITY_TYPE_FILTERS.map((ef) => {
-            const isActive = selectedEntityType === ef.value;
-            return (
-              <button
-                key={ef.value}
-                onClick={() => {
-                  setSelectedEntityType(ef.value);
+        <Segmented
+          value={selectedEntityType}
+          onChange={(v) => {
+            setSelectedEntityType(v);
+            setPage(0);
+          }}
+          options={ENTITY_TYPE_FILTERS.map((ef) => ({
+            value: ef.value,
+            label: ef.label,
+          }))}
+          className="w-full sm:w-auto"
+        />
+
+        {/* Search & Action Filter */}
+        <Toolbar>
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by action, entity ID, IP, or client..."
+          />
+
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <label className="relative flex-1 md:flex-none">
+              <span className="sr-only">Filter by action name</span>
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink/35 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Filter by action name..."
+                value={actionFilter}
+                onChange={(e) => {
+                  setActionFilter(e.target.value);
                   setPage(0);
                 }}
-                className={`tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
-                  isActive
-                    ? "bg-teal-brand text-white shadow-xs"
-                    : "text-ink/65 hover:text-ink hover:bg-white/60"
-                }`}
-              >
-                <span>{ef.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Search & Action Input Bar */}
-        <div className="p-4 rounded-md bg-white border border-ink/10 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
-            <input
-              type="text"
-              placeholder="Search by action, entity ID, IP, or client..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all text-ink"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Filter className="h-4 w-4 text-ink/40" />
-            <span className="text-xs text-ink/60 font-medium">Action:</span>
-            <input
-              type="text"
-              placeholder="Filter by action name..."
-              value={actionFilter}
-              onChange={(e) => {
-                setActionFilter(e.target.value);
-                setPage(0);
-              }}
-              className="text-xs rounded-md border border-ink/10 px-3 py-2 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 text-ink w-48"
-            />
-            {(search || actionFilter || selectedEntityType) && (
+                className={`${field.input} pl-9 font-mono !text-xs md:w-56`}
+              />
+            </label>
+            {hasFilters && (
               <button
-                onClick={() => {
-                  setSearch("");
-                  setActionFilter("");
-                  setSelectedEntityType("");
-                  setPage(0);
-                }}
-                className="text-xs text-teal-deep font-semibold hover:underline cursor-pointer ml-1"
+                onClick={resetFilters}
+                className={`${btn.ghost} ${btn.sm} text-teal-deep`}
               >
                 Reset
               </button>
             )}
           </div>
-        </div>
+        </Toolbar>
       </div>
 
-      {/* Ledger Table */}
-      <div className="rounded-md bg-white border border-ink/10 shadow-xs overflow-hidden">
+      {/* Ledger */}
+      <Panel flush>
         {isLoading ? (
-          <div className="p-8 space-y-4">
-            <div className="h-6 w-48 skeleton rounded-md" />
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-12 w-full skeleton rounded-md" />
-              ))}
-            </div>
-          </div>
+          <SkeletonRows rows={6} />
         ) : isError ? (
-          <div className="p-12 text-center space-y-3">
-            <AlertTriangle className="h-8 w-8 text-destructive mx-auto" />
-            <p className="font-bold text-ink text-sm">Failed to load audit logs</p>
-            <p className="text-xs text-ink/60">
-              There was an issue communicating with the audit service.
-            </p>
-            <button
-              onClick={() => refetch()}
-              className="px-4 py-1.5 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer"
-            >
-              Retry
-            </button>
+          <div className="p-4 sm:p-5">
+            <ErrorState
+              title="Failed to load audit logs"
+              message="There was an issue communicating with the audit service."
+              onRetry={() => refetch()}
+            />
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div className="p-12 text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-cream text-ink/40 flex items-center justify-center mx-auto">
-              <FileClock className="h-6 w-6" />
-            </div>
-            <h3 className="font-bold text-ink text-sm">No audit logs found</h3>
-            <p className="text-xs text-ink/60 max-w-sm mx-auto">
-              {search || actionFilter || selectedEntityType
+          <EmptyState
+            icon={FileClock}
+            title="No audit logs found"
+            description={
+              hasFilters
                 ? "No audit records matched your current query criteria. Try adjusting or clearing your filters."
-                : "No immutable audit logs have been recorded in the platform ledger yet."}
-            </p>
-            {(search || actionFilter || selectedEntityType) && (
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setActionFilter("");
-                  setSelectedEntityType("");
-                  setPage(0);
-                }}
-                className="px-3 py-1.5 rounded-md border border-ink/15 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
-              >
-                Clear Filters
-              </button>
-            )}
-          </div>
+                : "No immutable audit logs have been recorded in the platform ledger yet."
+            }
+            action={
+              hasFilters ? (
+                <button
+                  onClick={resetFilters}
+                  className={`${btn.secondary} ${btn.sm}`}
+                >
+                  Clear Filters
+                </button>
+              ) : undefined
+            }
+          />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="whitespace-nowrap w-full text-left text-xs text-ink">
-              <thead className="bg-cream/40 border-b border-ink/10 text-ink/60 font-semibold uppercase tracking-wider text-[11px]">
-                <tr>
-                  <th className="py-3.5 px-6">Timestamp & IP</th>
-                  <th className="py-3.5 px-4">Action Event</th>
-                  <th className="py-3.5 px-4">Entity Type</th>
-                  <th className="py-3.5 px-4">Entity Public ID</th>
-                  <th className="py-3.5 px-4">Actor / IDs</th>
-                  <th className="py-3.5 px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink/5">
-                {filteredLogs.map((log) => {
-                  const dateStr = log.createdAt
-                    ? new Date(log.createdAt).toLocaleString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                      })
-                    : "—";
+          <>
+            {/* Desktop: dense ledger table */}
+            <div className={`${table.wrap} hidden md:block`}>
+              <table className={table.table}>
+                <thead>
+                  <tr>
+                    <th className={table.th}>Timestamp & IP</th>
+                    <th className={table.th}>Action Event</th>
+                    <th className={table.th}>Entity Type</th>
+                    <th className={table.th}>Entity Public ID</th>
+                    <th className={table.th}>Actor / IDs</th>
+                    <th className={`${table.th} text-right`}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLogs.map((log) => {
+                    const dateStr = formatTimestamp(log.createdAt);
+                    const tone = getActionTone(log.action);
 
-                  return (
-                    <tr
-                      key={log.publicId}
-                      className="hover:bg-cream/20 transition-colors cursor-pointer"
+                    return (
+                      <tr
+                        key={log.publicId}
+                        className={`${table.tr} cursor-pointer`}
+                        onClick={() => setSelectedLog(log)}
+                      >
+                        <td className={`${table.td} whitespace-nowrap`}>
+                          <div className="flex items-start gap-2.5">
+                            <span
+                              className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${toneDot[tone]}`}
+                            />
+                            <div className="font-mono text-[11px]">
+                              <div className="font-semibold text-ink tabular-nums">
+                                {dateStr}
+                              </div>
+                              <div className="text-[10px] text-ink/45 mt-0.5 flex items-center gap-1">
+                                <Globe className="h-3 w-3 shrink-0" />
+                                <span>{log.ipAddress || "Internal / System"}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className={table.td}>
+                          <Badge tone={tone} className="font-mono !text-[10px] tracking-wide">
+                            {log.action}
+                          </Badge>
+                        </td>
+
+                        <td className={table.td}>
+                          <span className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-ink/[0.05] text-ink/75 font-semibold whitespace-nowrap">
+                            {log.entityType || "SYSTEM"}
+                          </span>
+                        </td>
+
+                        <td className={`${table.td} font-mono text-[11px] text-ink/65`}>
+                          {log.entityPublicId ? (
+                            <div className="flex items-center gap-1">
+                              <span className="truncate max-w-[140px]">
+                                {log.entityPublicId}
+                              </span>
+                              {renderEntityCopy(log)}
+                            </div>
+                          ) : (
+                            <span className="text-ink/30 italic">None</span>
+                          )}
+                        </td>
+
+                        <td className={`${table.td} text-[11px] text-ink/65 whitespace-nowrap`}>
+                          <div className="flex items-center gap-2">
+                            {log.actorUserId ? (
+                              <span className="inline-flex items-center gap-1">
+                                <User className="h-3 w-3 text-ink/35" />
+                                Actor: <span className="font-mono">#{log.actorUserId}</span>
+                              </span>
+                            ) : (
+                              <span className="text-ink/40">System</span>
+                            )}
+                            {log.organisationId && (
+                              <span className="text-[10px] text-ink/45 font-mono">
+                                • Org: #{log.organisationId}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className={`${table.td} text-right`}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedLog(log);
+                            }}
+                            className={`${btn.ghost} ${btn.sm} text-teal-deep`}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            Inspect
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile: vertical timeline */}
+            <ol className="md:hidden relative px-4 py-4">
+              {filteredLogs.map((log, i) => {
+                const dateStr = formatTimestamp(log.createdAt);
+                const tone = getActionTone(log.action);
+                const isLast = i === filteredLogs.length - 1;
+
+                return (
+                  <li key={log.publicId} className="relative pl-6 pb-4 last:pb-0">
+                    {!isLast && (
+                      <span
+                        className="absolute left-[5px] top-4 bottom-0 w-px bg-ink/10"
+                        aria-hidden="true"
+                      />
+                    )}
+                    <span
+                      className={`absolute left-0 top-2.5 w-[11px] h-[11px] rounded-full ring-4 ring-white ${toneDot[tone]}`}
+                      aria-hidden="true"
+                    />
+                    <div
                       onClick={() => setSelectedLog(log)}
+                      className="group rounded-md border border-ink/[0.07] bg-white p-3 cursor-pointer transition-all hover:-translate-y-0.5 hover:border-teal-brand/25 active:translate-y-0"
                     >
-                      <td className="py-4 px-6 font-mono text-[11px]">
-                        <div className="font-bold text-ink">{dateStr}</div>
-                        <div className="text-[10px] text-ink/50 mt-0.5 flex items-center gap-1">
-                          <Globe className="h-3 w-3 shrink-0" />
-                          <span>{log.ipAddress || "Internal / System"}</span>
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-4">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getActionColor(
-                            log.action
-                          )}`}
+                      <div className="flex items-start justify-between gap-2">
+                        <Badge
+                          tone={tone}
+                          className="font-mono !text-[10px] tracking-wide max-w-[70%] truncate"
                         >
                           {log.action}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-4">
-                        <span className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-ink/5 text-ink/80 font-semibold">
+                        </Badge>
+                        <ChevronRight className="h-4 w-4 text-ink/25 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                      </div>
+                      <div className="mt-2 font-mono text-[11px] text-ink font-semibold tabular-nums">
+                        {dateStr}
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-ink/55">
+                        <span className="font-mono px-1.5 py-px rounded-md bg-ink/[0.05] text-ink/70 font-semibold">
                           {log.entityType || "SYSTEM"}
                         </span>
-                      </td>
-
-                      <td className="py-4 px-4 font-mono text-[11px] text-ink/70">
-                        {log.entityPublicId ? (
-                          <div className="flex items-center gap-1">
-                            <span className="truncate max-w-[140px]">
-                              {log.entityPublicId}
-                            </span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyToClipboard(
-                                  log.entityPublicId!,
-                                  `ent-${log.publicId}`
-                                );
-                              }}
-                              className="text-ink/40 hover:text-ink p-0.5 cursor-pointer"
-                              title="Copy Entity ID"
-                            >
-                              {copiedKey === `ent-${log.publicId}` ? (
-                                <Check className="h-3 w-3 text-emerald-600" />
-                              ) : (
-                                <Copy className="h-3 w-3" />
-                              )}
-                            </button>
-                          </div>
+                        <span className="inline-flex items-center gap-1 font-mono">
+                          <Globe className="h-3 w-3" />
+                          {log.ipAddress || "Internal / System"}
+                        </span>
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-ink/55">
+                        {log.actorUserId ? (
+                          <span>Actor: #{log.actorUserId}</span>
                         ) : (
-                          <span className="text-ink/30 italic">None</span>
+                          <span className="text-ink/40">System</span>
                         )}
-                      </td>
-
-                      <td className="py-4 px-4 text-[11px] text-ink/70">
-                        <div className="flex items-center gap-2">
-                          {log.actorUserId ? (
-                            <span>Actor: #{log.actorUserId}</span>
-                          ) : (
-                            <span className="text-ink/40">System</span>
-                          )}
-                          {log.organisationId && (
-                            <span className="text-[10px] text-ink/50">
-                              • Org: #{log.organisationId}
-                            </span>
-                          )}
+                        {log.organisationId && (
+                          <span className="text-ink/45">• Org: #{log.organisationId}</span>
+                        )}
+                      </div>
+                      {log.entityPublicId ? (
+                        <div className="mt-1.5 flex items-center gap-1 font-mono text-[11px] text-ink/60 min-w-0">
+                          <Hash className="h-3 w-3 shrink-0 text-ink/35" />
+                          <span className="truncate">{log.entityPublicId}</span>
+                          {renderEntityCopy(log)}
                         </div>
-                      </td>
-
-                      <td className="py-4 px-6 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedLog(log);
-                          }}
-                          className="px-2.5 py-1.5 rounded-md bg-cream hover:bg-mint text-teal-deep text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          Inspect
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      ) : (
+                        <div className="mt-1.5 font-mono text-[11px] text-ink/30 italic">
+                          None
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </>
         )}
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="p-4 border-t border-ink/10 flex items-center justify-between text-xs text-ink/60">
-            <span>
+          <div className="px-5 py-3.5 border-t border-ink/[0.06] bg-[#f8faf9] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-ink/55">
+            <span className="tabular-nums">
               Page {page + 1} of {totalPages} ({totalElements} total entries)
             </span>
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="px-3 py-1.5 rounded-md border border-ink/10 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-cream font-medium cursor-pointer inline-flex items-center gap-1"
+                className={`${btn.secondary} ${btn.sm} flex-1 sm:flex-none`}
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
                 Previous
@@ -475,7 +575,7 @@ export default function AuditLogsPage() {
               <button
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1.5 rounded-md border border-ink/10 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-cream font-medium cursor-pointer inline-flex items-center gap-1"
+                className={`${btn.secondary} ${btn.sm} flex-1 sm:flex-none`}
               >
                 Next
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -483,107 +583,107 @@ export default function AuditLogsPage() {
             </div>
           </div>
         )}
-      </div>
+      </Panel>
 
       {/* -------------------------------------------------------------------- */}
       {/* AUDIT LOG INSPECTION MODAL                                           */}
       {/* -------------------------------------------------------------------- */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95">
-            <div className="flex items-start justify-between border-b border-ink/10 pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${getActionColor(
-                      selectedLog.action
-                    )}`}
-                  >
-                    {selectedLog.action}
-                  </span>
-                  <span className="font-mono text-xs px-2 py-0.5 rounded bg-ink/5 text-ink/70 font-semibold">
-                    {selectedLog.entityType}
-                  </span>
-                </div>
-                <h2 className="text-lg font-bold text-ink font-heading mt-2">
-                  Audit Event Details
-                </h2>
-                <p className="text-xs text-ink/60 font-mono">
-                  Log ID: {selectedLog.publicId}
-                </p>
-              </div>
+        <Modal
+          open
+          onClose={() => setSelectedLog(null)}
+          size="lg"
+          icon={Database}
+          title="Audit Event Details"
+          description={
+            <span className="font-mono text-xs break-all">
+              Log ID: {selectedLog.publicId}
+            </span>
+          }
+          footer={
+            <>
+              <button
+                onClick={() =>
+                  copyToClipboard(selectedLog.publicId, "log-public-id")
+                }
+                className={`${btn.secondary} sm:mr-auto`}
+              >
+                {copiedKey === "log-public-id" ? (
+                  <Check className="h-4 w-4 text-emerald-600" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+                Copy Log ID
+              </button>
 
               <button
                 onClick={() => setSelectedLog(null)}
-                className="text-ink/40 hover:text-ink p-1 rounded-md cursor-pointer"
+                className={btn.primary}
               >
-                <X className="h-5 w-5" />
+                Close Ledger Record
               </button>
+            </>
+          }
+        >
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge
+                tone={getActionTone(selectedLog.action)}
+                className="font-mono tracking-wide"
+              >
+                {selectedLog.action}
+              </Badge>
+              <span className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-ink/[0.05] text-ink/70 font-semibold">
+                {selectedLog.entityType}
+              </span>
             </div>
 
             {/* Core Ledger Attributes */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-              <div className="p-3 rounded-md bg-cream/30 border border-ink/5">
-                <span className="text-ink/50 text-[10px] uppercase font-semibold block">
-                  Timestamp
-                </span>
-                <span className="font-bold text-ink">
-                  {selectedLog.createdAt
-                    ? new Date(selectedLog.createdAt).toLocaleString()
-                    : "—"}
-                </span>
+            <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="p-3 rounded-md bg-cream/50 border border-ink/[0.06]">
+                <DataItem label="Timestamp" icon={Clock}>
+                  <span className="tabular-nums">
+                    {selectedLog.createdAt
+                      ? new Date(selectedLog.createdAt).toLocaleString()
+                      : "—"}
+                  </span>
+                </DataItem>
               </div>
-
-              <div className="p-3 rounded-md bg-cream/30 border border-ink/5">
-                <span className="text-ink/50 text-[10px] uppercase font-semibold block">
-                  IP Address
-                </span>
-                <span className="font-bold text-ink font-mono">
-                  {selectedLog.ipAddress || "Internal"}
-                </span>
+              <div className="p-3 rounded-md bg-cream/50 border border-ink/[0.06]">
+                <DataItem label="IP Address" icon={Globe}>
+                  <span className="font-mono">
+                    {selectedLog.ipAddress || "Internal"}
+                  </span>
+                </DataItem>
               </div>
-
-              <div className="p-3 rounded-md bg-cream/30 border border-ink/5">
-                <span className="text-ink/50 text-[10px] uppercase font-semibold block">
-                  Actor User ID
-                </span>
-                <span className="font-bold text-ink">
+              <div className="p-3 rounded-md bg-cream/50 border border-ink/[0.06]">
+                <DataItem label="Actor User ID" icon={User}>
                   {selectedLog.actorUserId ? `#${selectedLog.actorUserId}` : "System"}
-                </span>
+                </DataItem>
               </div>
-
-              <div className="p-3 rounded-md bg-cream/30 border border-ink/5">
-                <span className="text-ink/50 text-[10px] uppercase font-semibold block">
-                  Entity Public ID
-                </span>
-                <span className="font-bold text-ink font-mono truncate block text-[11px]">
-                  {selectedLog.entityPublicId || "—"}
-                </span>
+              <div className="p-3 rounded-md bg-cream/50 border border-ink/[0.06]">
+                <DataItem label="Entity Public ID" icon={Hash}>
+                  <span className="font-mono text-[11px]">
+                    {selectedLog.entityPublicId || "—"}
+                  </span>
+                </DataItem>
               </div>
-
-              <div className="p-3 rounded-md bg-cream/30 border border-ink/5">
-                <span className="text-ink/50 text-[10px] uppercase font-semibold block">
-                  Organisation ID
-                </span>
-                <span className="font-bold text-ink">
+              <div className="p-3 rounded-md bg-cream/50 border border-ink/[0.06]">
+                <DataItem label="Organisation ID" icon={Building2}>
                   {selectedLog.organisationId ? `#${selectedLog.organisationId}` : "—"}
-                </span>
+                </DataItem>
               </div>
-
-              <div className="p-3 rounded-md bg-cream/30 border border-ink/5">
-                <span className="text-ink/50 text-[10px] uppercase font-semibold block">
-                  Care Home ID
-                </span>
-                <span className="font-bold text-ink">
+              <div className="p-3 rounded-md bg-cream/50 border border-ink/[0.06]">
+                <DataItem label="Care Home ID" icon={Home}>
                   {selectedLog.careHomeId ? `#${selectedLog.careHomeId}` : "—"}
-                </span>
+                </DataItem>
               </div>
-            </div>
+            </dl>
 
             {/* User Agent */}
             {selectedLog.userAgent && (
-              <div className="p-3 rounded-md bg-cream/30 border border-ink/5 text-xs space-y-1">
-                <span className="text-ink/50 text-[10px] uppercase font-semibold block">
+              <div className="p-3 rounded-md bg-cream/50 border border-ink/[0.06] space-y-1">
+                <span className="block text-[11px] font-medium uppercase tracking-wider text-ink/45">
                   Client User-Agent
                 </span>
                 <p className="font-mono text-[11px] text-ink/80 break-all">
@@ -594,8 +694,8 @@ export default function AuditLogsPage() {
 
             {/* Structured Details JSON */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-semibold text-ink/60 uppercase tracking-wider flex items-center gap-1.5">
                   <Database className="h-3.5 w-3.5 text-teal-brand" />
                   Audit Payload Details (JSON)
                 </span>
@@ -607,7 +707,7 @@ export default function AuditLogsPage() {
                         "json-payload"
                       )
                     }
-                    className="text-xs text-teal-deep font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    className={`${btn.ghost} ${btn.sm} text-teal-deep`}
                   >
                     {copiedKey === "json-payload" ? (
                       <Check className="h-3 w-3 text-emerald-600" />
@@ -619,7 +719,7 @@ export default function AuditLogsPage() {
                 )}
               </div>
 
-              <div className="p-4 rounded-md bg-ink text-white font-mono text-xs overflow-x-auto max-h-60 leading-relaxed">
+              <div className="p-4 rounded-md bg-ink text-white/90 font-mono text-xs overflow-x-auto max-h-60 leading-relaxed shadow-inner">
                 {selectedLog.details &&
                 Object.keys(selectedLog.details).length > 0 ? (
                   <pre>{JSON.stringify(selectedLog.details, null, 2)}</pre>
@@ -630,32 +730,8 @@ export default function AuditLogsPage() {
                 )}
               </div>
             </div>
-
-            {/* Modal Footer */}
-            <div className="flex items-center justify-between pt-4 border-t border-ink/10">
-              <button
-                onClick={() =>
-                  copyToClipboard(selectedLog.publicId, "log-public-id")
-                }
-                className="px-3 py-1.5 rounded-md border border-ink/10 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer inline-flex items-center gap-1.5"
-              >
-                {copiedKey === "log-public-id" ? (
-                  <Check className="h-3.5 w-3.5 text-emerald-600" />
-                ) : (
-                  <Copy className="h-3.5 w-3.5" />
-                )}
-                Copy Log ID
-              </button>
-
-              <button
-                onClick={() => setSelectedLog(null)}
-                className="px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep cursor-pointer"
-              >
-                Close Ledger Record
-              </button>
-            </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

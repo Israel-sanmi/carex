@@ -49,7 +49,7 @@ export default function RoleTabs() {
         </div>
 
         {/* Tab Switcher Buttons */}
-        <div className="flex flex-wrap justify-center gap-3 md:gap-4 mb-12">
+        <div className="-mx-4 px-4 sm:mx-0 sm:px-0 flex sm:flex-wrap sm:justify-center gap-2.5 md:gap-4 mb-10 sm:mb-12 overflow-x-auto snap-x [scrollbar-width:none] pb-1">
           {tabs.map((t) => {
             const isActive = activeTab === t.key;
             const Icon = t.icon;
@@ -57,7 +57,7 @@ export default function RoleTabs() {
               <button
                 key={t.key}
                 onClick={() => setActiveTab(t.key)}
-                className={`inline-flex items-center gap-2.5 px-6 py-3.5 rounded-full text-sm font-semibold transition-all cursor-pointer ${
+                className={`snap-start shrink-0 inline-flex items-center gap-2.5 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full whitespace-nowrap text-sm font-semibold transition-all cursor-pointer ${
                   isActive
                     ? "bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-950 shadow-lg shadow-emerald-600/25 scale-102"
                     : "glass border border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/90 dark:hover:bg-slate-800/80 hover:-translate-y-0.5"
@@ -73,10 +73,10 @@ export default function RoleTabs() {
         </div>
 
         {/* Tab Content Container */}
-        <div className="glass-card rounded-md p-6 sm:p-10 lg:p-12 shadow-2xl border border-white/80 dark:border-white/10 transition-all duration-300">
+        <div className="glass-card rounded-md p-5 sm:p-10 lg:p-12 shadow-2xl border border-white/80 dark:border-white/10 transition-all duration-300">
           {/* TAB 1: Care Home Managers */}
           {activeTab === "managers" && (
-            <div className="grid lg:grid-cols-12 gap-10 items-center animate-rise">
+            <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-center animate-rise">
               <div className="lg:col-span-6 space-y-6 stagger">
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/20">
                   Facility Leadership
@@ -161,7 +161,7 @@ export default function RoleTabs() {
 
           {/* TAB 2: Frontline Caregivers */}
           {activeTab === "caregivers" && (
-            <div className="grid lg:grid-cols-12 gap-10 items-center animate-rise">
+            <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-center animate-rise">
               <div className="lg:col-span-6 space-y-6 stagger">
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/20">
                   Frontline Care Team
@@ -238,7 +238,7 @@ export default function RoleTabs() {
 
           {/* TAB 3: Operations Directors */}
           {activeTab === "directors" && (
-            <div className="grid lg:grid-cols-12 gap-10 items-center animate-rise">
+            <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-center animate-rise">
               <div className="lg:col-span-6 space-y-6 stagger">
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/20">
                   Multi-Facility Governance
@@ -331,7 +331,7 @@ export default function RoleTabs() {
 
           {/* TAB 4: Families & Residents */}
           {activeTab === "families" && (
-            <div className="grid lg:grid-cols-12 gap-10 items-center animate-rise">
+            <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-center animate-rise">
               <div className="lg:col-span-6 space-y-6 stagger">
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/20">
                   Family & Resident Circle

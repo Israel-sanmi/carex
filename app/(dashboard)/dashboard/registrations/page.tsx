@@ -15,14 +15,32 @@ import {
   ResidentRegistrationItem,
 } from "@/lib/api-registrations";
 import { toast } from "@/components/ui/toast";
+import StatCard from "@/components/dashboard/stat-card";
+import {
+  Avatar,
+  Badge,
+  type BadgeTone,
+  DataItem,
+  EmptyState,
+  ErrorState,
+  Modal,
+  PageHeader,
+  Panel,
+  SearchField,
+  Segmented,
+  SkeletonRows,
+  Spinner,
+  Toolbar,
+  btn,
+  field,
+  table,
+} from "@/components/dashboard/ui";
 import {
   Users,
-  Search,
   CheckCircle2,
   XCircle,
   Building2,
   Home,
-  AlertCircle,
   Eye,
   Calendar,
   Mail,
@@ -34,7 +52,40 @@ import {
   ChevronLeft,
   ChevronRight,
   UserCheck,
+  ClipboardList,
+  ListFilter,
+  FileStack,
+  Search,
+  Layers,
 } from "lucide-react";
+
+/* Presentation-only helpers ---------------------------------------- */
+
+const statusTone: Record<ResidentOnboardingStatus, BadgeTone> = {
+  PENDING_VERIFICATION: "amber",
+  VERIFIED: "sky",
+  PLACED: "green",
+  REJECTED: "red",
+};
+
+const statusIcon = {
+  PENDING_VERIFICATION: Mail,
+  VERIFIED: CheckCircle2,
+  PLACED: Home,
+  REJECTED: XCircle,
+} as const;
+
+function OnboardingBadge({ status }: { status: ResidentOnboardingStatus }) {
+  return (
+    <Badge tone={statusTone[status] ?? "red"} icon={statusIcon[status] ?? XCircle}>
+      {status.replace(/_/g, " ")}
+    </Badge>
+  );
+}
+
+function fullNameOf(res: ResidentRegistrationItem) {
+  return `${res.firstName || ""} ${res.middleName ? res.middleName + " " : ""}${res.lastName || ""}`.trim();
+}
 
 export default function RegistrationsPage() {
   const { roleAssignments } = useRole();
@@ -203,308 +254,366 @@ export default function RegistrationsPage() {
     },
   ];
 
+  const activeStatusLabel =
+    statuses.find((s) => s.value === selectedStatus)?.label ?? selectedStatus;
+
   return (
     <div className="space-y-6 text-ink">
       {/* Page Title & Action Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-ink font-heading">
-              Admissions & Intake Registrations
-            </h1>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
-              {data?.totalSize ?? 0} Registrations
-            </span>
-          </div>
-          <p className="text-sm text-ink/70 mt-1">
-            Review self-registered resident applicants, verify accounts, admit
-            into care homes, or reject applications.
-          </p>
-        </div>
+      <PageHeader
+        icon={UserCheck}
+        eyebrow={
+          <Badge tone="teal" dot>
+            {data?.totalSize ?? 0} Registrations
+          </Badge>
+        }
+        title="Admissions & Intake Registrations"
+        description="Review self-registered resident applicants, verify accounts, admit into care homes, or reject applications."
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className={btn.secondary}
+              title="Refresh registrations"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+              <span>Refresh</span>
+            </button>
+            <Link href="/dashboard/invitations" className={`${btn.primary} group`}>
+              <Mail className="h-4 w-4 transition-transform group-hover:-rotate-12" />
+              <span>Send Invitation</span>
+            </Link>
+          </>
+        }
+      />
 
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard/invitations"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-teal-brand text-white text-xs sm:text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
-          >
-            <Mail className="h-4 w-4" />
-            <span>Send Invitation</span>
-          </Link>
-        </div>
+      {/* Summary (derived from the already-loaded page) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label={activeStatusLabel}
+          value={data?.totalSize ?? 0}
+          icon={ClipboardList}
+          tone="teal"
+          hint="Total records in this status"
+          hintMuted
+        />
+        <StatCard
+          label="Loaded on this page"
+          value={content.length}
+          icon={FileStack}
+          tone="sky"
+          hint={`Up to ${pageSize} per page`}
+          hintMuted
+        />
+        <StatCard
+          label="Matching search"
+          value={filteredResidents.length}
+          icon={ListFilter}
+          tone="lilac"
+          hint={searchTerm ? `For “${searchTerm}”` : "No search applied"}
+          hintMuted
+        />
+        <StatCard
+          label="Page"
+          value={`${page + 1} / ${Math.max(1, data?.totalPages ?? 1)}`}
+          icon={Layers}
+          tone="sun"
+          hint={isFetching ? "Refreshing…" : "Up to date"}
+          hintMuted
+        />
       </div>
 
-      {/* Status Filter Tabs */}
-      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink/[0.04] border border-ink/[0.07] overflow-x-auto scrollbar-none">
-        {statuses.map((st) => {
-          const isActive = selectedStatus === st.value;
-          return (
-            <button
-              key={st.value}
-              onClick={() => {
-                setSelectedStatus(st.value);
-                setPage(0);
-              }}
-              className={`tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
-                isActive
-                  ? "bg-teal-brand text-white shadow-xs"
-                  : "text-ink/65 hover:text-ink hover:bg-white/60"
-              }`}
-            >
-              <span>{st.label}</span>
-              {isActive && data?.totalSize !== undefined && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-white/20 text-white font-mono">
-                  {data.totalSize}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Search Bar */}
-      <div className="p-3.5 rounded-md bg-white border border-ink/10 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
-          <input
-            type="text"
-            placeholder="Search by name, email, phone or address..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all text-ink"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 hover:text-ink p-1"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-
-        <div className="text-xs text-ink/60 font-medium">
+      {/* Status filter + search */}
+      <Toolbar className="md:flex-wrap">
+        <Segmented<ResidentOnboardingStatus>
+          value={selectedStatus}
+          onChange={(v) => {
+            setSelectedStatus(v);
+            setPage(0);
+          }}
+          options={statuses.map((st) => ({
+            value: st.value,
+            label: st.label,
+            count:
+              selectedStatus === st.value && data?.totalSize !== undefined
+                ? data.totalSize
+                : undefined,
+          }))}
+          className="md:shrink-0"
+        />
+        <SearchField
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Search by name, email, phone or address..."
+          className="md:min-w-[16rem]"
+        />
+        <div className="text-xs text-ink/60 font-medium whitespace-nowrap md:ml-auto px-1">
           Showing{" "}
-          <span className="font-semibold text-ink">
+          <span className="font-semibold text-ink tabular-nums">
             {filteredResidents.length}
           </span>{" "}
           of{" "}
-          <span className="font-semibold text-ink">{data?.totalSize ?? 0}</span>{" "}
+          <span className="font-semibold text-ink tabular-nums">{data?.totalSize ?? 0}</span>{" "}
           records
         </div>
-      </div>
+      </Toolbar>
 
       {/* Main Table or Loading / Error State */}
-      <div className="rounded-md bg-white border border-ink/10 shadow-xs overflow-hidden">
+      <Panel flush>
         {isLoading ? (
-          <div className="p-12 text-center space-y-3">
-            <div className="relative mx-auto h-10 w-10">
-              <div className="h-10 w-10 rounded-full border-4 border-teal-brand/20 border-t-teal-brand animate-spin" />
-            </div>
-            <p className="text-xs text-ink/60 font-medium">
-              Loading resident registrations...
-            </p>
+          <div>
+            <p className="sr-only">Loading resident registrations...</p>
+            <SkeletonRows rows={6} />
           </div>
         ) : isError ? (
-          <div className="p-10 text-center space-y-3">
-            <div className="grid h-12 w-12 place-items-center rounded-full bg-coral-soft text-coral mx-auto">
-              <AlertCircle className="h-6 w-6" />
-            </div>
-            <p className="text-sm font-semibold text-coral">
-              {(error as any)?.message || "Failed to load registrations"}
-            </p>
-            <button
-              onClick={() => refetch()}
-              className="px-4 py-1.5 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep"
-            >
-              Retry
-            </button>
+          <div className="p-5">
+            <ErrorState
+              title="Failed to load registrations"
+              message={(error as Error | null)?.message || "Failed to load registrations"}
+              onRetry={() => refetch()}
+              retrying={isFetching}
+            />
           </div>
         ) : filteredResidents.length === 0 ? (
-          <div className="py-16 text-center space-y-3">
-            <div className="grid h-14 w-14 place-items-center rounded-full bg-cream text-ink/40 mx-auto">
-              <Users className="h-7 w-7" />
-            </div>
-            <h3 className="text-base font-bold text-ink">
-              No registrations found
-            </h3>
-            <p className="text-xs text-ink/60 max-w-sm mx-auto leading-relaxed">
-              {searchTerm
+          <EmptyState
+            icon={searchTerm ? Search : Users}
+            title="No registrations found"
+            description={
+              searchTerm
                 ? `No registrations match your search "${searchTerm}".`
-                : `There are currently no resident applications with status "${selectedStatus.replace(/_/g, " ")}".`}
-            </p>
-          </div>
+                : `There are currently no resident applications with status "${selectedStatus.replace(/_/g, " ")}".`
+            }
+          />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="whitespace-nowrap w-full text-left text-xs text-ink">
-              <thead className="bg-cream/40 border-b border-ink/10 text-ink/60 font-semibold uppercase tracking-wider text-[11px]">
-                <tr>
-                  <th className="py-3.5 px-6">Resident Applicant</th>
-                  <th className="py-3.5 px-4">Contact Details</th>
-                  <th className="py-3.5 px-4">Demographics</th>
-                  <th className="py-3.5 px-4">Address</th>
-                  <th className="py-3.5 px-4">Status & Source</th>
-                  {selectedStatus === "REJECTED" && (
-                    <th className="py-3.5 px-4">Rejection Reason</th>
-                  )}
-                  <th className="py-3.5 px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink/5">
-                {filteredResidents.map((res) => {
-                  const fullName =
-                    `${res.firstName || ""} ${res.middleName ? res.middleName + " " : ""}${res.lastName || ""}`.trim();
-                  const initials =
-                    (
-                      (res.firstName?.[0] || "") + (res.lastName?.[0] || "")
-                    ).toUpperCase() || "R";
+          <>
+            {/* Desktop table */}
+            <div className={`hidden md:block ${table.wrap}`}>
+              <table className={table.table}>
+                <thead>
+                  <tr>
+                    <th className={table.th}>Resident Applicant</th>
+                    <th className={table.th}>Contact Details</th>
+                    <th className={table.th}>Demographics</th>
+                    <th className={table.th}>Address</th>
+                    <th className={table.th}>Status & Source</th>
+                    {selectedStatus === "REJECTED" && (
+                      <th className={table.th}>Rejection Reason</th>
+                    )}
+                    <th className={`${table.th} text-right`}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredResidents.map((res) => {
+                    const fullName = fullNameOf(res);
 
-                  return (
-                    <tr
-                      key={res.publicId}
-                      className="hover:bg-cream/20 transition-colors"
-                    >
-                      {/* Name & ID */}
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-teal-deep font-bold text-xs shadow-xs">
-                            {initials}
-                          </div>
-                          <div>
-                            <div className="font-bold text-sm text-ink">
+                    return (
+                      <tr key={res.publicId} className={table.tr}>
+                        {/* Name & ID */}
+                        <td className={table.td}>
+                          <div className="flex items-center gap-3">
+                            <Avatar
+                              name={`${res.firstName || ""} ${res.lastName || ""}`}
+                              className="transition-transform group-hover:scale-105"
+                            />
+                            <div className="font-semibold text-sm text-ink whitespace-nowrap">
                               {fullName}
                             </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Contact */}
-                      <td className="py-4 px-4 space-y-0.5">
-                        <div className="flex items-center gap-1.5 text-ink/80">
-                          <Mail className="h-3.5 w-3.5 text-ink/40" />
-                          <span>{res.email || "—"}</span>
-                        </div>
-                        {res.phone && (
-                          <div className="flex items-center gap-1.5 text-ink/60 text-[11px]">
-                            <Phone className="h-3 w-3 text-ink/40" />
-                            <span>{res.phone}</span>
+                        {/* Contact */}
+                        <td className={`${table.td} text-xs`}>
+                          <div className="flex items-center gap-1.5 text-ink/80 whitespace-nowrap">
+                            <Mail className="h-3.5 w-3.5 text-ink/40" />
+                            <span>{res.email || "—"}</span>
                           </div>
-                        )}
-                      </td>
+                          {res.phone && (
+                            <div className="mt-0.5 flex items-center gap-1.5 text-ink/60 text-[11px] whitespace-nowrap">
+                              <Phone className="h-3 w-3 text-ink/40" />
+                              <span>{res.phone}</span>
+                            </div>
+                          )}
+                        </td>
 
-                      {/* Demographics */}
-                      <td className="py-4 px-4 space-y-0.5">
-                        <div className="flex items-center gap-1.5 text-ink/80">
-                          <Calendar className="h-3.5 w-3.5 text-ink/40" />
-                          <span>{res.dateOfBirth || "—"}</span>
-                        </div>
-                        <div className="text-[11px] text-ink/60">
-                          Gender:{" "}
-                          <span className="font-medium text-ink/80">
-                            {res.gender || "—"}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Address */}
-                      <td className="py-4 px-4 max-w-xs truncate text-ink/70">
-                        {res.address ? (
-                          <div
-                            className="flex items-center gap-1.5"
-                            title={res.address}
-                          >
-                            <MapPin className="h-3.5 w-3.5 shrink-0 text-ink/40" />
-                            <span className="truncate">{res.address}</span>
+                        {/* Demographics */}
+                        <td className={`${table.td} text-xs`}>
+                          <div className="flex items-center gap-1.5 text-ink/80 whitespace-nowrap">
+                            <Calendar className="h-3.5 w-3.5 text-ink/40" />
+                            <span>{res.dateOfBirth || "—"}</span>
                           </div>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
+                          <div className="mt-0.5 text-[11px] text-ink/60 whitespace-nowrap">
+                            Gender:{" "}
+                            <span className="font-medium text-ink/80">
+                              {res.gender || "—"}
+                            </span>
+                          </div>
+                        </td>
 
-                      {/* Status & Source */}
-                      <td className="py-4 px-4 space-y-1">
-                        <div>
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                              res.onboardingStatus === "PENDING_VERIFICATION"
-                                ? "bg-amber-50 text-amber-800 border-amber-200"
-                                : res.onboardingStatus === "VERIFIED"
-                                  ? "bg-sky-50 text-sky-800 border-sky-200"
-                                  : res.onboardingStatus === "PLACED"
-                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                    : "bg-rose-50 text-rose-800 border-rose-200"
-                            }`}
-                          >
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                res.onboardingStatus === "PENDING_VERIFICATION"
-                                  ? "bg-amber-500 animate-pulse"
-                                  : res.onboardingStatus === "VERIFIED"
-                                    ? "bg-sky-500"
-                                    : res.onboardingStatus === "PLACED"
-                                      ? "bg-emerald-500"
-                                      : "bg-rose-500"
-                              }`}
-                            />
-                            {res.onboardingStatus.replace(/_/g, " ")}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-ink/50 uppercase tracking-wider font-semibold">
+                        {/* Address */}
+                        <td className={`${table.td} text-xs max-w-[14rem] text-ink/70`}>
+                          {res.address ? (
+                            <div
+                              className="flex items-center gap-1.5 min-w-0"
+                              title={res.address}
+                            >
+                              <MapPin className="h-3.5 w-3.5 shrink-0 text-ink/40" />
+                              <span className="truncate">{res.address}</span>
+                            </div>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+
+                        {/* Status & Source */}
+                        <td className={table.td}>
+                          <OnboardingBadge status={res.onboardingStatus} />
+                          <div className="mt-1 text-[10px] text-ink/50 uppercase tracking-wider font-semibold whitespace-nowrap">
+                            {res.registrationSource?.replace(/_/g, " ") ||
+                              "SELF REGISTRATION"}
+                          </div>
+                        </td>
+
+                        {/* Rejection Reason Column */}
+                        {selectedStatus === "REJECTED" && (
+                          <td className={`${table.td} max-w-xs text-red-700 text-xs font-medium`}>
+                            {res.rejectionReason || "—"}
+                          </td>
+                        )}
+
+                        {/* Actions */}
+                        <td className={`${table.td} text-right`}>
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              onClick={() => setViewTarget(res)}
+                              className={btn.icon}
+                              title="View resident profile"
+                              aria-label="View resident profile"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+
+                            {(res.onboardingStatus === "PENDING_VERIFICATION" ||
+                              res.onboardingStatus === "VERIFIED") && (
+                              <>
+                                <button
+                                  onClick={() => handleOpenAdmit(res)}
+                                  className={`${btn.primary} ${btn.sm} !bg-emerald-600 hover:!bg-emerald-700`}
+                                >
+                                  <Check className="h-3.5 w-3.5" />
+                                  <span>Admit</span>
+                                </button>
+
+                                <button
+                                  onClick={() => handleOpenReject(res)}
+                                  className={`${btn.dangerSoft} ${btn.sm}`}
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                  <span>Reject</span>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <ul className="md:hidden divide-y divide-ink/[0.06]">
+              {filteredResidents.map((res) => {
+                const fullName = fullNameOf(res);
+                return (
+                  <li key={res.publicId} className="p-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <Avatar name={`${res.firstName || ""} ${res.lastName || ""}`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm text-ink truncate">
+                          {fullName}
+                        </p>
+                        <p className="text-[10px] text-ink/50 uppercase tracking-wider font-semibold">
                           {res.registrationSource?.replace(/_/g, " ") ||
                             "SELF REGISTRATION"}
-                        </div>
-                      </td>
+                        </p>
+                      </div>
+                      <OnboardingBadge status={res.onboardingStatus} />
+                    </div>
 
-                      {/* Rejection Reason Column */}
-                      {selectedStatus === "REJECTED" && (
-                        <td className="py-4 px-4 max-w-xs text-rose-700 text-xs font-medium">
-                          {res.rejectionReason || "—"}
-                        </td>
+                    <div className="grid grid-cols-1 gap-1.5 text-xs text-ink/75">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Mail className="h-3.5 w-3.5 shrink-0 text-ink/40" />
+                        <span className="truncate">{res.email || "—"}</span>
+                      </div>
+                      {res.phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-3.5 w-3.5 shrink-0 text-ink/40" />
+                          <span>{res.phone}</span>
+                        </div>
                       )}
-
-                      {/* Actions */}
-                      <td className="py-4 px-6 text-right">
-                        <div className="inline-flex items-center gap-2">
-                          <button
-                            onClick={() => setViewTarget(res)}
-                            className="p-1.5 rounded-md hover:bg-cream text-ink/60 hover:text-ink transition-colors cursor-pointer"
-                            title="View resident profile"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-
-                          {(res.onboardingStatus === "PENDING_VERIFICATION" ||
-                            res.onboardingStatus === "VERIFIED") && (
-                            <>
-                              <button
-                                onClick={() => handleOpenAdmit(res)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-all shadow-xs cursor-pointer"
-                              >
-                                <Check className="h-3.5 w-3.5" />
-                                <span>Admit</span>
-                              </button>
-
-                              <button
-                                onClick={() => handleOpenReject(res)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs border border-rose-200 transition-all cursor-pointer"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                                <span>Reject</span>
-                              </button>
-                            </>
-                          )}
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3.5 w-3.5 shrink-0 text-ink/40" />
+                        <span>
+                          {res.dateOfBirth || "—"}
+                          <span className="text-ink/45"> · Gender: </span>
+                          <span className="font-medium">{res.gender || "—"}</span>
+                        </span>
+                      </div>
+                      {res.address && (
+                        <div className="flex items-start gap-2 min-w-0">
+                          <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-ink/40" />
+                          <span className="break-words">{res.address}</span>
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      )}
+                    </div>
+
+                    {selectedStatus === "REJECTED" && (
+                      <p className="px-3 py-2 rounded-md bg-red-50 border border-red-200/70 text-xs font-medium text-red-700">
+                        {res.rejectionReason || "—"}
+                      </p>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => setViewTarget(res)}
+                        className={`${btn.secondary} ${btn.sm}`}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        <span>View</span>
+                      </button>
+                      {(res.onboardingStatus === "PENDING_VERIFICATION" ||
+                        res.onboardingStatus === "VERIFIED") && (
+                        <>
+                          <button
+                            onClick={() => handleOpenAdmit(res)}
+                            className={`${btn.primary} ${btn.sm} !bg-emerald-600 hover:!bg-emerald-700`}
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            <span>Admit</span>
+                          </button>
+                          <button
+                            onClick={() => handleOpenReject(res)}
+                            className={`${btn.dangerSoft} ${btn.sm}`}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            <span>Reject</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
 
         {/* Pagination Bar */}
         {data && data.totalPages > 1 && (
-          <div className="p-4 border-t border-ink/10 flex items-center justify-between text-xs text-ink/70">
+          <div className="px-4 sm:px-5 py-3.5 border-t border-ink/[0.06] bg-[#f8faf9] flex items-center justify-between gap-3 text-xs text-ink/70">
             <div>
               Page <span className="font-semibold text-ink">{page + 1}</span> of{" "}
               <span className="font-semibold text-ink">{data.totalPages}</span>
@@ -514,358 +623,317 @@ export default function RegistrationsPage() {
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0 || isLoading}
-                className="px-3 py-1.5 rounded-md border border-ink/15 text-xs font-semibold hover:bg-cream disabled:opacity-40 transition-colors flex items-center gap-1 cursor-pointer"
+                className={`${btn.secondary} ${btn.sm} group`}
               >
-                <ChevronLeft className="h-3.5 w-3.5" />
-                Previous
+                <ChevronLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+                <span className="hidden sm:inline">Previous</span>
               </button>
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page >= data.totalPages - 1 || isLoading}
-                className="px-3 py-1.5 rounded-md border border-ink/15 text-xs font-semibold hover:bg-cream disabled:opacity-40 transition-colors flex items-center gap-1 cursor-pointer"
+                className={`${btn.secondary} ${btn.sm} group`}
               >
-                Next
-                <ChevronRight className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </button>
             </div>
           </div>
         )}
-      </div>
+      </Panel>
 
       {/* ADMIT RESIDENT MODAL */}
       {admitTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-lg rounded-md bg-white border border-ink/15 shadow-2xl p-6 space-y-5 text-ink">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-              <div className="flex items-center gap-2 text-emerald-700">
-                <CheckCircle2 className="h-5 w-5" />
-                <h3 className="text-lg font-bold text-ink">
-                  Admit & Place Resident
-                </h3>
-              </div>
+        <Modal
+          open
+          onClose={() => setAdmitTarget(null)}
+          icon={CheckCircle2}
+          title="Admit & Place Resident"
+          description="Assign this applicant to an organisation and care home."
+          footer={
+            <>
               <button
+                type="button"
                 onClick={() => setAdmitTarget(null)}
-                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
+                className={btn.secondary}
               >
-                <X className="h-5 w-5" />
+                Cancel
               </button>
-            </div>
-
-            <div className="p-3.5 rounded-md bg-cream/50 border border-ink/10 text-xs space-y-1">
-              <div className="font-bold text-sm text-ink">
+              <button
+                type="submit"
+                form="admit-resident-form"
+                disabled={admitMutation.isPending}
+                className={`${btn.primary} !bg-emerald-600 hover:!bg-emerald-700`}
+              >
+                {admitMutation.isPending && <Spinner className="h-4 w-4" />}
+                <span>
+                  {admitMutation.isPending
+                    ? "Admitting..."
+                    : "Confirm Admission"}
+                </span>
+                {!admitMutation.isPending && <Check className="h-4 w-4" />}
+              </button>
+            </>
+          }
+        >
+          <div className="flex items-center gap-3 p-3.5 rounded-md bg-mint/40 border border-teal-brand/15 mb-5">
+            <Avatar name={`${admitTarget.firstName || ""} ${admitTarget.lastName || ""}`} />
+            <div className="min-w-0 text-xs">
+              <div className="font-semibold text-sm text-ink truncate">
                 {admitTarget.firstName} {admitTarget.lastName}
               </div>
-              <div className="text-ink/65 flex items-center gap-3">
+              <div className="text-ink/65 flex flex-wrap items-center gap-x-3 gap-y-0.5">
                 <span>DOB: {admitTarget.dateOfBirth}</span>
-                <span>•</span>
-                <span>Email: {admitTarget.email}</span>
+                <span className="hidden sm:inline">•</span>
+                <span className="break-all">Email: {admitTarget.email}</span>
               </div>
             </div>
-
-            <form
-              onSubmit={handleConfirmAdmit}
-              className="space-y-4 text-xs sm:text-sm"
-            >
-              <div className="space-y-1.5">
-                <label className="font-semibold text-ink flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Building2 className="h-4 w-4 text-teal-brand" />
-                    <span>Destination Organisation *</span>
-                  </span>
-                  {isLoadingOrgs && (
-                    <span className="text-xs text-ink/50 flex items-center gap-1">
-                      <RefreshCw className="h-3 w-3 animate-spin text-teal-brand" />{" "}
-                      Loading...
-                    </span>
-                  )}
-                </label>
-                <div className="space-y-1.5">
-                  <select
-                    value={admitOrgId}
-                    onChange={(e) => {
-                      setAdmitOrgId(e.target.value);
-                      setAdmitCareHomeId("");
-                    }}
-                    disabled={isLoadingOrgs}
-                    className="w-full rounded-md border border-ink/15 bg-cream/30 px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40"
-                  >
-                    <option value="">
-                      {isLoadingOrgs
-                        ? "Loading organisations..."
-                        : "-- Select an organisation --"}
-                    </option>
-                    {orgsData?.content
-                      ?.filter((org) => org.status?.toUpperCase() === "ACTIVE")
-                      ?.map((org) => (
-                        <option key={org.publicId} value={org.publicId}>
-                          {org.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-semibold text-ink flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Home className="h-4 w-4 text-teal-brand" />
-                    <span>Care Home Facility *</span>
-                  </span>
-                  {isLoadingHomes && (
-                    <span className="text-xs text-ink/50 flex items-center gap-1">
-                      <RefreshCw className="h-3 w-3 animate-spin text-teal-brand" />{" "}
-                      Loading...
-                    </span>
-                  )}
-                </label>
-                <div className="space-y-1.5">
-                  <select
-                    value={admitCareHomeId}
-                    onChange={(e) => setAdmitCareHomeId(e.target.value)}
-                    disabled={!admitOrgId || isLoadingHomes}
-                    className="w-full rounded-md border border-ink/15 bg-cream/30 px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 disabled:opacity-60"
-                  >
-                    <option value="">
-                      {!admitOrgId
-                        ? "Select an organisation above first..."
-                        : isLoadingHomes
-                          ? "Loading care homes..."
-                          : (careHomesData?.content?.filter((h) => h.status?.toUpperCase() === "ACTIVE")?.length ?? 0) === 0
-                            ? "No active care homes found for this organisation"
-                            : "-- Select a care home --"}
-                    </option>
-                    {careHomesData?.content
-                      ?.filter((home) => home.status?.toUpperCase() === "ACTIVE")
-                      ?.map((home) => (
-                        <option key={home.publicId} value={home.publicId}>
-                          {home.name} {home.city ? `(${home.city})` : ""}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-semibold text-ink flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-teal-brand" />
-                  <span>Admission Date *</span>
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={admissionDate}
-                  onChange={(e) => setAdmissionDate(e.target.value)}
-                  className="w-full rounded-md border border-ink/15 bg-cream/30 px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40"
-                />
-              </div>
-
-              <div className="pt-3 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setAdmitTarget(null)}
-                  className="px-4 py-2.5 rounded-md border border-ink/15 text-xs font-semibold hover:bg-cream transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={admitMutation.isPending}
-                  className="px-5 py-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                >
-                  <span>
-                    {admitMutation.isPending
-                      ? "Admitting..."
-                      : "Confirm Admission"}
-                  </span>
-                  <Check className="h-4 w-4" />
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
+
+          <form
+            id="admit-resident-form"
+            onSubmit={handleConfirmAdmit}
+            className="space-y-4"
+          >
+            <div>
+              <label className={`${field.label} flex items-center justify-between`}>
+                <span className="flex items-center gap-1.5">
+                  <Building2 className="h-3.5 w-3.5 text-teal-brand" />
+                  <span>Destination Organisation *</span>
+                </span>
+                {isLoadingOrgs && (
+                  <span className="text-[11px] font-medium text-ink/50 flex items-center gap-1">
+                    <RefreshCw className="h-3 w-3 animate-spin text-teal-brand" />{" "}
+                    Loading...
+                  </span>
+                )}
+              </label>
+              <select
+                value={admitOrgId}
+                onChange={(e) => {
+                  setAdmitOrgId(e.target.value);
+                  setAdmitCareHomeId("");
+                }}
+                disabled={isLoadingOrgs}
+                className={field.input}
+              >
+                <option value="">
+                  {isLoadingOrgs
+                    ? "Loading organisations..."
+                    : "-- Select an organisation --"}
+                </option>
+                {orgsData?.content
+                  ?.filter((org) => org.status?.toUpperCase() === "ACTIVE")
+                  ?.map((org) => (
+                    <option key={org.publicId} value={org.publicId}>
+                      {org.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={`${field.label} flex items-center justify-between`}>
+                <span className="flex items-center gap-1.5">
+                  <Home className="h-3.5 w-3.5 text-teal-brand" />
+                  <span>Care Home Facility *</span>
+                </span>
+                {isLoadingHomes && (
+                  <span className="text-[11px] font-medium text-ink/50 flex items-center gap-1">
+                    <RefreshCw className="h-3 w-3 animate-spin text-teal-brand" />{" "}
+                    Loading...
+                  </span>
+                )}
+              </label>
+              <select
+                value={admitCareHomeId}
+                onChange={(e) => setAdmitCareHomeId(e.target.value)}
+                disabled={!admitOrgId || isLoadingHomes}
+                className={field.input}
+              >
+                <option value="">
+                  {!admitOrgId
+                    ? "Select an organisation above first..."
+                    : isLoadingHomes
+                      ? "Loading care homes..."
+                      : (careHomesData?.content?.filter((h) => h.status?.toUpperCase() === "ACTIVE")?.length ?? 0) === 0
+                        ? "No active care homes found for this organisation"
+                        : "-- Select a care home --"}
+                </option>
+                {careHomesData?.content
+                  ?.filter((home) => home.status?.toUpperCase() === "ACTIVE")
+                  ?.map((home) => (
+                    <option key={home.publicId} value={home.publicId}>
+                      {home.name} {home.city ? `(${home.city})` : ""}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={`${field.label} flex items-center gap-1.5`}>
+                <Calendar className="h-3.5 w-3.5 text-teal-brand" />
+                <span>Admission Date *</span>
+              </label>
+              <input
+                type="date"
+                required
+                value={admissionDate}
+                onChange={(e) => setAdmissionDate(e.target.value)}
+                className={field.input}
+              />
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* REJECT RESIDENT MODAL */}
       {rejectTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-md rounded-md bg-white border border-ink/15 shadow-2xl p-6 space-y-5 text-ink">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-              <div className="flex items-center gap-2 text-rose-700">
-                <XCircle className="h-5 w-5" />
-                <h3 className="text-lg font-bold text-ink">
-                  Reject Application
-                </h3>
-              </div>
+        <Modal
+          open
+          onClose={() => setRejectTarget(null)}
+          icon={XCircle}
+          tone="danger"
+          size="sm"
+          title="Reject Application"
+          footer={
+            <>
               <button
+                type="button"
                 onClick={() => setRejectTarget(null)}
-                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
+                className={btn.secondary}
               >
-                <X className="h-5 w-5" />
+                Cancel
               </button>
+              <button
+                type="submit"
+                form="reject-resident-form"
+                disabled={rejectMutation.isPending}
+                className={btn.danger}
+              >
+                {rejectMutation.isPending && <Spinner className="h-4 w-4" />}
+                <span>
+                  {rejectMutation.isPending
+                    ? "Declining..."
+                    : "Confirm Rejection"}
+                </span>
+                {!rejectMutation.isPending && <X className="h-4 w-4" />}
+              </button>
+            </>
+          }
+        >
+          <p className="text-sm text-ink/70 leading-relaxed mb-4">
+            You are declining the registration of{" "}
+            <span className="font-semibold text-ink">
+              {rejectTarget.firstName} {rejectTarget.lastName}
+            </span>
+            . Please state the administrative reason for this rejection.
+          </p>
+
+          <form
+            id="reject-resident-form"
+            onSubmit={handleConfirmReject}
+            className="space-y-4"
+          >
+            <div>
+              <label className={field.label}>Reason for Rejection *</label>
+              <textarea
+                required
+                rows={4}
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="e.g. Incomplete verification documentation, facility at maximum capacity, or out of catchment area..."
+                className={`${field.input} resize-y`}
+              />
             </div>
-
-            <p className="text-xs text-ink/70 leading-relaxed">
-              You are declining the registration of{" "}
-              <span className="font-semibold text-ink">
-                {rejectTarget.firstName} {rejectTarget.lastName}
-              </span>
-              . Please state the administrative reason for this rejection.
-            </p>
-
-            <form
-              onSubmit={handleConfirmReject}
-              className="space-y-4 text-xs sm:text-sm"
-            >
-              <div className="space-y-1.5">
-                <label className="font-semibold text-ink">
-                  Reason for Rejection *
-                </label>
-                <textarea
-                  required
-                  rows={4}
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="e.g. Incomplete verification documentation, facility at maximum capacity, or out of catchment area..."
-                  className="w-full rounded-md border border-ink/15 bg-cream/30 p-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRejectTarget(null)}
-                  className="px-4 py-2.5 rounded-md border border-ink/15 text-xs font-semibold hover:bg-cream transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={rejectMutation.isPending}
-                  className="px-5 py-2.5 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                >
-                  <span>
-                    {rejectMutation.isPending
-                      ? "Declining..."
-                      : "Confirm Rejection"}
-                  </span>
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+          </form>
+        </Modal>
       )}
 
       {/* VIEW DETAILS DRAWER / MODAL */}
       {viewTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-lg rounded-md bg-white border border-ink/15 shadow-2xl p-6 space-y-5 text-ink">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-              <div className="flex items-center gap-2 text-teal-brand">
-                <UserCheck className="h-5 w-5" />
-                <h3 className="text-lg font-bold text-ink">
-                  Resident Application Profile
-                </h3>
+        <Modal
+          open
+          onClose={() => setViewTarget(null)}
+          icon={UserCheck}
+          title="Resident Application Profile"
+          footer={
+            <button onClick={() => setViewTarget(null)} className={btn.primary}>
+              Close
+            </button>
+          }
+        >
+          <div className="space-y-5">
+            <div className="flex items-center gap-3">
+              <Avatar
+                size="lg"
+                name={`${viewTarget.firstName || ""} ${viewTarget.lastName || ""}`}
+              />
+              <div className="min-w-0">
+                <p className="font-semibold text-ink truncate">{fullNameOf(viewTarget)}</p>
+                <div className="mt-1">
+                  <OnboardingBadge status={viewTarget.onboardingStatus} />
+                </div>
               </div>
-              <button
-                onClick={() => setViewTarget(null)}
-                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
             </div>
 
-            <div className="space-y-4 text-xs sm:text-sm">
-              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-md bg-cream/50 border border-ink/10">
-                <div>
-                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
-                    First Name
-                  </span>
-                  <p className="font-bold text-ink">{viewTarget.firstName}</p>
-                </div>
-                <div>
-                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
-                    Last Name
-                  </span>
-                  <p className="font-bold text-ink">{viewTarget.lastName}</p>
-                </div>
-                {viewTarget.middleName && (
-                  <div>
-                    <span className="text-[11px] text-ink/60 uppercase font-semibold">
-                      Middle Name
-                    </span>
-                    <p className="font-bold text-ink">
-                      {viewTarget.middleName}
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
-                    Gender
-                  </span>
-                  <p className="font-bold text-ink">{viewTarget.gender}</p>
-                </div>
-                <div>
-                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
-                    Date of Birth
-                  </span>
-                  <p className="font-bold text-ink">{viewTarget.dateOfBirth}</p>
-                </div>
-                <div>
-                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
-                    Onboarding Status
-                  </span>
-                  <p className="font-bold text-teal-deep">
-                    {viewTarget.onboardingStatus.replace(/_/g, " ")}
-                  </p>
-                </div>
-              </div>
+            <dl className="grid grid-cols-2 gap-4 p-4 rounded-md bg-[#f8faf9] border border-ink/[0.06]">
+              <DataItem label="First Name">{viewTarget.firstName}</DataItem>
+              <DataItem label="Last Name">{viewTarget.lastName}</DataItem>
+              {viewTarget.middleName && (
+                <DataItem label="Middle Name">{viewTarget.middleName}</DataItem>
+              )}
+              <DataItem label="Gender">{viewTarget.gender}</DataItem>
+              <DataItem label="Date of Birth" icon={Calendar}>
+                {viewTarget.dateOfBirth}
+              </DataItem>
+              <DataItem label="Onboarding Status">
+                <span className="text-teal-deep">
+                  {viewTarget.onboardingStatus.replace(/_/g, " ")}
+                </span>
+              </DataItem>
+            </dl>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-teal-brand" />
+            <div className="space-y-2.5 text-sm">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="grid place-items-center w-8 h-8 rounded-md bg-mint text-teal-brand shrink-0">
+                  <Mail className="h-4 w-4" />
+                </span>
+                <span className="font-medium text-ink break-all">
+                  {viewTarget.email}
+                </span>
+              </div>
+              {viewTarget.phone && (
+                <div className="flex items-center gap-2.5">
+                  <span className="grid place-items-center w-8 h-8 rounded-md bg-mint text-teal-brand shrink-0">
+                    <Phone className="h-4 w-4" />
+                  </span>
                   <span className="font-medium text-ink">
-                    {viewTarget.email}
+                    {viewTarget.phone}
                   </span>
-                </div>
-                {viewTarget.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-teal-brand" />
-                    <span className="font-medium text-ink">
-                      {viewTarget.phone}
-                    </span>
-                  </div>
-                )}
-                {viewTarget.address && (
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 text-teal-brand shrink-0 mt-0.5" />
-                    <span className="font-medium text-ink">
-                      {viewTarget.address}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {viewTarget.rejectionReason && (
-                <div className="p-3.5 rounded-md bg-rose-50 border border-rose-200 text-rose-800 space-y-1">
-                  <p className="font-bold text-xs">Rejection Justification:</p>
-                  <p className="text-xs leading-relaxed">
-                    {viewTarget.rejectionReason}
-                  </p>
                 </div>
               )}
-
-              <div className="pt-2 text-right">
-                <button
-                  onClick={() => setViewTarget(null)}
-                  className="px-5 py-2 rounded-md bg-teal-brand text-white font-semibold text-xs hover:bg-teal-deep transition-all"
-                >
-                  Close
-                </button>
-              </div>
+              {viewTarget.address && (
+                <div className="flex items-start gap-2.5">
+                  <span className="grid place-items-center w-8 h-8 rounded-md bg-mint text-teal-brand shrink-0">
+                    <MapPin className="h-4 w-4" />
+                  </span>
+                  <span className="font-medium text-ink pt-1.5">
+                    {viewTarget.address}
+                  </span>
+                </div>
+              )}
             </div>
+
+            {viewTarget.rejectionReason && (
+              <div className="p-3.5 rounded-md bg-red-50 border border-red-200 text-red-800 space-y-1">
+                <p className="font-semibold text-xs">Rejection Justification:</p>
+                <p className="text-xs leading-relaxed">
+                  {viewTarget.rejectionReason}
+                </p>
+              </div>
+            )}
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

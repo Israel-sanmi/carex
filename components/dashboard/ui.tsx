@@ -295,6 +295,7 @@ const statusMap: Record<string, { tone: BadgeTone; icon: LucideIcon; label?: str
   ACCEPTED: { tone: "green", icon: CheckCircle2 },
   VERIFIED: { tone: "green", icon: CheckCircle2 },
   COMPLETED: { tone: "green", icon: CheckCircle2 },
+  PLACED: { tone: "green", icon: CheckCircle2 },
   PENDING: { tone: "amber", icon: Clock },
   PENDING_REVIEW: { tone: "amber", icon: Clock },
   PENDING_VERIFICATION: { tone: "amber", icon: Mail },
@@ -491,6 +492,9 @@ export function DataItem({
 /* Modal: centred dialog on desktop, bottom sheet on mobile            */
 /* ------------------------------------------------------------------ */
 
+/** Open modals, innermost last. Only the top one reacts to Escape; scroll unlocks when empty. */
+const modalStack: string[] = [];
+
 export function Modal({
   open,
   onClose,
@@ -514,17 +518,26 @@ export function Modal({
 }) {
   const titleId = useId();
 
+  // Register in the shared stack while open (controls scroll lock + who owns Escape)
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", onKey);
+    modalStack.push(titleId);
+    if (modalStack.length === 1) document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev;
-      document.removeEventListener("keydown", onKey);
+      const i = modalStack.lastIndexOf(titleId);
+      if (i !== -1) modalStack.splice(i, 1);
+      if (modalStack.length === 0) document.body.style.overflow = "";
     };
-  }, [open, onClose]);
+  }, [open, titleId]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && modalStack[modalStack.length - 1] === titleId) onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose, titleId]);
 
   if (!open || typeof document === "undefined") return null;
 

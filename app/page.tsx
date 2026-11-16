@@ -10,6 +10,8 @@ import Faq from "@/components/landing/faq";
 import Cta from "@/components/landing/cta";
 import Footer from "@/components/landing/footer";
 import Reveal from "@/components/landing/reveal";
+import Bento from "@/components/landing/bento";
+import HowItWorks from "@/components/landing/how-it-works";
 
 export default function Home() {
   return (
@@ -32,12 +34,18 @@ export default function Home() {
         </Reveal>
 
         <Reveal>
+          <Bento />
+        </Reveal>
+
+        <Reveal>
           <RoleTabs />
         </Reveal>
 
         <Reveal from="scale">
           <OfflineSpotlight />
         </Reveal>
+
+        <HowItWorks />
 
         <Reveal>
           <ImpactStats />
