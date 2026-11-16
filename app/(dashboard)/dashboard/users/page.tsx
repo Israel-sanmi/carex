@@ -4,30 +4,37 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRole } from "@/lib/role-context";
 import {
-  useResidentRegistrations,
-  useAdmitResidentMutation,
-  useRejectResidentMutation,
-} from "@/lib/hooks/use-registrations";
+  useUsers,
+  useUserRoles,
+  useUpdateUserMutation,
+  useAssignRoleMutation,
+  useRevokeRoleMutation,
+  useUpdateRoleStatusMutation,
+} from "@/lib/hooks/use-users";
 import { useOrganisations } from "@/lib/hooks/use-organisations";
 import { useCareHomesByOrganisation } from "@/lib/hooks/use-care-homes";
-import {
-  ResidentOnboardingStatus,
-  ResidentRegistrationItem,
-} from "@/lib/api-registrations";
+import { UserItem, UserRole, UserStatus, UserRoleAssignment } from "@/lib/api-users";
 import { toast } from "@/components/ui/toast";
 import {
   Users,
   Search,
+  Filter,
   CheckCircle2,
   XCircle,
   Building2,
   Home,
   AlertCircle,
+  AlertTriangle,
   Eye,
-  Calendar,
   Mail,
   Phone,
-  MapPin,
+  Calendar,
+  ShieldCheck,
+  ShieldAlert,
+  Shield,
+  Edit2,
+  Plus,
+  Trash2,
   RefreshCw,
   X,
   Check,
@@ -36,298 +43,400 @@ import {
   UserCheck,
 } from "lucide-react";
 
-export default function UsersPage() {
-  const { roleAssignments } = useRole();
+const ALLOWED_VIEWER_ROLES = [
+  "SUPER_ADMIN",
+  "SYSTEM_ADMIN",
+  "ORGANISATION_ADMIN",
+  "CARE_HOME_ADMIN",
+  "CARE_HOME_MANAGER",
+];
 
-  // Status Filter
-  const [selectedStatus, setSelectedStatus] =
-    useState<ResidentOnboardingStatus>("VERIFIED");
-  const [page, setPage] = useState(0);
-  const [pageSize] = useState(20);
+const STATUS_FILTERS: { label: string; value: UserStatus | "" }[] = [
+  { label: "All Statuses", value: "" },
+  { label: "Active", value: "ACTIVE" },
+  { label: "Pending", value: "PENDING" },
+  { label: "Suspended", value: "SUSPENDED" },
+  { label: "Inactive", value: "INACTIVE" },
+];
+
+const AVAILABLE_ROLES: { label: string; value: UserRole }[] = [
+  { label: "Caregiver", value: "CAREGIVER" },
+  { label: "Care Home Manager", value: "CARE_HOME_MANAGER" },
+  { label: "Care Home Admin", value: "CARE_HOME_ADMIN" },
+  { label: "Organisation Admin", value: "ORGANISATION_ADMIN" },
+  { label: "Organisation Support", value: "ORGANISATION_SUPPORT" },
+  { label: "Resident", value: "RESIDENT" },
+  { label: "System Support", value: "SYSTEM_SUPPORT" },
+  { label: "System Admin", value: "SYSTEM_ADMIN" },
+  { label: "Super Admin", value: "SUPER_ADMIN" },
+];
+
+export default function UsersPage() {
+  const { currentRole, roles } = useRole();
+
+  const isAuthorized =
+    ALLOWED_VIEWER_ROLES.includes(currentRole) ||
+    roles.some((r) => ALLOWED_VIEWER_ROLES.includes(r));
+
+  // Filter & Search states
+  const [selectedStatus, setSelectedStatus] = useState<UserStatus | "">("");
+  const [selectedRole, setSelectedRole] = useState<UserRole | "">("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(0);
+  const pageSize = 20;
 
   // Modals state
-  const [admitTarget, setAdmitTarget] =
-    useState<ResidentRegistrationItem | null>(null);
-  const [rejectTarget, setRejectTarget] =
-    useState<ResidentRegistrationItem | null>(null);
-  const [viewTarget, setViewTarget] = useState<ResidentRegistrationItem | null>(
-    null,
-  );
+  const [editingUser, setEditingUser] = useState<UserItem | null>(null);
+  const [managingRolesUser, setManagingRolesUser] = useState<UserItem | null>(null);
 
-  // Admit form state
-  const [admitOrgId, setAdmitOrgId] = useState<string>("");
-  const [admitCareHomeId, setAdmitCareHomeId] = useState<string>("");
-  const [admissionDate, setAdmissionDate] = useState<string>("");
+  // Edit user form state
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editMiddleName, setEditMiddleName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
 
-  // Reject form state
-  const [rejectionReason, setRejectionReason] = useState("");
+  // Assign role form state
+  const [assignRole, setAssignRole] = useState<UserRole>("CAREGIVER");
+  const [assignOrgId, setAssignOrgId] = useState("");
+  const [assignCareHomeId, setAssignCareHomeId] = useState("");
 
-  // React Query hooks
-  const { data, isLoading, isError, error, refetch, isFetching } =
-    useResidentRegistrations(selectedStatus, page, pageSize);
-
-  const admitMutation = useAdmitResidentMutation();
-  const rejectMutation = useRejectResidentMutation();
-
-  // On-demand fetch of organisations when Admit modal is open
-  const { data: orgsData, isLoading: isLoadingOrgs } = useOrganisations(
-    { page: 0, size: 100 },
-    { enabled: Boolean(admitTarget) },
-  );
-
-  // On-demand fetch of care homes for selected organisation when Admit modal is open
-  const { data: careHomesData, isLoading: isLoadingHomes } =
-    useCareHomesByOrganisation(
-      admitOrgId || null,
-      { page: 0, size: 100 },
-      { enabled: Boolean(admitTarget && admitOrgId) },
-    );
-
-  // Handle open admit modal
-  const handleOpenAdmit = (resident: ResidentRegistrationItem) => {
-    setAdmitTarget(resident);
-    const defaultOrg =
-      roleAssignments.find((ra) => ra.organisationPublicId)
-        ?.organisationPublicId || "";
-    setAdmitOrgId(defaultOrg);
-
-    const defaultHome =
-      roleAssignments.find((ra) => ra.careHomePublicId)?.careHomePublicId || "";
-    setAdmitCareHomeId(defaultHome);
-    setAdmissionDate(new Date().toISOString().split("T")[0]);
-  };
-
-  // Submit admit
-  const handleConfirmAdmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!admitTarget) return;
-
-    if (!admitOrgId) {
-      toast.error("Please select a destination organisation");
-      return;
-    }
-    if (!admitCareHomeId) {
-      toast.error("Please select an assigned care home facility");
-      return;
-    }
-    if (!admissionDate) {
-      toast.error("Please provide a valid admission date");
-      return;
-    }
-
-    try {
-      await admitMutation.mutateAsync({
-        residentPublicId: admitTarget.publicId,
-        payload: {
-          organisationPublicId: admitOrgId,
-          careHomePublicId: admitCareHomeId,
-          admissionDate,
-        },
-      });
-      setAdmitTarget(null);
-    } catch {
-      // Toast is handled in mutation hook
-    }
-  };
-
-  // Handle open reject modal
-  const handleOpenReject = (resident: ResidentRegistrationItem) => {
-    setRejectTarget(resident);
-    setRejectionReason("");
-  };
-
-  // Submit reject
-  const handleConfirmReject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!rejectTarget) return;
-
-    if (!rejectionReason.trim()) {
-      toast.error("Rejection reason is required");
-      return;
-    }
-
-    try {
-      await rejectMutation.mutateAsync({
-        residentPublicId: rejectTarget.publicId,
-        payload: {
-          reason: rejectionReason.trim(),
-        },
-      });
-      setRejectTarget(null);
-    } catch {
-      // Toast is handled in mutation hook
-    }
-  };
-
-  // Filter content by search
-  const content = data?.content || [];
-  const filteredResidents = content.filter((r) => {
-    if (!searchTerm.trim()) return true;
-    const q = searchTerm.toLowerCase();
-    const fullName =
-      `${r.firstName || ""} ${r.middleName || ""} ${r.lastName || ""}`.toLowerCase();
-    return (
-      fullName.includes(q) ||
-      (r.email && r.email.toLowerCase().includes(q)) ||
-      (r.phone && r.phone.toLowerCase().includes(q)) ||
-      (r.address && r.address.toLowerCase().includes(q)) ||
-      (r.publicId && r.publicId.toLowerCase().includes(q))
-    );
+  // Queries
+  const { data, isLoading, isError, refetch } = useUsers({
+    page,
+    size: pageSize,
+    status: selectedStatus || undefined,
+    role: selectedRole || undefined,
+    search: searchTerm.trim() || undefined,
   });
 
-  const statuses: {
-    label: string;
-    value: ResidentOnboardingStatus;
-    badgeColor: string;
-  }[] = [
-    {
-      label: "Email Verified",
-      value: "VERIFIED",
-      badgeColor: "bg-sky-100 text-sky-800 border-sky-200",
-    },
-    {
-      label: "Admitted & Placed",
-      value: "PLACED",
-      badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    },
-    {
-      label: "Rejected",
-      value: "REJECTED",
-      badgeColor: "bg-rose-100 text-rose-800 border-rose-200",
-    },
-    {
-      label: "Pending Verification",
-      value: "PENDING_VERIFICATION",
-      badgeColor: "bg-amber-100 text-amber-800 border-amber-200",
-    },
-  ];
+  const { data: rolesData, isLoading: isLoadingRoles } = useUserRoles(
+    managingRolesUser?.publicId,
+    { enabled: Boolean(managingRolesUser) }
+  );
+
+  // Mutations
+  const updateMutation = useUpdateUserMutation();
+  const assignRoleMutation = useAssignRoleMutation();
+  const revokeRoleMutation = useRevokeRoleMutation();
+  const updateRoleStatusMutation = useUpdateRoleStatusMutation();
+
+  // Reference lookups for assigning roles
+  const { data: orgsData } = useOrganisations(
+    { page: 0, size: 100 },
+    { enabled: Boolean(managingRolesUser) }
+  );
+
+  const { data: careHomesData } = useCareHomesByOrganisation(
+    assignOrgId || null,
+    { page: 0, size: 100 },
+    { enabled: Boolean(managingRolesUser && assignOrgId) }
+  );
+
+  const activeOrganisations =
+    orgsData?.content?.filter((o) => o.status?.toUpperCase() === "ACTIVE") || [];
+  const activeCareHomes =
+    careHomesData?.content?.filter((h) => h.status?.toUpperCase() === "ACTIVE") || [];
+
+  const usersList = data?.content || [];
+  const totalElements = data?.totalElements || 0;
+  const totalPages = data?.totalPages || 1;
+
+  // Handlers
+  const handleOpenEdit = (user: UserItem) => {
+    setEditingUser(user);
+    setEditFirstName(user.firstName || "");
+    setEditMiddleName(user.middleName || "");
+    setEditLastName(user.lastName || "");
+    setEditPhone(user.phone || "");
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    try {
+      await updateMutation.mutateAsync({
+        publicId: editingUser.publicId,
+        payload: {
+          firstName: editFirstName.trim(),
+          middleName: editMiddleName.trim() || undefined,
+          lastName: editLastName.trim(),
+          phone: editPhone.trim() || undefined,
+        },
+      });
+      setEditingUser(null);
+    } catch {
+      // Toast handled by mutation hook
+    }
+  };
+
+  const handleOpenManageRoles = (user: UserItem) => {
+    setManagingRolesUser(user);
+    setAssignRole("CAREGIVER");
+    setAssignOrgId(user.organisationPublicId || "");
+    setAssignCareHomeId("");
+  };
+
+  const handleAssignRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!managingRolesUser) return;
+
+    try {
+      await assignRoleMutation.mutateAsync({
+        publicId: managingRolesUser.publicId,
+        payload: {
+          role: assignRole,
+          organisationPublicId: assignOrgId || undefined,
+          careHomePublicId: assignCareHomeId || undefined,
+        },
+      });
+      setAssignRole("CAREGIVER");
+      setAssignCareHomeId("");
+    } catch {
+      // Toast handled by mutation hook
+    }
+  };
+
+  const handleRevokeRole = async (assignmentPublicId: string) => {
+    if (!managingRolesUser) return;
+    if (!confirm("Are you sure you want to revoke this role assignment?")) return;
+
+    try {
+      await revokeRoleMutation.mutateAsync({
+        publicId: managingRolesUser.publicId,
+        assignmentPublicId,
+      });
+    } catch {
+      // Toast handled by mutation hook
+    }
+  };
+
+  const handleToggleStatus = async (user: UserItem, assignment: UserRoleAssignment) => {
+    const nextStatus = user.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
+    try {
+      await updateRoleStatusMutation.mutateAsync({
+        publicId: user.publicId,
+        assignmentPublicId: assignment.assignmentPublicId,
+        payload: { status: nextStatus },
+      });
+    } catch {
+      // Toast handled by mutation hook
+    }
+  };
+
+  if (!isAuthorized) {
+    return (
+      <div className="p-8 rounded-md bg-white border border-ink/10 text-center max-w-xl mx-auto space-y-4 my-12 shadow-xs">
+        <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
+          <AlertTriangle className="h-6 w-6" />
+        </div>
+        <h2 className="text-xl font-bold text-ink font-heading">
+          Restricted Administration Domain
+        </h2>
+        <p className="text-xs text-ink/70 leading-relaxed">
+          User management and role provisioning are restricted to platform and
+          organisation administrators.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 text-ink">
-      {/* Page Title & Action Bar */}
+    <div className="space-y-8">
+      {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-ink font-heading">
-              User & Resident Management
+              User Directory & Identity
             </h1>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
-              {data?.totalSize ?? 0} Registrations
+              {isLoading ? "—" : totalElements} Accounts
             </span>
           </div>
           <p className="text-sm text-ink/70 mt-1">
-            Review self-registered resident applicants, verify accounts, admit
-            into care homes, or reject applications.
+            Manage user accounts, assign facility roles, and configure identity
+            credentials.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 self-start md:self-auto">
+          <button
+            onClick={() => refetch()}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-md border border-ink/10 bg-white hover:bg-cream text-ink/80 hover:text-ink transition-all cursor-pointer shadow-xs"
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </button>
+
           <Link
             href="/dashboard/invitations"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-teal-brand text-white text-xs sm:text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
           >
             <Mail className="h-4 w-4" />
-            <span>Send Invitation</span>
+            <span>Invite New User</span>
           </Link>
         </div>
       </div>
 
-      {/* Status Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-ink/10 overflow-x-auto pb-1">
-        {statuses.map((st) => (
-          <button
-            key={st.value}
-            onClick={() => {
-              setSelectedStatus(st.value);
-              setPage(0);
-            }}
-            className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-t-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-              selectedStatus === st.value
-                ? "bg-teal-brand text-white shadow-xs"
-                : "text-ink/65 hover:text-ink hover:bg-cream/60"
-            }`}
-          >
-            <span>{st.label}</span>
-            {selectedStatus === st.value && data?.totalSize !== undefined && (
-              <span className="text-[11px] px-2 py-0.2 rounded-full bg-white/20 text-white font-mono">
-                {data.totalSize}
-              </span>
-            )}
-          </button>
-        ))}
+      {/* Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs">
+          <span className="text-xs font-semibold text-ink/60 uppercase tracking-wider">
+            Total Accounts
+          </span>
+          <p className="text-3xl font-bold text-ink mt-1">
+            {isLoading ? "—" : totalElements}
+          </p>
+          <span className="text-xs text-ink/60">Registered users</span>
+        </div>
+
+        <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs">
+          <span className="text-xs font-semibold text-ink/60 uppercase tracking-wider">
+            Active Accounts
+          </span>
+          <p className="text-3xl font-bold text-emerald-700 mt-1">
+            {isLoading
+              ? "—"
+              : usersList.filter((u) => u.status?.toUpperCase() === "ACTIVE").length}
+          </p>
+          <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3" />
+            Operational users in view
+          </span>
+        </div>
+
+        <div className="p-5 rounded-md bg-white border border-ink/10 shadow-xs">
+          <span className="text-xs font-semibold text-ink/60 uppercase tracking-wider">
+            Pending / Suspended
+          </span>
+          <p className="text-3xl font-bold text-amber-700 mt-1">
+            {isLoading
+              ? "—"
+              : usersList.filter(
+                  (u) =>
+                    u.status?.toUpperCase() === "PENDING" ||
+                    u.status?.toUpperCase() === "SUSPENDED"
+                ).length}
+          </p>
+          <span className="text-xs text-ink/60">Requires attention</span>
+        </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="p-3.5 rounded-md bg-white border border-ink/10 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
-          <input
-            type="text"
-            placeholder="Search by name, email, phone or address..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all text-ink"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 hover:text-ink p-1"
+      {/* Filters Bar */}
+      <div className="space-y-3">
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink/[0.04] border border-ink/[0.07] overflow-x-auto scrollbar-none">
+          {STATUS_FILTERS.map((st) => {
+            const isActive = selectedStatus === st.value;
+            return (
+              <button
+                key={st.value}
+                onClick={() => {
+                  setSelectedStatus(st.value);
+                  setPage(0);
+                }}
+                className={`tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                  isActive
+                    ? "bg-teal-brand text-white shadow-xs"
+                    : "text-ink/65 hover:text-ink hover:bg-white/60"
+                }`}
+              >
+                <span>{st.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Search & Role Filter Bar */}
+        <div className="p-4 rounded-md bg-white border border-ink/10 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <div className="relative w-full sm:w-96">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
+            <input
+              type="text"
+              placeholder="Search by name, email, phone or org..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(0);
+              }}
+              className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all text-ink"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Filter className="h-4 w-4 text-ink/40" />
+            <span className="text-xs text-ink/60 font-medium">Role:</span>
+            <select
+              value={selectedRole}
+              onChange={(e) => {
+                setSelectedRole(e.target.value as UserRole);
+                setPage(0);
+              }}
+              className="text-xs rounded-md border border-ink/10 px-3 py-2 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium text-ink"
             >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
+              <option value="">All Roles</option>
+              {AVAILABLE_ROLES.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
 
-        <div className="text-xs text-ink/60 font-medium">
-          Showing{" "}
-          <span className="font-semibold text-ink">
-            {filteredResidents.length}
-          </span>{" "}
-          of{" "}
-          <span className="font-semibold text-ink">{data?.totalSize ?? 0}</span>{" "}
-          records
+            {(searchTerm || selectedStatus || selectedRole) && (
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setSelectedStatus("");
+                  setSelectedRole("");
+                  setPage(0);
+                }}
+                className="text-xs text-teal-deep font-semibold hover:underline cursor-pointer ml-1"
+              >
+                Reset
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Main Table or Loading / Error State */}
+      {/* Main Table */}
       <div className="rounded-md bg-white border border-ink/10 shadow-xs overflow-hidden">
         {isLoading ? (
-          <div className="p-12 text-center space-y-3">
-            <div className="relative mx-auto h-10 w-10">
-              <div className="h-10 w-10 rounded-full border-4 border-teal-brand/20 border-t-teal-brand animate-spin" />
+          <div className="p-8 space-y-4">
+            <div className="h-6 w-48 skeleton rounded-md" />
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-12 w-full skeleton rounded-md" />
+              ))}
             </div>
-            <p className="text-xs text-ink/60 font-medium">
-              Loading resident registrations...
-            </p>
           </div>
         ) : isError ? (
-          <div className="p-10 text-center space-y-3">
-            <div className="grid h-12 w-12 place-items-center rounded-full bg-coral-soft text-coral mx-auto">
-              <AlertCircle className="h-6 w-6" />
-            </div>
-            <p className="text-sm font-semibold text-coral">
-              {(error as any)?.message || "Failed to load registrations"}
+          <div className="p-12 text-center space-y-3">
+            <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
+            <p className="font-bold text-ink text-sm">Failed to load users</p>
+            <p className="text-xs text-ink/60">
+              There was an issue retrieving the user directory from the server.
             </p>
             <button
               onClick={() => refetch()}
-              className="px-4 py-1.5 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep"
+              className="px-4 py-1.5 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer"
             >
               Retry
             </button>
           </div>
-        ) : filteredResidents.length === 0 ? (
-          <div className="py-16 text-center space-y-3">
-            <div className="grid h-14 w-14 place-items-center rounded-full bg-cream text-ink/40 mx-auto">
-              <Users className="h-7 w-7" />
+        ) : usersList.length === 0 ? (
+          <div className="p-12 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-cream text-ink/40 flex items-center justify-center mx-auto">
+              <Users className="h-6 w-6" />
             </div>
-            <h3 className="text-base font-bold text-ink">
-              No registrations found
-            </h3>
-            <p className="text-xs text-ink/60 max-w-sm mx-auto leading-relaxed">
-              {searchTerm
-                ? `No registrations match your search "${searchTerm}".`
-                : `There are currently no resident applications with status "${selectedStatus.replace(/_/g, " ")}".`}
+            <h3 className="font-bold text-ink text-sm">No users found</h3>
+            <p className="text-xs text-ink/60 max-w-sm mx-auto">
+              {searchTerm || selectedStatus || selectedRole
+                ? "No user records match your search criteria. Try adjusting or clearing filters."
+                : "No registered users exist in this partition."}
             </p>
           </div>
         ) : (
@@ -335,32 +444,29 @@ export default function UsersPage() {
             <table className="whitespace-nowrap w-full text-left text-xs text-ink">
               <thead className="bg-cream/40 border-b border-ink/10 text-ink/60 font-semibold uppercase tracking-wider text-[11px]">
                 <tr>
-                  <th className="py-3.5 px-6">Resident Applicant</th>
+                  <th className="py-3.5 px-6">User / Identity</th>
                   <th className="py-3.5 px-4">Contact Details</th>
-                  <th className="py-3.5 px-4">Demographics</th>
-                  <th className="py-3.5 px-4">Address</th>
-                  <th className="py-3.5 px-4">Status & Source</th>
-                  {selectedStatus === "REJECTED" && (
-                    <th className="py-3.5 px-4">Rejection Reason</th>
-                  )}
+                  <th className="py-3.5 px-4">Organisation</th>
+                  <th className="py-3.5 px-4">Email Verification</th>
+                  <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-6 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink/5">
-                {filteredResidents.map((res) => {
-                  const fullName =
-                    `${res.firstName || ""} ${res.middleName ? res.middleName + " " : ""}${res.lastName || ""}`.trim();
+                {usersList.map((u) => {
+                  const fullName = `${u.firstName || ""} ${
+                    u.middleName ? u.middleName + " " : ""
+                  }${u.lastName || ""}`.trim() || "Unnamed User";
                   const initials =
-                    (
-                      (res.firstName?.[0] || "") + (res.lastName?.[0] || "")
-                    ).toUpperCase() || "R";
+                    ((u.firstName?.[0] || "") + (u.lastName?.[0] || "")).toUpperCase() ||
+                    "U";
 
                   return (
                     <tr
-                      key={res.publicId}
-                      className="hover:bg-cream/20 transition-colors"
+                      key={u.publicId}
+                      className="hover:bg-cream/20 transition-colors cursor-pointer"
+                      onClick={() => handleOpenManageRoles(u)}
                     >
-                      {/* Name & ID */}
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
                           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-teal-deep font-bold text-xs shadow-xs">
@@ -370,125 +476,94 @@ export default function UsersPage() {
                             <div className="font-bold text-sm text-ink">
                               {fullName}
                             </div>
+                            <div className="text-[10px] text-ink/50 font-mono">
+                              {u.publicId}
+                            </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* Contact */}
                       <td className="py-4 px-4 space-y-0.5">
-                        <div className="flex items-center gap-1.5 text-ink/80">
+                        <div className="flex items-center gap-1.5 text-ink">
                           <Mail className="h-3.5 w-3.5 text-ink/40" />
-                          <span>{res.email || "—"}</span>
+                          <span>{u.email}</span>
                         </div>
-                        {res.phone && (
+                        {u.phone && (
                           <div className="flex items-center gap-1.5 text-ink/60 text-[11px]">
                             <Phone className="h-3 w-3 text-ink/40" />
-                            <span>{res.phone}</span>
+                            <span>{u.phone}</span>
                           </div>
                         )}
                       </td>
 
-                      {/* Demographics */}
-                      <td className="py-4 px-4 space-y-0.5">
-                        <div className="flex items-center gap-1.5 text-ink/80">
-                          <Calendar className="h-3.5 w-3.5 text-ink/40" />
-                          <span>{res.dateOfBirth || "—"}</span>
-                        </div>
-                        <div className="text-[11px] text-ink/60">
-                          Gender:{" "}
-                          <span className="font-medium text-ink/80">
-                            {res.gender || "—"}
-                          </span>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-1.5 font-medium text-ink">
+                          <Building2 className="h-3.5 w-3.5 text-teal-brand shrink-0" />
+                          <span>{u.organisationName || "Unassigned"}</span>
                         </div>
                       </td>
 
-                      {/* Address */}
-                      <td className="py-4 px-4 max-w-xs truncate text-ink/70">
-                        {res.address ? (
-                          <div
-                            className="flex items-center gap-1.5"
-                            title={res.address}
-                          >
-                            <MapPin className="h-3.5 w-3.5 shrink-0 text-ink/40" />
-                            <span className="truncate">{res.address}</span>
-                          </div>
+                      <td className="py-4 px-4">
+                        {u.emailVerified ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Verified
+                          </span>
                         ) : (
-                          "—"
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                            <AlertCircle className="h-3 w-3" />
+                            Unverified
+                          </span>
                         )}
                       </td>
 
-                      {/* Status & Source */}
-                      <td className="py-4 px-4 space-y-1">
-                        <div>
+                      <td className="py-4 px-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                            u.status?.toUpperCase() === "ACTIVE"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : u.status?.toUpperCase() === "PENDING"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : u.status?.toUpperCase() === "SUSPENDED"
+                              ? "bg-rose-50 text-rose-700 border border-rose-200"
+                              : "bg-ink/5 text-ink/70 border border-ink/10"
+                          }`}
+                        >
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                              res.onboardingStatus === "PENDING_VERIFICATION"
-                                ? "bg-amber-50 text-amber-800 border-amber-200"
-                                : res.onboardingStatus === "VERIFIED"
-                                  ? "bg-sky-50 text-sky-800 border-sky-200"
-                                  : res.onboardingStatus === "PLACED"
-                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                    : "bg-rose-50 text-rose-800 border-rose-200"
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              u.status?.toUpperCase() === "ACTIVE"
+                                ? "bg-emerald-500"
+                                : u.status?.toUpperCase() === "PENDING"
+                                ? "bg-amber-500"
+                                : "bg-rose-500"
                             }`}
-                          >
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                res.onboardingStatus === "PENDING_VERIFICATION"
-                                  ? "bg-amber-500 animate-pulse"
-                                  : res.onboardingStatus === "VERIFIED"
-                                    ? "bg-sky-500"
-                                    : res.onboardingStatus === "PLACED"
-                                      ? "bg-emerald-500"
-                                      : "bg-rose-500"
-                              }`}
-                            />
-                            {res.onboardingStatus.replace(/_/g, " ")}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-ink/50 uppercase tracking-wider font-semibold">
-                          {res.registrationSource?.replace(/_/g, " ") ||
-                            "SELF REGISTRATION"}
-                        </div>
+                          />
+                          {u.status}
+                        </span>
                       </td>
 
-                      {/* Rejection Reason Column */}
-                      {selectedStatus === "REJECTED" && (
-                        <td className="py-4 px-4 max-w-xs text-rose-700 text-xs font-medium">
-                          {res.rejectionReason || "—"}
-                        </td>
-                      )}
-
-                      {/* Actions */}
                       <td className="py-4 px-6 text-right">
-                        <div className="inline-flex items-center gap-2">
+                        <div
+                          className="flex items-center justify-end gap-1.5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <button
-                            onClick={() => setViewTarget(res)}
-                            className="p-1.5 rounded-md hover:bg-cream text-ink/60 hover:text-ink transition-colors cursor-pointer"
-                            title="View resident profile"
+                            onClick={() => handleOpenManageRoles(u)}
+                            className="px-2.5 py-1.5 rounded-md bg-cream hover:bg-mint text-teal-deep text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1"
+                            title="Manage user role assignments"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Shield className="h-3.5 w-3.5" />
+                            Roles
                           </button>
 
-                          {(res.onboardingStatus === "PENDING_VERIFICATION" ||
-                            res.onboardingStatus === "VERIFIED") && (
-                            <>
-                              <button
-                                onClick={() => handleOpenAdmit(res)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-all shadow-xs cursor-pointer"
-                              >
-                                <Check className="h-3.5 w-3.5" />
-                                <span>Admit</span>
-                              </button>
-
-                              <button
-                                onClick={() => handleOpenReject(res)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs border border-rose-200 transition-all cursor-pointer"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                                <span>Reject</span>
-                              </button>
-                            </>
-                          )}
+                          <button
+                            onClick={() => handleOpenEdit(u)}
+                            className="px-2.5 py-1.5 rounded-md border border-ink/10 hover:bg-cream text-ink/80 text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1"
+                            title="Edit user details"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                            Edit
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -499,27 +574,25 @@ export default function UsersPage() {
           </div>
         )}
 
-        {/* Pagination Bar */}
-        {data && data.totalPages > 1 && (
-          <div className="p-4 border-t border-ink/10 flex items-center justify-between text-xs text-ink/70">
-            <div>
-              Page <span className="font-semibold text-ink">{page + 1}</span> of{" "}
-              <span className="font-semibold text-ink">{data.totalPages}</span>
-            </div>
-
+        {/* Pagination Footer */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-ink/10 flex items-center justify-between text-xs text-ink/60">
+            <span>
+              Page {page + 1} of {totalPages} ({totalElements} users)
+            </span>
             <div className="flex items-center gap-2">
               <button
+                disabled={page <= 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0 || isLoading}
-                className="px-3 py-1.5 rounded-md border border-ink/15 text-xs font-semibold hover:bg-cream disabled:opacity-40 transition-colors flex items-center gap-1 cursor-pointer"
+                className="px-3 py-1.5 rounded-md border border-ink/10 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-cream font-medium cursor-pointer inline-flex items-center gap-1"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
                 Previous
               </button>
               <button
+                disabled={page >= totalPages - 1}
                 onClick={() => setPage((p) => p + 1)}
-                disabled={page >= data.totalPages - 1 || isLoading}
-                className="px-3 py-1.5 rounded-md border border-ink/15 text-xs font-semibold hover:bg-cream disabled:opacity-40 transition-colors flex items-center gap-1 cursor-pointer"
+                className="px-3 py-1.5 rounded-md border border-ink/10 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-cream font-medium cursor-pointer inline-flex items-center gap-1"
               >
                 Next
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -529,349 +602,292 @@ export default function UsersPage() {
         )}
       </div>
 
-      {/* --------------------------------------------------------------------- */}
-      {/* ADMIT RESIDENT MODAL */}
-      {/* --------------------------------------------------------------------- */}
-      {admitTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-lg rounded-md bg-white border border-ink/15 shadow-2xl p-6 space-y-5 text-ink">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-              <div className="flex items-center gap-2 text-emerald-700">
-                <CheckCircle2 className="h-5 w-5" />
-                <h3 className="text-lg font-bold text-ink">
-                  Admit & Place Resident
-                </h3>
+      {/* -------------------------------------------------------------------- */}
+      {/* MODAL 1: Manage Roles & Permissions                                  */}
+      {/* -------------------------------------------------------------------- */}
+      {managingRolesUser && (
+        <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95">
+            <div className="flex items-start justify-between border-b border-ink/10 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
+                    Identity & Access Management
+                  </span>
+                  <span className="text-xs font-mono text-ink/50">
+                    ID: {managingRolesUser.publicId}
+                  </span>
+                </div>
+                <h2 className="text-xl font-bold text-ink font-heading mt-1">
+                  Manage Roles: {managingRolesUser.firstName}{" "}
+                  {managingRolesUser.lastName}
+                </h2>
+                <p className="text-xs text-ink/60">{managingRolesUser.email}</p>
               </div>
+
               <button
-                onClick={() => setAdmitTarget(null)}
-                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
+                onClick={() => setManagingRolesUser(null)}
+                className="text-ink/40 hover:text-ink p-1 rounded-md cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Resident summary card */}
-            <div className="p-3.5 rounded-md bg-cream/50 border border-ink/10 text-xs space-y-1">
-              <div className="font-bold text-sm text-ink">
-                {admitTarget.firstName} {admitTarget.lastName}
-              </div>
-              <div className="text-ink/65 flex items-center gap-3">
-                <span>DOB: {admitTarget.dateOfBirth}</span>
-                <span>•</span>
-                <span>Email: {admitTarget.email}</span>
-              </div>
+            {/* Current Assigned Roles */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-teal-brand" />
+                Active Role Assignments ({rolesData?.length ?? 0})
+              </h3>
+
+              {isLoadingRoles ? (
+                <div className="space-y-2">
+                  <div className="h-12 w-full skeleton rounded-md" />
+                  <div className="h-12 w-full skeleton rounded-md" />
+                </div>
+              ) : rolesData && rolesData.length > 0 ? (
+                <div className="space-y-2">
+                  {rolesData.map((ra) => (
+                    <div
+                      key={ra.assignmentPublicId}
+                      className="p-3.5 rounded-md bg-cream/30 border border-ink/10 flex items-center justify-between gap-4 text-xs"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded bg-teal-brand text-white font-bold text-[10px]">
+                            {ra.role}
+                          </span>
+                          {ra.assignedAt && (
+                            <span className="text-[10px] text-ink/50">
+                              Assigned: {new Date(ra.assignedAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-ink/80 flex flex-wrap items-center gap-x-3 text-[11px]">
+                          {ra.organisationName && (
+                            <span className="flex items-center gap-1">
+                              <Building2 className="h-3 w-3 text-ink/40" />
+                              {ra.organisationName}
+                            </span>
+                          )}
+                          {ra.careHomeName && (
+                            <span className="flex items-center gap-1">
+                              <Home className="h-3 w-3 text-ink/40" />
+                              {ra.careHomeName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handleToggleStatus(managingRolesUser, ra)}
+                          disabled={updateRoleStatusMutation.isPending}
+                          className="px-2.5 py-1 rounded border border-ink/15 text-[11px] font-semibold text-ink/70 hover:bg-cream cursor-pointer"
+                        >
+                          {managingRolesUser.status === "ACTIVE"
+                            ? "Suspend"
+                            : "Activate"}
+                        </button>
+
+                        <button
+                          onClick={() => handleRevokeRole(ra.assignmentPublicId)}
+                          disabled={revokeRoleMutation.isPending}
+                          className="p-1.5 rounded text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Revoke role assignment"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 rounded-md bg-cream/20 border border-ink/5 text-center text-xs text-ink/50 italic">
+                  No explicit role assignments found for this account.
+                </div>
+              )}
             </div>
 
+            {/* Grant New Role Assignment Section */}
             <form
-              onSubmit={handleConfirmAdmit}
-              className="space-y-4 text-xs sm:text-sm"
+              onSubmit={handleAssignRole}
+              className="p-4 rounded-md bg-cream/40 border border-ink/10 space-y-3 text-xs"
             >
-              {/* Destination Organisation */}
-              <div className="space-y-1.5">
-                <label className="font-semibold text-ink flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Building2 className="h-4 w-4 text-teal-brand" />
-                    <span>Destination Organisation *</span>
-                  </span>
-                  {isLoadingOrgs && (
-                    <span className="text-xs text-ink/50 flex items-center gap-1">
-                      <RefreshCw className="h-3 w-3 animate-spin text-teal-brand" />{" "}
-                      Loading...
-                    </span>
-                  )}
-                </label>
-                <div className="space-y-1.5">
+              <h4 className="font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
+                <Plus className="h-4 w-4 text-teal-brand" />
+                Grant New Role Assignment
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">Role *</label>
                   <select
-                    value={admitOrgId}
+                    value={assignRole}
+                    onChange={(e) => setAssignRole(e.target.value as UserRole)}
+                    className="w-full p-2 rounded-md border border-ink/15 bg-white text-ink text-xs focus:ring-2 focus:ring-teal-brand/20"
+                  >
+                    {AVAILABLE_ROLES.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">Organisation Scope</label>
+                  <select
+                    value={assignOrgId}
                     onChange={(e) => {
-                      setAdmitOrgId(e.target.value);
-                      setAdmitCareHomeId("");
+                      setAssignOrgId(e.target.value);
+                      setAssignCareHomeId("");
                     }}
-                    disabled={isLoadingOrgs}
-                    className="w-full rounded-md border border-ink/15 bg-cream/30 px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40"
+                    className="w-full p-2 rounded-md border border-ink/15 bg-white text-ink text-xs focus:ring-2 focus:ring-teal-brand/20"
                   >
-                    <option value="">
-                      {isLoadingOrgs
-                        ? "Loading organisations..."
-                        : "-- Select an organisation --"}
-                    </option>
-                    {orgsData?.content
-                      ?.filter((org) => org.status?.toUpperCase() === "ACTIVE")
-                      ?.map((org) => (
-                        <option key={org.publicId} value={org.publicId}>
-                          {org.name}
-                        </option>
-                      ))}
+                    <option value="">-- None / System Level --</option>
+                    {activeOrganisations.map((org) => (
+                      <option key={org.publicId} value={org.publicId}>
+                        {org.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
-              </div>
 
-              {/* Destination Care Home */}
-              <div className="space-y-1.5">
-                <label className="font-semibold text-ink flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Home className="h-4 w-4 text-teal-brand" />
-                    <span>Care Home Facility *</span>
-                  </span>
-                  {isLoadingHomes && (
-                    <span className="text-xs text-ink/50 flex items-center gap-1">
-                      <RefreshCw className="h-3 w-3 animate-spin text-teal-brand" />{" "}
-                      Loading...
-                    </span>
-                  )}
-                </label>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">Care Facility Scope</label>
                   <select
-                    value={admitCareHomeId}
-                    onChange={(e) => setAdmitCareHomeId(e.target.value)}
-                    disabled={!admitOrgId || isLoadingHomes}
-                    className="w-full rounded-md border border-ink/15 bg-cream/30 px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 disabled:opacity-60"
+                    value={assignCareHomeId}
+                    onChange={(e) => setAssignCareHomeId(e.target.value)}
+                    disabled={!assignOrgId}
+                    className="w-full p-2 rounded-md border border-ink/15 bg-white text-ink text-xs focus:ring-2 focus:ring-teal-brand/20 disabled:opacity-50"
                   >
-                    <option value="">
-                      {!admitOrgId
-                        ? "Select an organisation above first..."
-                        : isLoadingHomes
-                          ? "Loading care homes..."
-                          : (careHomesData?.content?.filter((h) => h.status?.toUpperCase() === "ACTIVE")?.length ?? 0) === 0
-                            ? "No active care homes found for this organisation"
-                            : "-- Select a care home --"}
-                    </option>
-                    {careHomesData?.content
-                      ?.filter((home) => home.status?.toUpperCase() === "ACTIVE")
-                      ?.map((home) => (
-                        <option key={home.publicId} value={home.publicId}>
-                          {home.name} {home.city ? `(${home.city})` : ""}
-                        </option>
-                      ))}
+                    <option value="">-- None / All Homes in Org --</option>
+                    {activeCareHomes.map((home) => (
+                      <option key={home.publicId} value={home.publicId}>
+                        {home.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
 
-              {/* Admission Date */}
-              <div className="space-y-1.5">
-                <label className="font-semibold text-ink flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-teal-brand" />
-                  <span>Admission Date *</span>
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={admissionDate}
-                  onChange={(e) => setAdmissionDate(e.target.value)}
-                  className="w-full rounded-md border border-ink/15 bg-cream/30 px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40"
-                />
-              </div>
-
-              {/* Action buttons */}
-              <div className="pt-3 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setAdmitTarget(null)}
-                  className="px-4 py-2.5 rounded-md border border-ink/15 text-xs font-semibold hover:bg-cream transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
+              <div className="text-right pt-1">
                 <button
                   type="submit"
-                  disabled={admitMutation.isPending}
-                  className="px-5 py-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  disabled={assignRoleMutation.isPending}
+                  className="px-4 py-2 rounded-md bg-teal-brand text-white font-semibold text-xs hover:bg-teal-deep transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
                 >
-                  <span>
-                    {admitMutation.isPending
-                      ? "Admitting..."
-                      : "Confirm Admission"}
-                  </span>
-                  <Check className="h-4 w-4" />
+                  {assignRoleMutation.isPending && (
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  )}
+                  {assignRoleMutation.isPending ? "Assigning..." : "Grant Role Assignment"}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
 
-      {/* --------------------------------------------------------------------- */}
-      {/* REJECT RESIDENT MODAL */}
-      {/* --------------------------------------------------------------------- */}
-      {rejectTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-md rounded-md bg-white border border-ink/15 shadow-2xl p-6 space-y-5 text-ink">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-              <div className="flex items-center gap-2 text-rose-700">
-                <XCircle className="h-5 w-5" />
-                <h3 className="text-lg font-bold text-ink">
-                  Reject Application
-                </h3>
-              </div>
+            <div className="pt-2 text-right border-t border-ink/10">
               <button
-                onClick={() => setRejectTarget(null)}
-                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
+                onClick={() => setManagingRolesUser(null)}
+                className="px-4 py-2 rounded-md bg-cream text-ink text-xs font-semibold hover:bg-mint hover:text-teal-deep cursor-pointer"
               >
-                <X className="h-5 w-5" />
+                Done
               </button>
             </div>
-
-            <p className="text-xs text-ink/70 leading-relaxed">
-              You are declining the registration of{" "}
-              <span className="font-semibold text-ink">
-                {rejectTarget.firstName} {rejectTarget.lastName}
-              </span>
-              . Please state the administrative reason for this rejection.
-            </p>
-
-            <form
-              onSubmit={handleConfirmReject}
-              className="space-y-4 text-xs sm:text-sm"
-            >
-              <div className="space-y-1.5">
-                <label className="font-semibold text-ink">
-                  Reason for Rejection *
-                </label>
-                <textarea
-                  required
-                  rows={4}
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="e.g. Incomplete verification documentation, facility at maximum capacity, or out of catchment area..."
-                  className="w-full rounded-md border border-ink/15 bg-cream/30 p-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRejectTarget(null)}
-                  className="px-4 py-2.5 rounded-md border border-ink/15 text-xs font-semibold hover:bg-cream transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={rejectMutation.isPending}
-                  className="px-5 py-2.5 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                >
-                  <span>
-                    {rejectMutation.isPending
-                      ? "Declining..."
-                      : "Confirm Rejection"}
-                  </span>
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
 
-      {/* --------------------------------------------------------------------- */}
-      {/* VIEW DETAILS DRAWER / MODAL */}
-      {/* --------------------------------------------------------------------- */}
-      {viewTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-lg rounded-md bg-white border border-ink/15 shadow-2xl p-6 space-y-5 text-ink">
+      {/* -------------------------------------------------------------------- */}
+      {/* MODAL 2: Edit User Profile                                           */}
+      {/* -------------------------------------------------------------------- */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-4 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-ink/10 pb-3">
               <div className="flex items-center gap-2 text-teal-brand">
                 <UserCheck className="h-5 w-5" />
-                <h3 className="text-lg font-bold text-ink">
-                  Resident Application Profile
-                </h3>
+                <h3 className="text-lg font-bold text-ink">Edit User Profile</h3>
               </div>
               <button
-                onClick={() => setViewTarget(null)}
-                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
+                onClick={() => setEditingUser(null)}
+                className="text-ink/40 hover:text-ink p-1 rounded-md cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-4 text-xs sm:text-sm">
-              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-md bg-cream/50 border border-ink/10">
-                <div>
-                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
-                    First Name
-                  </span>
-                  <p className="font-bold text-ink">{viewTarget.firstName}</p>
+            <form onSubmit={handleSaveEdit} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">First Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFirstName}
+                    onChange={(e) => setEditFirstName(e.target.value)}
+                    className="w-full p-2.5 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 text-ink text-xs"
+                  />
                 </div>
-                <div>
-                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
-                    Last Name
-                  </span>
-                  <p className="font-bold text-ink">{viewTarget.lastName}</p>
-                </div>
-                {viewTarget.middleName && (
-                  <div>
-                    <span className="text-[11px] text-ink/60 uppercase font-semibold">
-                      Middle Name
-                    </span>
-                    <p className="font-bold text-ink">
-                      {viewTarget.middleName}
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
-                    Gender
-                  </span>
-                  <p className="font-bold text-ink">{viewTarget.gender}</p>
-                </div>
-                <div>
-                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
-                    Date of Birth
-                  </span>
-                  <p className="font-bold text-ink">{viewTarget.dateOfBirth}</p>
-                </div>
-                <div>
-                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
-                    Onboarding Status
-                  </span>
-                  <p className="font-bold text-teal-deep">
-                    {viewTarget.onboardingStatus.replace(/_/g, " ")}
-                  </p>
+
+                <div className="space-y-1">
+                  <label className="font-semibold text-ink">Middle Name</label>
+                  <input
+                    type="text"
+                    value={editMiddleName}
+                    onChange={(e) => setEditMiddleName(e.target.value)}
+                    className="w-full p-2.5 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 text-ink text-xs"
+                  />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-teal-brand" />
-                  <span className="font-medium text-ink">
-                    {viewTarget.email}
-                  </span>
-                </div>
-                {viewTarget.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-teal-brand" />
-                    <span className="font-medium text-ink">
-                      {viewTarget.phone}
-                    </span>
-                  </div>
-                )}
-                {viewTarget.address && (
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 text-teal-brand shrink-0 mt-0.5" />
-                    <span className="font-medium text-ink">
-                      {viewTarget.address}
-                    </span>
-                  </div>
-                )}
+              <div className="space-y-1">
+                <label className="font-semibold text-ink">Last Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editLastName}
+                  onChange={(e) => setEditLastName(e.target.value)}
+                  className="w-full p-2.5 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 text-ink text-xs"
+                />
               </div>
 
-              {viewTarget.rejectionReason && (
-                <div className="p-3.5 rounded-md bg-rose-50 border border-rose-200 text-rose-800 space-y-1">
-                  <p className="font-bold text-xs">Rejection Justification:</p>
-                  <p className="text-xs leading-relaxed">
-                    {viewTarget.rejectionReason}
-                  </p>
-                </div>
-              )}
+              <div className="space-y-1">
+                <label className="font-semibold text-ink">Phone Number</label>
+                <input
+                  type="text"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="+44 7700 900123"
+                  className="w-full p-2.5 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 text-ink text-xs"
+                />
+              </div>
 
-              <div className="pt-2 text-right">
+              <div className="p-3 rounded-md bg-cream/40 border border-ink/10 text-[11px] text-ink/70">
+                <p>Email: <span className="font-semibold text-ink">{editingUser.email}</span></p>
+                <p className="text-[10px] text-ink/50 mt-0.5">Primary email address is bound to identity credentials.</p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3">
                 <button
-                  onClick={() => setViewTarget(null)}
-                  className="px-5 py-2 rounded-md bg-teal-brand text-white font-semibold text-xs hover:bg-teal-deep transition-all"
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="px-4 py-2 rounded-md border border-ink/15 text-ink/70 hover:bg-cream cursor-pointer font-semibold"
                 >
-                  Close
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updateMutation.isPending}
+                  className="px-4 py-2 rounded-md bg-teal-brand text-white font-semibold hover:bg-teal-deep cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
+                >
+                  {updateMutation.isPending && (
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  )}
+                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

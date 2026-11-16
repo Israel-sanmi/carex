@@ -19,12 +19,28 @@ import {
 } from "@/lib/api-care-homes";
 import { toast } from "@/components/ui/toast";
 import {
+  PageHeader,
+  Toolbar,
+  SearchField,
+  Segmented,
+  StatusBadge,
+  Badge,
+  EmptyState,
+  ErrorState,
+  SkeletonCards,
+  Spinner,
+  DataItem,
+  Modal,
+  btn,
+  field,
+} from "@/components/dashboard/ui";
+import StatCard from "@/components/dashboard/stat-card";
+import {
   Building2,
   MapPin,
   Phone,
   Mail,
   Plus,
-  Search,
   CheckCircle2,
   AlertTriangle,
   RefreshCw,
@@ -34,11 +50,48 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  X,
   Home,
-  SlidersHorizontal,
   Calendar,
+  Clock,
+  Ban,
+  Users,
+  ArrowRight,
+  Fingerprint,
 } from "lucide-react";
+
+/* Presentation helpers (pure, no data logic) */
+const monogramTones = [
+  "bg-mint text-teal-deep",
+  "bg-sky-soft text-[#2d6ea3]",
+  "bg-lilac-soft text-[#5144a8]",
+  "bg-sun-soft text-amber-700",
+  "bg-coral-soft text-[#b4532f]",
+];
+
+function monogram(name?: string | null) {
+  const n = (name ?? "").trim() || "?";
+  return n
+    .split(/\s+/)
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function monogramTone(name?: string | null) {
+  const n = name ?? "";
+  return monogramTones[
+    [...n].reduce((a, c) => a + c.charCodeAt(0), 0) % monogramTones.length
+  ];
+}
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "ACTIVE", label: "Active" },
+  { value: "PENDING", label: "Pending" },
+  { value: "SUSPENDED", label: "Suspended" },
+  { value: "INACTIVE", label: "Inactive" },
+];
 
 function CareHomesContent() {
   const searchParams = useSearchParams();
@@ -230,81 +283,131 @@ function CareHomesContent() {
 
   const currentOrg = organisations.find((o) => o.publicId === selectedOrgId);
 
+  // Presentation-only counts over the already-loaded list
+  const countByStatus = (st: string) =>
+    rawHomes.filter((h) => h.status?.toUpperCase() === st).length;
+  const activeCount = countByStatus("ACTIVE");
+  const pendingCount = countByStatus("PENDING");
+  const offlineCount = countByStatus("SUSPENDED") + countByStatus("INACTIVE");
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-ink font-heading">
-              Care Homes & Facilities
-            </h1>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
+      <PageHeader
+        icon={Home}
+        eyebrow={
+          <>
+            <Badge tone="teal" dot>
               {filteredHomes.length} Facilities Listed
-            </span>
-          </div>
-          <p className="text-sm text-ink/70 mt-1">
-            Manage residential care facilities, contact information, and
-            operating status.
-          </p>
-        </div>
+            </Badge>
+            {currentOrg && (
+              <span className="inline-flex items-center gap-1 text-ink/55">
+                <Building2 className="h-3 w-3" />
+                {currentOrg.name}
+              </span>
+            )}
+          </>
+        }
+        title="Care Homes & Facilities"
+        description="Manage residential care facilities, contact information, and operating status."
+        actions={
+          <>
+            {/* <button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className={btn.secondary}
+              title="Refresh list"
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${isFetching ? "animate-spin text-teal-brand" : ""}`}
+              />
+              <span>Refresh</span>
+            </button> */}
 
-        <div className="flex items-center gap-3">
-          {/* <button
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-ink/15 text-xs font-semibold text-ink/80 hover:bg-cream transition-all cursor-pointer disabled:opacity-50"
-            title="Refresh list"
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${isFetching ? "animate-spin text-teal-brand" : ""}`}
-            />
-            <span>Refresh</span>
-          </button> */}
+            <button
+              onClick={() => {
+                if (!selectedOrgId && organisations.length > 0) {
+                  setSelectedOrgId(organisations[0].publicId);
+                }
+                setShowAddModal(true);
+              }}
+              className={`${btn.primary} group`}
+            >
+              <Plus className="h-4 w-4 transition-transform duration-300 group-hover:rotate-90" />
+              <span>Add Care Home</span>
+            </button>
+          </>
+        }
+      />
 
-          <button
-            onClick={() => {
-              if (!selectedOrgId && organisations.length > 0) {
-                setSelectedOrgId(organisations[0].publicId);
-              }
-              setShowAddModal(true);
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-teal-brand text-white text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add Care Home</span>
-          </button>
-        </div>
+      {/* KPI row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Facilities"
+          value={isLoadingHomes ? "—" : totalElements}
+          icon={Home}
+          tone="teal"
+          hint={currentOrg ? currentOrg.name : "Across your access"}
+          hintMuted
+        />
+        <StatCard
+          label="Active"
+          value={isLoadingHomes ? "—" : activeCount}
+          icon={CheckCircle2}
+          tone="sky"
+          hint="Operational facilities"
+          hintMuted
+        />
+        <StatCard
+          label="Pending"
+          value={isLoadingHomes ? "—" : pendingCount}
+          icon={Clock}
+          tone="sun"
+          hint="Awaiting activation"
+          hintMuted
+        />
+        <StatCard
+          label="Suspended / Inactive"
+          value={isLoadingHomes ? "—" : offlineCount}
+          icon={Ban}
+          tone="coral"
+          hint="Not currently operating"
+          hintMuted
+        />
       </div>
 
-      {/* Organisation Switcher Banner */}
-      <div className="p-4 rounded-md bg-white border border-ink/10 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-md bg-teal-brand/10 text-teal-brand flex items-center justify-center shrink-0">
+      {/* Organisation switcher */}
+      <Toolbar className="md:justify-between">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="grid place-items-center w-10 h-10 rounded-md bg-teal-brand/10 text-teal-brand shrink-0">
             <Building2 className="h-5 w-5" />
-          </div>
-          <div>
-            <span className="text-[11px] font-bold text-ink/50 uppercase tracking-wider block">
+          </span>
+          <div className="min-w-0">
+            <span className="block text-[11px] font-semibold uppercase tracking-wider text-ink/45">
               Active Organisation Filter
             </span>
-            <div className="font-bold text-ink text-sm sm:text-base">
+            <div className="text-sm sm:text-base font-semibold text-ink truncate">
               {currentOrg ? currentOrg.name : "Select an Organisation"}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <label className="text-xs font-medium text-ink/70 whitespace-nowrap">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 w-full md:w-auto">
+          <label
+            htmlFor="care-homes-org-switch"
+            className="text-xs font-medium text-ink/60 whitespace-nowrap"
+          >
             Switch Org:
           </label>
           <select
+            id="care-homes-org-switch"
             value={selectedOrgId}
             onChange={(e) => {
               setSelectedOrgId(e.target.value);
               setPage(0);
             }}
             disabled={isLoadingOrgs}
-            className="w-full sm:w-72 rounded-md border border-ink/15 bg-cream/30 px-3 py-2 text-xs sm:text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 font-medium cursor-pointer"
+            className={`${field.input} md:w-72 cursor-pointer font-medium`}
           >
             <option value="">
               {isLoadingOrgs
@@ -318,217 +421,200 @@ function CareHomesContent() {
             ))}
           </select>
         </div>
-      </div>
+      </Toolbar>
 
-      {/* Filter and Search Bar */}
-      <div className="p-4 rounded-md bg-white border border-ink/10 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full sm:w-96">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
-          <input
-            type="text"
-            placeholder="Search by facility name, city or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all text-ink"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <SlidersHorizontal className="h-4 w-4 text-ink/40" />
-          <span className="text-xs text-ink/60 font-medium">Status:</span>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-xs rounded-md border border-ink/10 px-3 py-2 bg-cream/30 focus:outline-none focus:ring-2 focus:ring-teal-brand/20 font-medium text-ink"
-          >
-            <option value="all">All Statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="PENDING">Pending</option>
-            <option value="SUSPENDED">Suspended</option>
-            <option value="INACTIVE">Inactive</option>
-          </select>
-        </div>
-      </div>
+      {/* Search & status filter */}
+      <Toolbar>
+        <SearchField
+          value={search}
+          onChange={(v) => setSearch(v)}
+          placeholder="Search by facility name, city or email..."
+          className="md:max-w-md"
+        />
+        <Segmented
+          value={statusFilter}
+          onChange={(v) => setStatusFilter(v)}
+          className="md:ml-auto"
+          options={STATUS_OPTIONS.map((o) => ({
+            value: o.value,
+            label: o.label,
+            count:
+              rawHomes.length > 0
+                ? o.value === "all"
+                  ? rawHomes.length
+                  : countByStatus(o.value)
+                : undefined,
+          }))}
+        />
+      </Toolbar>
 
       {/* Content Grid */}
       {isLoadingHomes ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="p-6 rounded-md bg-white border border-ink/10 shadow-xs animate-pulse space-y-4"
-            >
-              <div className="h-5 bg-ink/10 rounded-md w-1/2" />
-              <div className="h-4 bg-ink/10 rounded-md w-1/3" />
-              <div className="h-20 bg-cream rounded-md" />
-            </div>
-          ))}
-        </div>
+        <SkeletonCards count={6} className="xl:grid-cols-3" />
       ) : isHomesError ? (
-        <div className="p-8 rounded-md bg-red-50 border border-red-200 text-center space-y-3">
-          <AlertTriangle className="h-8 w-8 text-red-600 mx-auto" />
-          <p className="text-sm font-semibold text-red-800">
-            Failed to load care homes
-          </p>
-          <p className="text-xs text-red-600 font-mono">
-            {homesError instanceof Error ? homesError.message : "Unknown error"}
-          </p>
-          <button
-            onClick={() => refetch()}
-            className="px-4 py-2 rounded-md bg-red-600 text-white text-xs font-semibold hover:bg-red-700 cursor-pointer"
-          >
-            Try Again
-          </button>
-        </div>
+        <ErrorState
+          title="Failed to load care homes"
+          message={
+            <span className="font-mono">
+              {homesError instanceof Error
+                ? homesError.message
+                : "Unknown error"}
+            </span>
+          }
+          onRetry={() => refetch()}
+          retrying={isFetching}
+        />
       ) : filteredHomes.length === 0 ? (
-        <div className="p-12 rounded-md bg-white border border-ink/10 text-center space-y-4 shadow-xs">
-          <div className="w-14 h-14 rounded-full bg-cream text-teal-brand flex items-center justify-center mx-auto">
-            <Home className="h-7 w-7" />
-          </div>
-          <div className="max-w-md mx-auto space-y-1">
-            <h3 className="text-base font-bold text-ink">
-              No Care Homes Found
-            </h3>
-            <p className="text-xs text-ink/60">
-              {search
+        <div className="bg-white border border-ink/[0.08] rounded-md">
+          <EmptyState
+            icon={Home}
+            title="No Care Homes Found"
+            description={
+              search
                 ? `No facilities match "${search}". Try adjusting your search term.`
                 : selectedOrgId
                   ? `No care homes have been registered under "${currentOrg?.name || "this organisation"}". Add the first one below.`
-                  : "Please select an organisation above to view and manage care homes."}
-            </p>
-          </div>
-          {selectedOrgId && (
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Register First Care Home</span>
-            </button>
-          )}
+                  : "Please select an organisation above to view and manage care homes."
+            }
+            action={
+              selectedOrgId && (
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className={btn.primary}
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Register First Care Home</span>
+                </button>
+              )
+            }
+          />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredHomes.map((home) => (
-            <div
-              key={home.publicId}
-              className="p-6 rounded-md bg-white border border-ink/10 shadow-xs hover:border-teal-brand/40 transition-all space-y-4 flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
-                          home.status === "ACTIVE"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : home.status === "PENDING"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-gray-100 text-gray-800"
-                        }`}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filteredHomes.map((home) => {
+            const fullAddress = [
+              home.address,
+              home.city,
+              home.state,
+              home.country,
+              home.postalCode,
+            ]
+              .filter(Boolean)
+              .join(", ");
+            return (
+              <article
+                key={home.publicId}
+                className="group relative flex flex-col bg-white border border-ink/[0.08] rounded-md overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:border-teal-brand/30"
+              >
+                {/* Accent line */}
+                <span className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-teal-brand to-emerald-400 origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100" />
+
+                <div className="flex-1 p-5 space-y-4">
+                  {/* Card header */}
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={`grid place-items-center w-11 h-11 rounded-md text-sm font-bold shrink-0 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 ${monogramTone(home.name)}`}
+                      aria-hidden="true"
+                    >
+                      {monogram(home.name)}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-semibold text-ink leading-snug truncate">
+                        {home.name}
+                      </h3>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <StatusBadge status={home.status} />
+                        {home.organisationName && (
+                          <Badge tone="teal" className="max-w-full truncate">
+                            {home.organisationName}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center -mr-1.5 -mt-1 shrink-0">
+                      <button
+                        onClick={() => setEditingHome(home)}
+                        title="Edit Care Home"
+                        aria-label="Edit Care Home"
+                        className={btn.icon}
                       >
-                        {home.status}
-                      </span>
-                      {home.organisationName && (
-                        <span className="text-[11px] font-semibold text-teal-deep bg-mint px-2 py-0.5 rounded-md">
-                          {home.organisationName}
-                        </span>
-                      )}
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => setViewingHome(home)}
+                        title="View Details"
+                        aria-label="View Details"
+                        className={btn.icon}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </button>
                     </div>
-                    <h3 className="text-lg font-bold text-ink mt-1.5 font-heading">
-                      {home.name}
-                    </h3>
                   </div>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setEditingHome(home)}
-                      title="Edit Care Home"
-                      className="p-1.5 rounded-md text-ink/50 hover:text-ink hover:bg-cream cursor-pointer"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setViewingHome(home)}
-                      title="View Details"
-                      className="p-1.5 rounded-md text-ink/50 hover:text-ink hover:bg-cream cursor-pointer"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </button>
-                  </div>
+                  {/* Details */}
+                  <dl className="grid grid-cols-1 gap-3 p-3.5 rounded-md bg-[#f8faf9] border border-ink/[0.05]">
+                    <DataItem label="Email" icon={Mail}>
+                      <span title={home.email}>{home.email}</span>
+                    </DataItem>
+                    {home.phone && (
+                      <DataItem label="Phone" icon={Phone}>
+                        {home.phone}
+                      </DataItem>
+                    )}
+                    {(home.address || home.city) && (
+                      <DataItem label="Address" icon={MapPin}>
+                        <span title={fullAddress}>{fullAddress}</span>
+                      </DataItem>
+                    )}
+                  </dl>
                 </div>
 
-                {/* Details Section */}
-                <div className="p-3.5 rounded-md bg-cream/30 border border-ink/5 text-xs space-y-2">
-                  <div className="flex items-center gap-2 text-ink/80 truncate">
-                    <Mail className="h-3.5 w-3.5 text-teal-brand shrink-0" />
-                    <span className="font-medium truncate">{home.email}</span>
-                  </div>
-                  {home.phone && (
-                    <div className="flex items-center gap-2 text-ink/80">
-                      <Phone className="h-3.5 w-3.5 text-teal-brand shrink-0" />
-                      <span>{home.phone}</span>
-                    </div>
-                  )}
-                  {(home.address || home.city) && (
-                    <div className="flex items-center gap-2 text-ink/80">
-                      <MapPin className="h-3.5 w-3.5 text-teal-brand shrink-0" />
-                      <span>
-                        {[
-                          home.address,
-                          home.city,
-                          home.state,
-                          home.country,
-                          home.postalCode,
-                        ]
-                          .filter(Boolean)
-                          .join(", ")}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Card Footer */}
-              <div className="pt-3 border-t border-ink/5 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
+                {/* Card footer */}
+                <div className="flex flex-wrap items-center gap-2 px-5 py-3 border-t border-ink/[0.06] bg-[#fbfcfc]">
                   <button
                     onClick={() => setStatusHome(home)}
-                    className="px-2.5 py-1 rounded-md border border-ink/15 text-[11px] font-semibold text-ink/70 hover:bg-cream cursor-pointer"
+                    className={`${btn.secondary} ${btn.sm}`}
                   >
                     Change Status
                   </button>
                   <Link
                     href={`/dashboard/users`}
-                    className="px-3 py-1 rounded-md bg-teal-brand/10 hover:bg-teal-brand/20 text-teal-deep font-semibold text-xs transition-all cursor-pointer"
+                    className={`${btn.ghost} ${btn.sm} group/link ml-auto text-teal-deep hover:text-teal-deep hover:bg-mint/60`}
                   >
+                    <Users className="h-3.5 w-3.5" />
                     Manage Residents
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-0.5" />
                   </Link>
                 </div>
-              </div>
-            </div>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 border-t border-ink/10 text-xs text-ink/70">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 rounded-md bg-white border border-ink/[0.08] text-xs text-ink/60">
           <span>
-            Showing Page {page + 1} of {totalPages} ({totalElements} care homes)
+            Showing Page{" "}
+            <span className="font-semibold text-ink">{page + 1}</span> of{" "}
+            <span className="font-semibold text-ink">{totalPages}</span> (
+            {totalElements} care homes)
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="p-2 rounded-md border border-ink/15 disabled:opacity-40 hover:bg-cream cursor-pointer"
+              className={`${btn.secondary} ${btn.sm}`}
+              aria-label="Previous page"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="p-2 rounded-md border border-ink/15 disabled:opacity-40 hover:bg-cream cursor-pointer"
+              className={`${btn.secondary} ${btn.sm}`}
+              aria-label="Next page"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -537,375 +623,397 @@ function CareHomesContent() {
       )}
 
       {/* Add Care Home Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-5 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-              <div className="flex items-center gap-2">
-                <Home className="h-5 w-5 text-teal-brand" />
-                <h3 className="text-lg font-bold text-ink font-heading">
-                  Register Care Home Facility
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={handleCreateSubmit}
-              className="space-y-4 text-xs sm:text-sm"
+      <Modal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        icon={Home}
+        title="Register Care Home Facility"
+        description="Add a new residential facility under a care organisation."
+        size="lg"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setShowAddModal(false)}
+              className={btn.secondary}
             >
-              <div className="space-y-1">
-                <label className="font-semibold text-ink">
-                  Parent Care Organisation *
-                </label>
-                <select
-                  required
-                  value={selectedOrgId}
-                  onChange={(e) => setSelectedOrgId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                >
-                  <option value="">-- Select Organisation --</option>
-                  {organisations
-                    .filter((org) => org.status?.toUpperCase() === "ACTIVE")
-                    .map((org) => (
-                      <option key={org.publicId} value={org.publicId}>
-                        {org.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="font-semibold text-ink">
-                    Facility Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. St. Jude's Residential Home"
-                    value={createForm.name}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, name: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">
-                    Official Email *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="stjudes@apexcare.co.uk"
-                    value={createForm.email}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, email: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">Phone</label>
-                  <input
-                    type="tel"
-                    placeholder="+44 117 496 0281"
-                    value={createForm.phone}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, phone: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="font-semibold text-ink">
-                    Street Address
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="14 Primrose Crescent"
-                    value={createForm.address}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, address: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">City</label>
-                  <input
-                    type="text"
-                    placeholder="Bristol"
-                    value={createForm.city}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, city: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">
-                    State / County
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Somerset"
-                    value={createForm.state}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, state: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">Postal Code</label>
-                  <input
-                    type="text"
-                    placeholder="BS8 4HG"
-                    value={createForm.postalCode}
-                    onChange={(e) =>
-                      setCreateForm({
-                        ...createForm,
-                        postalCode: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">Country</label>
-                  <input
-                    type="text"
-                    placeholder="United Kingdom"
-                    value={createForm.country}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, country: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-ink/10">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-md border border-ink/15 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {createMutation.isPending ? (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <span>Register Facility</span>
-                  )}
-                </button>
-              </div>
-            </form>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="create-care-home-form"
+              disabled={createMutation.isPending}
+              className={btn.primary}
+            >
+              {createMutation.isPending ? (
+                <>
+                  <Spinner className="h-4 w-4" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <span>Register Facility</span>
+              )}
+            </button>
+          </>
+        }
+      >
+        <form
+          id="create-care-home-form"
+          onSubmit={handleCreateSubmit}
+          className="grid sm:grid-cols-2 gap-4"
+        >
+          <div className="sm:col-span-2">
+            <label htmlFor="ch-create-org" className={field.label}>
+              Parent Care Organisation *
+            </label>
+            <select
+              id="ch-create-org"
+              required
+              value={selectedOrgId}
+              onChange={(e) => setSelectedOrgId(e.target.value)}
+              className={`${field.input} cursor-pointer`}
+            >
+              <option value="">-- Select Organisation --</option>
+              {organisations
+                .filter((org) => org.status?.toUpperCase() === "ACTIVE")
+                .map((org) => (
+                  <option key={org.publicId} value={org.publicId}>
+                    {org.name}
+                  </option>
+                ))}
+            </select>
           </div>
-        </div>
-      )}
+
+          <div className="sm:col-span-2">
+            <label htmlFor="ch-create-name" className={field.label}>
+              Facility Name *
+            </label>
+            <input
+              id="ch-create-name"
+              type="text"
+              required
+              placeholder="e.g. St. Jude's Residential Home"
+              value={createForm.name}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, name: e.target.value })
+              }
+              className={field.input}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="ch-create-email" className={field.label}>
+              Official Email *
+            </label>
+            <input
+              id="ch-create-email"
+              type="email"
+              required
+              placeholder="stjudes@apexcare.co.uk"
+              value={createForm.email}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, email: e.target.value })
+              }
+              className={field.input}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="ch-create-phone" className={field.label}>
+              Phone
+            </label>
+            <input
+              id="ch-create-phone"
+              type="tel"
+              placeholder="+44 117 496 0281"
+              value={createForm.phone}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, phone: e.target.value })
+              }
+              className={field.input}
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label htmlFor="ch-create-address" className={field.label}>
+              Street Address
+            </label>
+            <input
+              id="ch-create-address"
+              type="text"
+              placeholder="14 Primrose Crescent"
+              value={createForm.address}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, address: e.target.value })
+              }
+              className={field.input}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="ch-create-city" className={field.label}>
+              City
+            </label>
+            <input
+              id="ch-create-city"
+              type="text"
+              placeholder="Bristol"
+              value={createForm.city}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, city: e.target.value })
+              }
+              className={field.input}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="ch-create-state" className={field.label}>
+              State / County
+            </label>
+            <input
+              id="ch-create-state"
+              type="text"
+              placeholder="Somerset"
+              value={createForm.state}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, state: e.target.value })
+              }
+              className={field.input}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="ch-create-postal" className={field.label}>
+              Postal Code
+            </label>
+            <input
+              id="ch-create-postal"
+              type="text"
+              placeholder="BS8 4HG"
+              value={createForm.postalCode}
+              onChange={(e) =>
+                setCreateForm({
+                  ...createForm,
+                  postalCode: e.target.value,
+                })
+              }
+              className={field.input}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="ch-create-country" className={field.label}>
+              Country
+            </label>
+            <input
+              id="ch-create-country"
+              type="text"
+              placeholder="United Kingdom"
+              value={createForm.country}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, country: e.target.value })
+              }
+              className={field.input}
+            />
+          </div>
+        </form>
+      </Modal>
 
       {/* Edit Care Home Modal */}
-      {editingHome && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-5 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-              <div className="flex items-center gap-2">
-                <Edit2 className="h-5 w-5 text-teal-brand" />
-                <h3 className="text-lg font-bold text-ink font-heading">
-                  Edit Care Home Facility
-                </h3>
-              </div>
-              <button
-                onClick={() => setEditingHome(null)}
-                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={handleUpdateSubmit}
-              className="space-y-4 text-xs sm:text-sm"
+      <Modal
+        open={Boolean(editingHome)}
+        onClose={() => setEditingHome(null)}
+        icon={Edit2}
+        title="Edit Care Home Facility"
+        description={editingHome?.name}
+        size="lg"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setEditingHome(null)}
+              className={btn.secondary}
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="font-semibold text-ink">
-                    Facility Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingHome.name}
-                    onChange={(e) =>
-                      setEditingHome({ ...editingHome, name: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">Email *</label>
-                  <input
-                    type="email"
-                    required
-                    value={editingHome.email}
-                    onChange={(e) =>
-                      setEditingHome({ ...editingHome, email: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">Phone</label>
-                  <input
-                    type="tel"
-                    value={editingHome.phone || ""}
-                    onChange={(e) =>
-                      setEditingHome({ ...editingHome, phone: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="font-semibold text-ink">Address</label>
-                  <input
-                    type="text"
-                    value={editingHome.address || ""}
-                    onChange={(e) =>
-                      setEditingHome({
-                        ...editingHome,
-                        address: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">City</label>
-                  <input
-                    type="text"
-                    value={editingHome.city || ""}
-                    onChange={(e) =>
-                      setEditingHome({ ...editingHome, city: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">State</label>
-                  <input
-                    type="text"
-                    value={editingHome.state || ""}
-                    onChange={(e) =>
-                      setEditingHome({ ...editingHome, state: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">Postal Code</label>
-                  <input
-                    type="text"
-                    value={editingHome.postalCode || ""}
-                    onChange={(e) =>
-                      setEditingHome({
-                        ...editingHome,
-                        postalCode: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-ink">Country</label>
-                  <input
-                    type="text"
-                    value={editingHome.country || ""}
-                    onChange={(e) =>
-                      setEditingHome({
-                        ...editingHome,
-                        country: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-ink/10">
-                <button
-                  type="button"
-                  onClick={() => setEditingHome(null)}
-                  className="px-4 py-2 rounded-md border border-ink/15 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={updateMutation.isPending}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {updateMutation.isPending ? (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <span>Save Changes</span>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Change Status Modal */}
-      {statusHome && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-              <h3 className="text-base font-bold text-ink">
-                Update Care Home Status
-              </h3>
-              <button
-                onClick={() => setStatusHome(null)}
-                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="edit-care-home-form"
+              disabled={updateMutation.isPending}
+              className={btn.primary}
+            >
+              {updateMutation.isPending ? (
+                <>
+                  <Spinner className="h-4 w-4" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <span>Save Changes</span>
+              )}
+            </button>
+          </>
+        }
+      >
+        {editingHome && (
+          <form
+            id="edit-care-home-form"
+            onSubmit={handleUpdateSubmit}
+            className="grid sm:grid-cols-2 gap-4"
+          >
+            <div className="sm:col-span-2">
+              <label htmlFor="ch-edit-name" className={field.label}>
+                Facility Name *
+              </label>
+              <input
+                id="ch-edit-name"
+                type="text"
+                required
+                value={editingHome.name}
+                onChange={(e) =>
+                  setEditingHome({ ...editingHome, name: e.target.value })
+                }
+                className={field.input}
+              />
             </div>
 
-            <p className="text-xs text-ink/70">
+            <div>
+              <label htmlFor="ch-edit-email" className={field.label}>
+                Email *
+              </label>
+              <input
+                id="ch-edit-email"
+                type="email"
+                required
+                value={editingHome.email}
+                onChange={(e) =>
+                  setEditingHome({ ...editingHome, email: e.target.value })
+                }
+                className={field.input}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="ch-edit-phone" className={field.label}>
+                Phone
+              </label>
+              <input
+                id="ch-edit-phone"
+                type="tel"
+                value={editingHome.phone || ""}
+                onChange={(e) =>
+                  setEditingHome({ ...editingHome, phone: e.target.value })
+                }
+                className={field.input}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label htmlFor="ch-edit-address" className={field.label}>
+                Address
+              </label>
+              <input
+                id="ch-edit-address"
+                type="text"
+                value={editingHome.address || ""}
+                onChange={(e) =>
+                  setEditingHome({
+                    ...editingHome,
+                    address: e.target.value,
+                  })
+                }
+                className={field.input}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="ch-edit-city" className={field.label}>
+                City
+              </label>
+              <input
+                id="ch-edit-city"
+                type="text"
+                value={editingHome.city || ""}
+                onChange={(e) =>
+                  setEditingHome({ ...editingHome, city: e.target.value })
+                }
+                className={field.input}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="ch-edit-state" className={field.label}>
+                State
+              </label>
+              <input
+                id="ch-edit-state"
+                type="text"
+                value={editingHome.state || ""}
+                onChange={(e) =>
+                  setEditingHome({ ...editingHome, state: e.target.value })
+                }
+                className={field.input}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="ch-edit-postal" className={field.label}>
+                Postal Code
+              </label>
+              <input
+                id="ch-edit-postal"
+                type="text"
+                value={editingHome.postalCode || ""}
+                onChange={(e) =>
+                  setEditingHome({
+                    ...editingHome,
+                    postalCode: e.target.value,
+                  })
+                }
+                className={field.input}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="ch-edit-country" className={field.label}>
+                Country
+              </label>
+              <input
+                id="ch-edit-country"
+                type="text"
+                value={editingHome.country || ""}
+                onChange={(e) =>
+                  setEditingHome({
+                    ...editingHome,
+                    country: e.target.value,
+                  })
+                }
+                className={field.input}
+              />
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* Change Status Modal (hidden while its confirmation step is showing,
+          so the two portal dialogs never stack) */}
+      <Modal
+        open={Boolean(statusHome) && !confirmStatusHome}
+        onClose={() => setStatusHome(null)}
+        icon={RefreshCw}
+        title="Update Care Home Status"
+        size="sm"
+        footer={
+          <button
+            onClick={() => setStatusHome(null)}
+            className={btn.secondary}
+          >
+            Close
+          </button>
+        }
+      >
+        {statusHome && (
+          <div className="space-y-4">
+            <p className="text-sm text-ink/65">
               Select status for{" "}
               <strong className="text-ink">{statusHome.name}</strong>:
             </p>
@@ -923,52 +1031,76 @@ function CareHomesContent() {
                       });
                     }}
                     disabled={statusMutation.isPending}
-                    className={`w-full p-2.5 rounded-md text-left text-xs font-semibold border transition-all cursor-pointer flex items-center justify-between ${
+                    className={`w-full flex items-center justify-between gap-3 px-3.5 py-3 rounded-md border text-left transition-all cursor-pointer disabled:opacity-50 ${
                       statusHome.status === st
-                        ? "border-teal-brand bg-teal-brand/10 text-teal-deep"
-                        : "border-ink/10 hover:border-ink/30 text-ink/80"
+                        ? "border-teal-brand bg-teal-brand/[0.06]"
+                        : "border-ink/10 hover:border-teal-brand/40 hover:bg-mint/30 hover:translate-x-0.5"
                     }`}
                   >
-                    <span>{st}</span>
-                    {statusHome.status === st && (
-                      <Check className="h-4 w-4 text-teal-brand" />
+                    <StatusBadge status={st} />
+                    {statusHome.status === st ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-brand">
+                        <Check className="h-4 w-4" />
+                        Current
+                      </span>
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-ink/30" />
                     )}
                   </button>
                 ),
               )}
             </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                onClick={() => setStatusHome(null)}
-                className="px-3 py-1.5 rounded-md border border-ink/15 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Confirmation Modal for Care Home Status Change */}
-      {confirmStatusHome && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20 shrink-0">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-ink">
-                  Confirm Status Change
-                </h3>
-                <p className="text-xs text-ink/50">
-                  Facility operational update
-                </p>
-              </div>
-            </div>
-
-            <p className="text-xs text-ink/70 leading-relaxed">
+      <Modal
+        open={Boolean(confirmStatusHome)}
+        onClose={() => setConfirmStatusHome(null)}
+        icon={AlertTriangle}
+        title="Confirm Status Change"
+        description="Facility operational update"
+        size="sm"
+        footer={
+          confirmStatusHome && (
+            <>
+              <button
+                type="button"
+                onClick={() => setConfirmStatusHome(null)}
+                disabled={statusMutation.isPending}
+                className={btn.secondary}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await handleStatusChange(
+                    confirmStatusHome.home,
+                    confirmStatusHome.targetStatus,
+                  );
+                  setConfirmStatusHome(null);
+                }}
+                disabled={statusMutation.isPending}
+                className={btn.primary}
+              >
+                {statusMutation.isPending ? (
+                  <>
+                    <Spinner className="h-4 w-4" />
+                    <span>Updating...</span>
+                  </>
+                ) : (
+                  <span>Confirm & Update</span>
+                )}
+              </button>
+            </>
+          )
+        }
+      >
+        {confirmStatusHome && (
+          <div className="space-y-4">
+            <p className="text-sm text-ink/70 leading-relaxed">
               Are you sure you want to change the status of{" "}
               <strong className="text-ink">
                 {confirmStatusHome.home.name}
@@ -983,143 +1115,114 @@ function CareHomesContent() {
               </span>
               ?
             </p>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-ink/10">
-              <button
-                type="button"
-                onClick={() => setConfirmStatusHome(null)}
-                disabled={statusMutation.isPending}
-                className="px-3.5 py-2 rounded-md border border-ink/15 text-xs font-semibold text-ink/70 hover:bg-cream cursor-pointer transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  await handleStatusChange(
-                    confirmStatusHome.home,
-                    confirmStatusHome.targetStatus,
-                  );
-                  setConfirmStatusHome(null);
-                }}
-                disabled={statusMutation.isPending}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all cursor-pointer disabled:opacity-50 shadow-sm"
-              >
-                {statusMutation.isPending ? (
-                  <>
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                    <span>Updating...</span>
-                  </>
-                ) : (
-                  <span>Confirm & Update</span>
-                )}
-              </button>
+            <div className="flex items-center justify-center gap-3 p-3 rounded-md bg-[#f8faf9] border border-ink/[0.06]">
+              <StatusBadge status={confirmStatusHome.home.status} />
+              <ArrowRight className="h-4 w-4 text-ink/35" />
+              <StatusBadge status={confirmStatusHome.targetStatus} />
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Details View Modal */}
-      {viewingHome && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-md p-6 shadow-2xl border border-ink/10 space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-              <div className="flex items-center gap-2">
-                <Home className="h-5 w-5 text-teal-brand" />
-                <h3 className="text-lg font-bold text-ink">
-                  {viewingHome.name}
-                </h3>
-              </div>
-              <button
-                onClick={() => setViewingHome(null)}
-                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-md bg-cream/40 border border-ink/10 space-y-1">
-                <span className="text-[10px] uppercase font-bold text-ink/50">
-                  Care Home Public ID
-                </span>
-                <div className="flex items-center justify-between font-mono text-[11px] text-ink break-all">
-                  <span>{viewingHome.publicId}</span>
-                  <button
-                    onClick={() =>
-                      handleCopy(viewingHome.publicId, viewingHome.publicId)
-                    }
-                    className="p-1 text-teal-brand hover:text-teal-deep cursor-pointer shrink-0"
-                  >
+      <Modal
+        open={Boolean(viewingHome)}
+        onClose={() => setViewingHome(null)}
+        icon={Home}
+        title={viewingHome?.name ?? ""}
+        description={viewingHome?.organisationName}
+        footer={
+          <button
+            onClick={() => setViewingHome(null)}
+            className={btn.primary}
+          >
+            Close
+          </button>
+        }
+      >
+        {viewingHome && (
+          <div className="space-y-4">
+            <div className="p-3.5 rounded-md bg-[#f8faf9] border border-ink/[0.08]">
+              <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-ink/45">
+                <Fingerprint className="h-3 w-3" />
+                Care Home Public ID
+              </span>
+              <div className="mt-1 flex items-center justify-between gap-2 font-mono text-xs text-ink break-all">
+                <span>{viewingHome.publicId}</span>
+                <button
+                  onClick={() =>
+                    handleCopy(viewingHome.publicId, viewingHome.publicId)
+                  }
+                  className={`${btn.icon} !w-8 !h-8 text-teal-brand hover:text-teal-deep shrink-0`}
+                  aria-label="Copy Care Home ID"
+                  title="Copy ID"
+                >
+                  {copiedId === viewingHome.publicId ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
                     <Copy className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="p-2.5 rounded-md bg-cream/30 border border-ink/10">
-                  <span className="text-[10px] uppercase font-bold text-ink/50 block">
-                    Status
-                  </span>
-                  <span className="font-semibold text-ink">
-                    {viewingHome.status}
-                  </span>
-                </div>
-                <div className="p-2.5 rounded-md bg-cream/30 border border-ink/10">
-                  <span className="text-[10px] uppercase font-bold text-ink/50 block">
-                    Registered
-                  </span>
-                  <span className="font-semibold text-ink">
-                    {new Date(viewingHome.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2 border-t border-ink/10 pt-3">
-                <div className="flex justify-between">
-                  <span className="text-ink/60">Email:</span>
-                  <span className="font-medium text-ink">
-                    {viewingHome.email}
-                  </span>
-                </div>
-                {viewingHome.phone && (
-                  <div className="flex justify-between">
-                    <span className="text-ink/60">Phone:</span>
-                    <span className="font-medium text-ink">
-                      {viewingHome.phone}
-                    </span>
-                  </div>
-                )}
-                {viewingHome.address && (
-                  <div className="flex justify-between">
-                    <span className="text-ink/60">Address:</span>
-                    <span className="font-medium text-ink text-right">
-                      {[
-                        viewingHome.address,
-                        viewingHome.city,
-                        viewingHome.state,
-                        viewingHome.country,
-                        viewingHome.postalCode,
-                      ]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </span>
-                  </div>
-                )}
+                  )}
+                </button>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-ink/10 flex justify-end">
-              <button
-                onClick={() => setViewingHome(null)}
-                className="px-4 py-1.5 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
+            <dl className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-md border border-ink/[0.08]">
+                <DataItem label="Status">
+                  <StatusBadge status={viewingHome.status} />
+                </DataItem>
+              </div>
+              <div className="p-3 rounded-md border border-ink/[0.08]">
+                <DataItem label="Registered" icon={Calendar}>
+                  {new Date(viewingHome.createdAt).toLocaleDateString()}
+                </DataItem>
+              </div>
+            </dl>
+
+            <dl className="divide-y divide-ink/[0.06] text-sm">
+              <div className="flex items-start justify-between gap-4 py-2.5">
+                <dt className="flex items-center gap-1.5 text-ink/55 shrink-0">
+                  <Mail className="h-3.5 w-3.5" />
+                  Email
+                </dt>
+                <dd className="font-medium text-ink text-right break-all">
+                  {viewingHome.email}
+                </dd>
+              </div>
+              {viewingHome.phone && (
+                <div className="flex items-start justify-between gap-4 py-2.5">
+                  <dt className="flex items-center gap-1.5 text-ink/55 shrink-0">
+                    <Phone className="h-3.5 w-3.5" />
+                    Phone
+                  </dt>
+                  <dd className="font-medium text-ink text-right">
+                    {viewingHome.phone}
+                  </dd>
+                </div>
+              )}
+              {viewingHome.address && (
+                <div className="flex items-start justify-between gap-4 py-2.5">
+                  <dt className="flex items-center gap-1.5 text-ink/55 shrink-0">
+                    <MapPin className="h-3.5 w-3.5" />
+                    Address
+                  </dt>
+                  <dd className="font-medium text-ink text-right">
+                    {[
+                      viewingHome.address,
+                      viewingHome.city,
+                      viewingHome.state,
+                      viewingHome.country,
+                      viewingHome.postalCode,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </dd>
+                </div>
+              )}
+            </dl>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

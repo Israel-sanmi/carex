@@ -668,6 +668,20 @@
 .dash-page > * > *:nth-child(4) { animation-delay: 210ms; }
 .dash-page > * > *:nth-child(n + 5) { animation-delay: 280ms; }
 
+/* Portal modal (components/dashboard/ui.tsx <Modal/>): bottom sheet on mobile, pop on desktop */
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: none; }
+}
+.cl-modal-backdrop { animation: backdrop-in 0.2s ease both; }
+.cl-modal-panel { animation: sheet-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (min-width: 640px) {
+  .cl-modal-panel { animation: pop-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cl-modal-backdrop, .cl-modal-panel { animation: none !important; }
+}
+
 /* Themed scrollbars */
 .dash-scope ::-webkit-scrollbar { width: 10px; height: 10px; }
 .dash-scope ::-webkit-scrollbar-thumb {

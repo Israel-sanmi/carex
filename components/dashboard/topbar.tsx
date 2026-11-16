@@ -93,7 +93,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 z-30 h-18 bg-white/75 backdrop-blur-xl backdrop-saturate-150 border-b border-ink/[0.07] px-4 sm:px-8 flex items-center justify-between gap-4"
+      className="sticky top-0 z-30 h-16 sm:h-18 bg-white/70 backdrop-blur-xl backdrop-saturate-150 border-b border-ink/[0.07] px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4"
     >
       {/* Left: Mobile Toggle, page title & context */}
       <div className="flex items-center gap-3 min-w-0">
@@ -107,12 +107,12 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
 
         <div
           key={pageTitle}
-          className="hidden md:block min-w-0 pr-3 mr-1 border-r border-ink/10 animate-rise"
+          className="min-w-0 sm:pr-3 sm:mr-1 sm:border-r border-ink/10 animate-rise"
         >
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink/40 leading-none">
+          <p className="hidden sm:block text-[10px] font-semibold uppercase tracking-[0.16em] text-ink/40 leading-none">
             Dashboard
           </p>
-          <p className="text-base font-semibold text-ink truncate leading-tight mt-1">
+          <p className="text-base font-semibold text-ink truncate leading-tight sm:mt-1">
             {pageTitle}
           </p>
         </div>
@@ -129,14 +129,14 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
             >
               <Home className="h-3.5 w-3.5 text-teal-brand" />
               <span className="hidden sm:inline">Facility:</span>
-              <span className="font-bold">{activeCareHome}</span>
+              <span className="hidden sm:inline font-bold max-w-[10rem] lg:max-w-[14rem] truncate">{activeCareHome}</span>
               <ChevronDown
                 className={`h-3.5 w-3.5 text-ink/40 transition-transform ${facilityMenuOpen ? "rotate-180" : ""}`}
               />
             </button>
 
             {facilityMenuOpen && (
-              <div className="absolute left-0 mt-2 w-64 rounded-md bg-white/95 backdrop-blur-xl border border-ink/10 shadow-2xl shadow-ink/10 p-2 z-50 animate-scale-in text-xs space-y-1">
+              <div className="absolute left-0 sm:left-0 mt-2 w-[min(16rem,calc(100vw-1.5rem))] rounded-md bg-white/95 backdrop-blur-xl border border-ink/10 shadow-2xl shadow-ink/10 p-2 z-50 animate-scale-in text-xs space-y-1">
                 <p className="px-2.5 py-1 text-[10px] font-bold text-ink/40 uppercase tracking-wider">
                   Select Care Home Facility
                 </p>
@@ -171,7 +171,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
       </div>
 
       {/* Right: Live Interactive Role Switcher & Notifications */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Role Display / Switcher (only show dropdown if user has multiple assigned roles) */}
         <div className="relative">
           {availableRoles.length > 1 ? (
@@ -187,7 +187,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
                 <span className="hidden md:inline text-teal-brand font-medium">
                   Active Role:
                 </span>
-                <span className="font-bold">
+                <span className="hidden sm:inline font-bold">
                   {ROLE_PROFILES[currentRole]?.roleTitle?.split(" ")[0] ||
                     currentRole}
                 </span>
@@ -197,7 +197,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
               </button>
 
               {roleMenuOpen && (
-                <div className="absolute right-0 mt-2 w-72 rounded-md bg-white/95 backdrop-blur-xl border border-ink/10 shadow-2xl shadow-ink/10 p-2 z-50 animate-scale-in origin-top-right text-xs space-y-1">
+                <div className="absolute right-0 mt-2 w-[min(18rem,calc(100vw-1.5rem))] rounded-md bg-white/95 backdrop-blur-xl border border-ink/10 shadow-2xl shadow-ink/10 p-2 z-50 animate-scale-in origin-top-right text-xs space-y-1">
                   <div className="px-3 py-2 border-b border-ink/5">
                     <p className="text-[10px] font-bold text-ink/40 uppercase tracking-wider">
                       Switch Assigned Role
@@ -245,7 +245,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
               <span className="hidden md:inline text-teal-brand/75 font-medium">
                 Role:
               </span>
-              <span className="font-bold">
+              <span className="hidden sm:inline font-bold truncate max-w-[12rem]">
                 {ROLE_PROFILES[currentRole]?.roleTitle ||
                   currentRole.replace(/_/g, " ")}
               </span>
@@ -264,7 +264,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 rounded-md bg-white/95 backdrop-blur-xl border border-ink/10 shadow-2xl shadow-ink/10 p-4 z-50 animate-scale-in origin-top-right text-xs space-y-3">
+            <div className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-1.5rem))] rounded-md bg-white/95 backdrop-blur-xl border border-ink/10 shadow-2xl shadow-ink/10 p-4 z-50 animate-scale-in origin-top-right text-xs space-y-3">
               <div className="flex items-center justify-between border-b border-ink/5 pb-2">
                 <span className="font-bold text-ink">System Notifications</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-cream text-ink/60 font-semibold">

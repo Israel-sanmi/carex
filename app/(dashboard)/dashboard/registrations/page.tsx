@@ -1,837 +1,869 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRole } from "@/lib/role-context";
 import {
-  UserPlus,
+  useResidentRegistrations,
+  useAdmitResidentMutation,
+  useRejectResidentMutation,
+} from "@/lib/hooks/use-registrations";
+import { useOrganisations } from "@/lib/hooks/use-organisations";
+import { useCareHomesByOrganisation } from "@/lib/hooks/use-care-homes";
+import {
+  ResidentOnboardingStatus,
+  ResidentRegistrationItem,
+} from "@/lib/api-registrations";
+import { toast } from "@/components/ui/toast";
+import {
+  Users,
   Search,
-  Filter,
   CheckCircle2,
   XCircle,
-  Clock,
   Building2,
   Home,
-  Bed,
   AlertCircle,
   Eye,
-  FileCheck,
-  Sparkles,
-  ArrowRight,
-  Send,
+  Calendar,
   Mail,
   Phone,
-  User,
-  ArrowLeftRight,
-  ShieldCheck,
+  MapPin,
+  RefreshCw,
+  X,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  UserCheck,
 } from "lucide-react";
 
-type AdmissionType = "New Admission" | "Transfer";
-type AdmissionStatus =
-  | "Pending Admission"
-  | "Placed"
-  | "Rejected"
-  | "Transfer Pending"
-  | "Transfer Approved"
-  | "Transfer Rejected";
-
-interface AdmissionRequest {
-  id: string;
-  referenceNumber: string;
-  residentName: string;
-  email: string;
-  phone: string;
-  admissionType: AdmissionType;
-  previousOrganisation?: string;
-  previousCareHome?: string;
-  destinationOrganisation: string;
-  destinationCareHome: string;
-  requestDate: string;
-  status: AdmissionStatus;
-  careLevel: string;
-  medicalNotes: string;
-  allocatedRoom?: string;
-  allocatedBed?: string;
-}
-
-const mockAdmissions: AdmissionRequest[] = [
-  {
-    id: "adm-01",
-    referenceNumber: "REG-2026-9401",
-    residentName: "Dorothy Gable",
-    email: "dorothy.gable@example.co.uk",
-    phone: "+44 (0) 7700 900123",
-    admissionType: "New Admission",
-    destinationOrganisation: "Apex Care Group",
-    destinationCareHome: "St. Jude's Residential Home",
-    requestDate: "12 November 2026",
-    status: "Pending Admission",
-    careLevel: "Dementia Support",
-    medicalNotes:
-      "Moderate vascular dementia. Requires assistance with evening hydration.",
-  },
-  {
-    id: "adm-02",
-    referenceNumber: "TRF-2026-8812",
-    residentName: "Robert 'Bob' Chen",
-    email: "robert.chen@example.co.uk",
-    phone: "+44 (0) 7700 900341",
-    admissionType: "Transfer",
-    previousOrganisation: "Beacon Light Care Trust",
-    previousCareHome: "Beacon Crest Lodge",
-    destinationOrganisation: "Apex Care Group",
-    destinationCareHome: "Meadow View Lodge",
-    requestDate: "10 November 2026",
-    status: "Transfer Pending",
-    careLevel: "Residential Assisted",
-    medicalNotes:
-      "Resident seeks relocation closer to daughter in Bath. Osteoarthritis in hips.",
-  },
-  {
-    id: "adm-03",
-    referenceNumber: "REG-2026-9214",
-    residentName: "Beatrice Mary Campbell",
-    email: "beatrice.campbell@example.co.uk",
-    phone: "+44 (0) 7820 441098",
-    admissionType: "New Admission",
-    destinationOrganisation: "Apex Care Group",
-    destinationCareHome: "St. Jude's Residential Home",
-    requestDate: "08 November 2026",
-    status: "Placed",
-    careLevel: "High Dependency",
-    medicalNotes: "Post-stroke mobility support. Requires 2-carer assist.",
-    allocatedRoom: "Suite 104",
-    allocatedBed: "Bed 1",
-  },
-  {
-    id: "adm-04",
-    referenceNumber: "TRF-2026-7730",
-    residentName: "Evelyn Harper",
-    email: "evelyn.harper@example.co.uk",
-    phone: "+44 (0) 7944 651233",
-    admissionType: "Transfer",
-    previousOrganisation: "Kindred Care Living",
-    previousCareHome: "Somerset Manor",
-    destinationOrganisation: "Apex Care Group",
-    destinationCareHome: "Oakridge Manor Care Centre",
-    requestDate: "05 November 2026",
-    status: "Transfer Approved",
-    careLevel: "Nursing Care",
-    medicalNotes:
-      "Transfer completed. Resident successfully moved from previous organisation.",
-    allocatedRoom: "Suite 201",
-    allocatedBed: "Bed 2",
-  },
-  {
-    id: "adm-05",
-    referenceNumber: "REG-2026-8941",
-    residentName: "Thomas Wright",
-    email: "thomas.wright@example.co.uk",
-    phone: "+44 (0) 7891 123456",
-    admissionType: "New Admission",
-    destinationOrganisation: "Apex Care Group",
-    destinationCareHome: "Oakridge Manor Care Centre",
-    requestDate: "02 November 2026",
-    status: "Rejected",
-    careLevel: "Nursing Care",
-    medicalNotes:
-      "Specialised ventilator care requirements exceeding current facility registration.",
-  },
-];
-
 export default function RegistrationsPage() {
-  const { currentRole } = useRole();
-  const [admissions, setAdmissions] =
-    useState<AdmissionRequest[]>(mockAdmissions);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<
-    "ALL" | "New Admission" | "Transfer"
-  >("ALL");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const { roleAssignments } = useRole();
 
-  // Review Modal state (Section 3)
-  const [selectedAdmission, setSelectedAdmission] =
-    useState<AdmissionRequest | null>(null);
+  // Status Filter
+  const [selectedStatus, setSelectedStatus] =
+    useState<ResidentOnboardingStatus>("VERIFIED");
+  const [page, setPage] = useState(0);
+  const [pageSize] = useState(20);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Invite Resident Modal state (Section 2)
-  const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteOrg, setInviteOrg] = useState("Apex Care Group");
-  const [inviteHome, setInviteHome] = useState("St. Jude's Residential Home");
-  const [inviteSuccess, setInviteSuccess] = useState(false);
-
-  // Allocate Bed Modal state
-  const [allocatingAdm, setAllocatingAdm] = useState<AdmissionRequest | null>(
+  // Modals state
+  const [admitTarget, setAdmitTarget] =
+    useState<ResidentRegistrationItem | null>(null);
+  const [rejectTarget, setRejectTarget] =
+    useState<ResidentRegistrationItem | null>(null);
+  const [viewTarget, setViewTarget] = useState<ResidentRegistrationItem | null>(
     null,
   );
-  const [allocRoom, setAllocRoom] = useState("Suite 106");
-  const [allocBed, setAllocBed] = useState("Bed 1");
 
-  const filteredItems = admissions.filter((item) => {
-    const matchesSearch =
-      item.residentName.toLowerCase().includes(search.toLowerCase()) ||
-      item.referenceNumber.toLowerCase().includes(search.toLowerCase()) ||
-      item.email.toLowerCase().includes(search.toLowerCase()) ||
-      item.destinationCareHome.toLowerCase().includes(search.toLowerCase());
-    const matchesType =
-      typeFilter === "ALL" || item.admissionType === typeFilter;
-    const matchesStatus =
-      statusFilter === "ALL" || item.status === statusFilter;
-    return matchesSearch && matchesType && matchesStatus;
+  // Admit form state
+  const [admitOrgId, setAdmitOrgId] = useState<string>("");
+  const [admitCareHomeId, setAdmitCareHomeId] = useState<string>("");
+  const [admissionDate, setAdmissionDate] = useState<string>("");
+
+  // Reject form state
+  const [rejectionReason, setRejectionReason] = useState("");
+
+  // React Query hooks
+  const { data, isLoading, isError, error, refetch, isFetching } =
+    useResidentRegistrations(selectedStatus, page, pageSize);
+
+  const admitMutation = useAdmitResidentMutation();
+  const rejectMutation = useRejectResidentMutation();
+
+  // On-demand fetch of organisations when Admit modal is open
+  const { data: orgsData, isLoading: isLoadingOrgs } = useOrganisations(
+    { page: 0, size: 100 },
+    { enabled: Boolean(admitTarget) },
+  );
+
+  // On-demand fetch of care homes for selected organisation when Admit modal is open
+  const { data: careHomesData, isLoading: isLoadingHomes } =
+    useCareHomesByOrganisation(
+      admitOrgId || null,
+      { page: 0, size: 100 },
+      { enabled: Boolean(admitTarget && admitOrgId) },
+    );
+
+  // Handle open admit modal
+  const handleOpenAdmit = (resident: ResidentRegistrationItem) => {
+    setAdmitTarget(resident);
+    const defaultOrg =
+      roleAssignments.find((ra) => ra.organisationPublicId)
+        ?.organisationPublicId || "";
+    setAdmitOrgId(defaultOrg);
+
+    const defaultHome =
+      roleAssignments.find((ra) => ra.careHomePublicId)?.careHomePublicId || "";
+    setAdmitCareHomeId(defaultHome);
+    setAdmissionDate(new Date().toISOString().split("T")[0]);
+  };
+
+  // Submit admit
+  const handleConfirmAdmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!admitTarget) return;
+
+    if (!admitOrgId) {
+      toast.error("Please select a destination organisation");
+      return;
+    }
+    if (!admitCareHomeId) {
+      toast.error("Please select an assigned care home facility");
+      return;
+    }
+    if (!admissionDate) {
+      toast.error("Please provide a valid admission date");
+      return;
+    }
+
+    try {
+      await admitMutation.mutateAsync({
+        residentPublicId: admitTarget.publicId,
+        payload: {
+          organisationPublicId: admitOrgId,
+          careHomePublicId: admitCareHomeId,
+          admissionDate,
+        },
+      });
+      setAdmitTarget(null);
+    } catch {
+      // Toast is handled in mutation hook
+    }
+  };
+
+  // Handle open reject modal
+  const handleOpenReject = (resident: ResidentRegistrationItem) => {
+    setRejectTarget(resident);
+    setRejectionReason("");
+  };
+
+  // Submit reject
+  const handleConfirmReject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectTarget) return;
+
+    if (!rejectionReason.trim()) {
+      toast.error("Rejection reason is required");
+      return;
+    }
+
+    try {
+      await rejectMutation.mutateAsync({
+        residentPublicId: rejectTarget.publicId,
+        payload: {
+          reason: rejectionReason.trim(),
+        },
+      });
+      setRejectTarget(null);
+    } catch {
+      // Toast is handled in mutation hook
+    }
+  };
+
+  // Filter content by search
+  const content = data?.content || [];
+  const filteredResidents = content.filter((r) => {
+    if (!searchTerm.trim()) return true;
+    const q = searchTerm.toLowerCase();
+    const fullName =
+      `${r.firstName || ""} ${r.middleName || ""} ${r.lastName || ""}`.toLowerCase();
+    return (
+      fullName.includes(q) ||
+      (r.email && r.email.toLowerCase().includes(q)) ||
+      (r.phone && r.phone.toLowerCase().includes(q)) ||
+      (r.address && r.address.toLowerCase().includes(q)) ||
+      (r.publicId && r.publicId.toLowerCase().includes(q))
+    );
   });
 
-  const handleApprove = (id: string) => {
-    const target = admissions.find((a) => a.id === id);
-    if (!target) return;
-
-    if (target.admissionType === "Transfer") {
-      setAdmissions((prev) =>
-        prev.map((a) =>
-          a.id === id
-            ? {
-                ...a,
-                status: "Transfer Approved",
-                allocatedRoom: "Suite 108",
-                allocatedBed: "Bed 1",
-              }
-            : a,
-        ),
-      );
-      if (selectedAdmission?.id === id) {
-        setSelectedAdmission((prev) =>
-          prev ? { ...prev, status: "Transfer Approved" } : null,
-        );
-      }
-    } else {
-      // For New Admission, open Bed allocation modal
-      setAllocatingAdm(target);
-    }
-  };
-
-  const handleReject = (id: string) => {
-    const target = admissions.find((a) => a.id === id);
-    const nextStatus =
-      target?.admissionType === "Transfer" ? "Transfer Rejected" : "Rejected";
-    setAdmissions((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: nextStatus } : a)),
-    );
-    if (selectedAdmission?.id === id) {
-      setSelectedAdmission((prev) =>
-        prev ? { ...prev, status: nextStatus } : null,
-      );
-    }
-  };
-
-  const handleConfirmBedAllocation = () => {
-    if (!allocatingAdm) return;
-    setAdmissions((prev) =>
-      prev.map((a) =>
-        a.id === allocatingAdm.id
-          ? {
-              ...a,
-              status: "Placed",
-              allocatedRoom: allocRoom,
-              allocatedBed: allocBed,
-            }
-          : a,
-      ),
-    );
-    if (selectedAdmission?.id === allocatingAdm.id) {
-      setSelectedAdmission((prev) =>
-        prev
-          ? {
-              ...prev,
-              status: "Placed",
-              allocatedRoom: allocRoom,
-              allocatedBed: allocBed,
-            }
-          : null,
-      );
-    }
-    setAllocatingAdm(null);
-  };
-
-  const handleSendInvite = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inviteEmail) return;
-
-    const newRequest: AdmissionRequest = {
-      id: `adm-${Date.now()}`,
-      referenceNumber: `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      residentName: "Invited Resident",
-      email: inviteEmail,
-      phone: "Awaiting registration",
-      admissionType: "New Admission",
-      destinationOrganisation: inviteOrg,
-      destinationCareHome: inviteHome,
-      requestDate: "12 November 2026",
-      status: "Pending Admission",
-      careLevel: "Evaluation Pending",
-      medicalNotes: "Invitation dispatched by Organisation Administrator.",
-    };
-
-    setAdmissions([newRequest, ...admissions]);
-    setInviteSuccess(true);
-    setTimeout(() => {
-      setInviteSuccess(false);
-      setShowInviteModal(false);
-      setInviteEmail("");
-    }, 1500);
-  };
-
-  const pendingCount = admissions.filter(
-    (a) => a.status === "Pending Admission" || a.status === "Transfer Pending",
-  ).length;
+  const statuses: {
+    label: string;
+    value: ResidentOnboardingStatus;
+    badgeColor: string;
+  }[] = [
+    {
+      label: "Email Verified",
+      value: "VERIFIED",
+      badgeColor: "bg-sky-100 text-sky-800 border-sky-200",
+    },
+    {
+      label: "Admitted & Placed",
+      value: "PLACED",
+      badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    },
+    {
+      label: "Rejected",
+      value: "REJECTED",
+      badgeColor: "bg-rose-100 text-rose-800 border-rose-200",
+    },
+    {
+      label: "Pending Verification",
+      value: "PENDING_VERIFICATION",
+      badgeColor: "bg-amber-100 text-amber-800 border-amber-200",
+    },
+  ];
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
+    <div className="space-y-6 text-ink">
+      {/* Page Title & Action Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-ink dark:text-white font-heading">
-              Admissions & Intake Review
+            <h1 className="text-2xl font-bold tracking-tight text-ink font-heading">
+              Admissions & Intake Registrations
             </h1>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-semibold">
-              {pendingCount} Awaiting Decision
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
+              {data?.totalSize ?? 0} Registrations
             </span>
           </div>
-          <p className="text-sm text-ink/70 dark:text-slate-300 mt-1">
-            Review incoming self-registrations and transfer requests.
-            Approving officially admits the resident and allocates a care home
-            bed.
+          <p className="text-sm text-ink/70 mt-1">
+            Review self-registered resident applicants, verify accounts, admit
+            into care homes, or reject applications.
           </p>
         </div>
 
-        {/* Section 2 "Invite Resident" button */}
-        <button
-          onClick={() => setShowInviteModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white text-sm font-semibold transition-all shadow-sm cursor-pointer"
-        >
-          <UserPlus className="h-4 w-4" />
-          Invite Resident 
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/invitations"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-teal-brand text-white text-xs sm:text-sm font-semibold hover:bg-teal-deep transition-all shadow-sm cursor-pointer"
+          >
+            <Mail className="h-4 w-4" />
+            <span>Send Invitation</span>
+          </Link>
+        </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="p-4 rounded-md glass dark:bg-slate-900/80 border border-ink/10 dark:border-white/10 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
+      {/* Status Filter Tabs */}
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink/[0.04] border border-ink/[0.07] overflow-x-auto scrollbar-none">
+        {statuses.map((st) => {
+          const isActive = selectedStatus === st.value;
+          return (
+            <button
+              key={st.value}
+              onClick={() => {
+                setSelectedStatus(st.value);
+                setPage(0);
+              }}
+              className={`tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                isActive
+                  ? "bg-teal-brand text-white shadow-xs"
+                  : "text-ink/65 hover:text-ink hover:bg-white/60"
+              }`}
+            >
+              <span>{st.label}</span>
+              {isActive && data?.totalSize !== undefined && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-white/20 text-white font-mono">
+                  {data.totalSize}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Search Bar */}
+      <div className="p-3.5 rounded-md bg-white border border-ink/10 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
         <div className="relative w-full md:w-96">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40 dark:text-slate-500" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
           <input
             type="text"
-            placeholder="Search by name, ref #, email or care home..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-ink/10 dark:border-white/10 bg-cream/30 dark:bg-slate-800 text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+            placeholder="Search by name, email, phone or address..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm rounded-md border border-ink/10 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/20 transition-all text-ink"
           />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/40 hover:text-ink p-1"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          {/* Admission Type Filter */}
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className="text-ink/60 dark:text-slate-400 font-medium">
-              Type:
-            </span>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as any)}
-              className="rounded-md border border-ink/10 dark:border-white/10 px-3 py-2 bg-cream/30 dark:bg-slate-800 text-ink dark:text-white font-medium text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="ALL">All Types</option>
-              <option value="New Admission">New Admission</option>
-              <option value="Transfer">Care Transfer</option>
-            </select>
-          </div>
-
-          {/* Status Filter */}
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className="text-ink/60 dark:text-slate-400 font-medium">
-              Status:
-            </span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-md border border-ink/10 dark:border-white/10 px-3 py-2 bg-cream/30 dark:bg-slate-800 text-ink dark:text-white font-medium text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="Pending Admission">Pending Admission</option>
-              <option value="Placed">Placed / Admitted</option>
-              <option value="Rejected">Rejected</option>
-              <option value="Transfer Pending">Transfer Pending</option>
-              <option value="Transfer Approved">Transfer Approved</option>
-              <option value="Transfer Rejected">Transfer Rejected</option>
-            </select>
-          </div>
+        <div className="text-xs text-ink/60 font-medium">
+          Showing{" "}
+          <span className="font-semibold text-ink">
+            {filteredResidents.length}
+          </span>{" "}
+          of{" "}
+          <span className="font-semibold text-ink">{data?.totalSize ?? 0}</span>{" "}
+          records
         </div>
       </div>
 
-      {/* Section 3 Admissions Table displaying all specified fields */}
-      <div className="rounded-md glass dark:bg-slate-900/80 border border-ink/10 dark:border-white/10 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-ink dark:text-slate-200">
-            <thead className="bg-cream/40 dark:bg-slate-800/60 border-b border-ink/10 dark:border-white/10 text-ink/60 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
-              <tr>
-                <th className="py-3.5 px-6">Resident Details</th>
-                <th className="py-3.5 px-4">Admission Type</th>
-                <th className="py-3.5 px-4">Previous Organisation / Home</th>
-                <th className="py-3.5 px-4">Destination Facility</th>
-                <th className="py-3.5 px-4">Request Date</th>
-                <th className="py-3.5 px-4">Current Status</th>
-                <th className="py-3.5 px-6 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink/5 dark:divide-white/5">
-              {filteredItems.map((adm) => (
-                <tr
-                  key={adm.id}
-                  className="hover:bg-cream/20 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
-                  onClick={() => setSelectedAdmission(adm)}
-                >
-                  <td className="py-4 px-6">
-                    <div className="font-bold text-sm text-ink dark:text-white">
-                      {adm.residentName}
-                    </div>
-                    <div className="text-[11px] text-ink/60 dark:text-slate-400 flex items-center gap-2 mt-0.5">
-                      <span>{adm.email}</span>
-                      <span>•</span>
-                      <span>{adm.phone}</span>
-                    </div>
-                    <span className="font-mono text-[10px] text-teal-deep dark:text-emerald-400 block mt-0.5">
-                      {adm.referenceNumber}
-                    </span>
-                  </td>
-
-                  <td className="py-4 px-4">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                        adm.admissionType === "Transfer"
-                          ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/20"
-                          : "bg-mint dark:bg-emerald-950/60 text-teal-deep dark:text-emerald-300 border border-teal-brand/20 dark:border-emerald-500/20"
-                      }`}
-                    >
-                      {adm.admissionType === "Transfer" ? (
-                        <ArrowLeftRight className="w-3 h-3" />
-                      ) : (
-                        <UserPlus className="w-3 h-3" />
-                      )}
-                      {adm.admissionType}
-                    </span>
-                  </td>
-
-                  <td className="py-4 px-4">
-                    {adm.previousOrganisation ? (
-                      <div>
-                        <span className="font-semibold text-ink dark:text-white block">
-                          {adm.previousOrganisation}
-                        </span>
-                        <span className="text-[11px] text-ink/60 dark:text-slate-400">
-                          {adm.previousCareHome}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-ink/40 dark:text-slate-500 italic">
-                        N/A (New Intake)
-                      </span>
-                    )}
-                  </td>
-
-                  <td className="py-4 px-4">
-                    <span className="font-semibold text-ink dark:text-white block">
-                      {adm.destinationCareHome}
-                    </span>
-                    <span className="text-[11px] text-ink/60 dark:text-slate-400">
-                      {adm.destinationOrganisation}
-                    </span>
-                  </td>
-
-                  <td className="py-4 px-4 text-ink/70 dark:text-slate-300">
-                    {adm.requestDate}
-                  </td>
-
-                  <td className="py-4 px-4">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                        adm.status === "Placed" ||
-                        adm.status === "Transfer Approved"
-                          ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30"
-                          : adm.status === "Rejected" ||
-                              adm.status === "Transfer Rejected"
-                            ? "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-500/30"
-                            : "bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-500/30"
-                      }`}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                      {adm.status}
-                    </span>
-                    {adm.allocatedRoom && (
-                      <span className="block text-[10px] text-teal-deep dark:text-emerald-400 font-semibold mt-0.5">
-                        {adm.allocatedRoom} ({adm.allocatedBed})
-                      </span>
-                    )}
-                  </td>
-
-                  <td className="py-4 px-6 text-right">
-                    <div
-                      className="flex items-center justify-end gap-1.5"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {(adm.status === "Pending Admission" ||
-                        adm.status === "Transfer Pending") && (
-                        <>
-                          <button
-                            onClick={() => handleApprove(adm.id)}
-                            className="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleReject(adm.id)}
-                            className="px-3 py-1.5 rounded-md bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30 text-xs font-semibold transition-all cursor-pointer"
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
-                      <button
-                        onClick={() => setSelectedAdmission(adm)}
-                        className="px-2.5 py-1.5 rounded-md border border-ink/10 dark:border-white/10 hover:bg-cream dark:hover:bg-slate-800 text-ink dark:text-slate-300 text-xs font-semibold cursor-pointer"
-                      >
-                        Details
-                      </button>
-                    </div>
-                  </td>
+      {/* Main Table or Loading / Error State */}
+      <div className="rounded-md bg-white border border-ink/10 shadow-xs overflow-hidden">
+        {isLoading ? (
+          <div className="p-12 text-center space-y-3">
+            <div className="relative mx-auto h-10 w-10">
+              <div className="h-10 w-10 rounded-full border-4 border-teal-brand/20 border-t-teal-brand animate-spin" />
+            </div>
+            <p className="text-xs text-ink/60 font-medium">
+              Loading resident registrations...
+            </p>
+          </div>
+        ) : isError ? (
+          <div className="p-10 text-center space-y-3">
+            <div className="grid h-12 w-12 place-items-center rounded-full bg-coral-soft text-coral mx-auto">
+              <AlertCircle className="h-6 w-6" />
+            </div>
+            <p className="text-sm font-semibold text-coral">
+              {(error as any)?.message || "Failed to load registrations"}
+            </p>
+            <button
+              onClick={() => refetch()}
+              className="px-4 py-1.5 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep"
+            >
+              Retry
+            </button>
+          </div>
+        ) : filteredResidents.length === 0 ? (
+          <div className="py-16 text-center space-y-3">
+            <div className="grid h-14 w-14 place-items-center rounded-full bg-cream text-ink/40 mx-auto">
+              <Users className="h-7 w-7" />
+            </div>
+            <h3 className="text-base font-bold text-ink">
+              No registrations found
+            </h3>
+            <p className="text-xs text-ink/60 max-w-sm mx-auto leading-relaxed">
+              {searchTerm
+                ? `No registrations match your search "${searchTerm}".`
+                : `There are currently no resident applications with status "${selectedStatus.replace(/_/g, " ")}".`}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="whitespace-nowrap w-full text-left text-xs text-ink">
+              <thead className="bg-cream/40 border-b border-ink/10 text-ink/60 font-semibold uppercase tracking-wider text-[11px]">
+                <tr>
+                  <th className="py-3.5 px-6">Resident Applicant</th>
+                  <th className="py-3.5 px-4">Contact Details</th>
+                  <th className="py-3.5 px-4">Demographics</th>
+                  <th className="py-3.5 px-4">Address</th>
+                  <th className="py-3.5 px-4">Status & Source</th>
+                  {selectedStatus === "REJECTED" && (
+                    <th className="py-3.5 px-4">Rejection Reason</th>
+                  )}
+                  <th className="py-3.5 px-6 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-ink/5">
+                {filteredResidents.map((res) => {
+                  const fullName =
+                    `${res.firstName || ""} ${res.middleName ? res.middleName + " " : ""}${res.lastName || ""}`.trim();
+                  const initials =
+                    (
+                      (res.firstName?.[0] || "") + (res.lastName?.[0] || "")
+                    ).toUpperCase() || "R";
+
+                  return (
+                    <tr
+                      key={res.publicId}
+                      className="hover:bg-cream/20 transition-colors"
+                    >
+                      {/* Name & ID */}
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-teal-deep font-bold text-xs shadow-xs">
+                            {initials}
+                          </div>
+                          <div>
+                            <div className="font-bold text-sm text-ink">
+                              {fullName}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Contact */}
+                      <td className="py-4 px-4 space-y-0.5">
+                        <div className="flex items-center gap-1.5 text-ink/80">
+                          <Mail className="h-3.5 w-3.5 text-ink/40" />
+                          <span>{res.email || "—"}</span>
+                        </div>
+                        {res.phone && (
+                          <div className="flex items-center gap-1.5 text-ink/60 text-[11px]">
+                            <Phone className="h-3 w-3 text-ink/40" />
+                            <span>{res.phone}</span>
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Demographics */}
+                      <td className="py-4 px-4 space-y-0.5">
+                        <div className="flex items-center gap-1.5 text-ink/80">
+                          <Calendar className="h-3.5 w-3.5 text-ink/40" />
+                          <span>{res.dateOfBirth || "—"}</span>
+                        </div>
+                        <div className="text-[11px] text-ink/60">
+                          Gender:{" "}
+                          <span className="font-medium text-ink/80">
+                            {res.gender || "—"}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Address */}
+                      <td className="py-4 px-4 max-w-xs truncate text-ink/70">
+                        {res.address ? (
+                          <div
+                            className="flex items-center gap-1.5"
+                            title={res.address}
+                          >
+                            <MapPin className="h-3.5 w-3.5 shrink-0 text-ink/40" />
+                            <span className="truncate">{res.address}</span>
+                          </div>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+
+                      {/* Status & Source */}
+                      <td className="py-4 px-4 space-y-1">
+                        <div>
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                              res.onboardingStatus === "PENDING_VERIFICATION"
+                                ? "bg-amber-50 text-amber-800 border-amber-200"
+                                : res.onboardingStatus === "VERIFIED"
+                                  ? "bg-sky-50 text-sky-800 border-sky-200"
+                                  : res.onboardingStatus === "PLACED"
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                    : "bg-rose-50 text-rose-800 border-rose-200"
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                res.onboardingStatus === "PENDING_VERIFICATION"
+                                  ? "bg-amber-500 animate-pulse"
+                                  : res.onboardingStatus === "VERIFIED"
+                                    ? "bg-sky-500"
+                                    : res.onboardingStatus === "PLACED"
+                                      ? "bg-emerald-500"
+                                      : "bg-rose-500"
+                              }`}
+                            />
+                            {res.onboardingStatus.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-ink/50 uppercase tracking-wider font-semibold">
+                          {res.registrationSource?.replace(/_/g, " ") ||
+                            "SELF REGISTRATION"}
+                        </div>
+                      </td>
+
+                      {/* Rejection Reason Column */}
+                      {selectedStatus === "REJECTED" && (
+                        <td className="py-4 px-4 max-w-xs text-rose-700 text-xs font-medium">
+                          {res.rejectionReason || "—"}
+                        </td>
+                      )}
+
+                      {/* Actions */}
+                      <td className="py-4 px-6 text-right">
+                        <div className="inline-flex items-center gap-2">
+                          <button
+                            onClick={() => setViewTarget(res)}
+                            className="p-1.5 rounded-md hover:bg-cream text-ink/60 hover:text-ink transition-colors cursor-pointer"
+                            title="View resident profile"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+
+                          {(res.onboardingStatus === "PENDING_VERIFICATION" ||
+                            res.onboardingStatus === "VERIFIED") && (
+                            <>
+                              <button
+                                onClick={() => handleOpenAdmit(res)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-all shadow-xs cursor-pointer"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                                <span>Admit</span>
+                              </button>
+
+                              <button
+                                onClick={() => handleOpenReject(res)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs border border-rose-200 transition-all cursor-pointer"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                                <span>Reject</span>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pagination Bar */}
+        {data && data.totalPages > 1 && (
+          <div className="p-4 border-t border-ink/10 flex items-center justify-between text-xs text-ink/70">
+            <div>
+              Page <span className="font-semibold text-ink">{page + 1}</span> of{" "}
+              <span className="font-semibold text-ink">{data.totalPages}</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0 || isLoading}
+                className="px-3 py-1.5 rounded-md border border-ink/15 text-xs font-semibold hover:bg-cream disabled:opacity-40 transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                Previous
+              </button>
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page >= data.totalPages - 1 || isLoading}
+                className="px-3 py-1.5 rounded-md border border-ink/15 text-xs font-semibold hover:bg-cream disabled:opacity-40 transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                Next
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Section 3 Admission Review Screen Modal */}
-      {selectedAdmission && (
-        <div className="fixed inset-0 z-50 bg-ink/40 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-xl glass dark:bg-slate-900 rounded-md p-6 sm:p-8 shadow-2xl border border-white/80 dark:border-white/10 space-y-6 animate-in fade-in zoom-in-95">
-            <div className="flex items-start justify-between border-b border-ink/10 dark:border-white/10 pb-4">
-              <div>
-                <span className="font-mono text-xs font-bold text-teal-deep dark:text-emerald-400">
-                  {selectedAdmission.referenceNumber}
-                </span>
-                <h3 className="text-xl font-bold text-ink dark:text-white font-heading mt-1">
-                  Admission Review: {selectedAdmission.residentName}
+      {/* ADMIT RESIDENT MODAL */}
+      {admitTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
+          <div className="relative w-full max-w-lg rounded-md bg-white border border-ink/15 shadow-2xl p-6 space-y-5 text-ink">
+            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <CheckCircle2 className="h-5 w-5" />
+                <h3 className="text-lg font-bold text-ink">
+                  Admit & Place Resident
                 </h3>
-                <p className="text-xs text-ink/60 dark:text-slate-400">
-                  Request Date: {selectedAdmission.requestDate} • Type:{" "}
-                  <span className="font-semibold text-ink dark:text-white">
-                    {selectedAdmission.admissionType}
-                  </span>
-                </p>
               </div>
               <button
-                onClick={() => setSelectedAdmission(null)}
-                className="text-xs p-1 text-ink/50 hover:text-ink dark:hover:text-white cursor-pointer"
+                onClick={() => setAdmitTarget(null)}
+                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Illustrative Layout matching Section 3 */}
-            <div className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3.5 rounded-md bg-cream/40 dark:bg-slate-800/60 border border-ink/5 dark:border-white/5">
-                  <span className="text-[10px] uppercase font-bold text-ink/50 dark:text-slate-400 block">
-                    Resident Contact
-                  </span>
-                  <p className="font-bold text-ink dark:text-white text-sm mt-0.5">
-                    {selectedAdmission.residentName}
-                  </p>
-                  <p className="text-ink/70 dark:text-slate-300">
-                    {selectedAdmission.email}
-                  </p>
-                  <p className="text-ink/70 dark:text-slate-300">
-                    {selectedAdmission.phone}
-                  </p>
-                </div>
+            <div className="p-3.5 rounded-md bg-cream/50 border border-ink/10 text-xs space-y-1">
+              <div className="font-bold text-sm text-ink">
+                {admitTarget.firstName} {admitTarget.lastName}
+              </div>
+              <div className="text-ink/65 flex items-center gap-3">
+                <span>DOB: {admitTarget.dateOfBirth}</span>
+                <span>•</span>
+                <span>Email: {admitTarget.email}</span>
+              </div>
+            </div>
 
-                <div className="p-3.5 rounded-md bg-cream/40 dark:bg-slate-800/60 border border-ink/5 dark:border-white/5">
-                  <span className="text-[10px] uppercase font-bold text-ink/50 dark:text-slate-400 block">
-                    Current Status
+            <form
+              onSubmit={handleConfirmAdmit}
+              className="space-y-4 text-xs sm:text-sm"
+            >
+              <div className="space-y-1.5">
+                <label className="font-semibold text-ink flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Building2 className="h-4 w-4 text-teal-brand" />
+                    <span>Destination Organisation *</span>
                   </span>
-                  <span className="inline-block mt-1 font-bold text-emerald-700 dark:text-emerald-400">
-                    {selectedAdmission.status}
-                  </span>
-                  {selectedAdmission.allocatedRoom && (
-                    <p className="text-[11px] text-teal-deep dark:text-emerald-300 mt-1">
-                      Allocated: {selectedAdmission.allocatedRoom} (
-                      {selectedAdmission.allocatedBed})
-                    </p>
+                  {isLoadingOrgs && (
+                    <span className="text-xs text-ink/50 flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3 animate-spin text-teal-brand" />{" "}
+                      Loading...
+                    </span>
                   )}
+                </label>
+                <div className="space-y-1.5">
+                  <select
+                    value={admitOrgId}
+                    onChange={(e) => {
+                      setAdmitOrgId(e.target.value);
+                      setAdmitCareHomeId("");
+                    }}
+                    disabled={isLoadingOrgs}
+                    className="w-full rounded-md border border-ink/15 bg-cream/30 px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40"
+                  >
+                    <option value="">
+                      {isLoadingOrgs
+                        ? "Loading organisations..."
+                        : "-- Select an organisation --"}
+                    </option>
+                    {orgsData?.content
+                      ?.filter((org) => org.status?.toUpperCase() === "ACTIVE")
+                      ?.map((org) => (
+                        <option key={org.publicId} value={org.publicId}>
+                          {org.name}
+                        </option>
+                      ))}
+                  </select>
                 </div>
               </div>
 
-              {/* Destination vs Previous */}
-              <div className="p-4 rounded-md bg-cream/30 dark:bg-slate-800/40 border border-ink/5 dark:border-white/5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-ink dark:text-white">
-                    Requested Destination:
+              <div className="space-y-1.5">
+                <label className="font-semibold text-ink flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Home className="h-4 w-4 text-teal-brand" />
+                    <span>Care Home Facility *</span>
                   </span>
-                  <span className="font-semibold text-teal-deep dark:text-emerald-400">
-                    {selectedAdmission.destinationOrganisation} —{" "}
-                    {selectedAdmission.destinationCareHome}
+                  {isLoadingHomes && (
+                    <span className="text-xs text-ink/50 flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3 animate-spin text-teal-brand" />{" "}
+                      Loading...
+                    </span>
+                  )}
+                </label>
+                <div className="space-y-1.5">
+                  <select
+                    value={admitCareHomeId}
+                    onChange={(e) => setAdmitCareHomeId(e.target.value)}
+                    disabled={!admitOrgId || isLoadingHomes}
+                    className="w-full rounded-md border border-ink/15 bg-cream/30 px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 disabled:opacity-60"
+                  >
+                    <option value="">
+                      {!admitOrgId
+                        ? "Select an organisation above first..."
+                        : isLoadingHomes
+                          ? "Loading care homes..."
+                          : (careHomesData?.content?.filter((h) => h.status?.toUpperCase() === "ACTIVE")?.length ?? 0) === 0
+                            ? "No active care homes found for this organisation"
+                            : "-- Select a care home --"}
+                    </option>
+                    {careHomesData?.content
+                      ?.filter((home) => home.status?.toUpperCase() === "ACTIVE")
+                      ?.map((home) => (
+                        <option key={home.publicId} value={home.publicId}>
+                          {home.name} {home.city ? `(${home.city})` : ""}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-semibold text-ink flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 text-teal-brand" />
+                  <span>Admission Date *</span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={admissionDate}
+                  onChange={(e) => setAdmissionDate(e.target.value)}
+                  className="w-full rounded-md border border-ink/15 bg-cream/30 px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAdmitTarget(null)}
+                  className="px-4 py-2.5 rounded-md border border-ink/15 text-xs font-semibold hover:bg-cream transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={admitMutation.isPending}
+                  className="px-5 py-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  <span>
+                    {admitMutation.isPending
+                      ? "Admitting..."
+                      : "Confirm Admission"}
+                  </span>
+                  <Check className="h-4 w-4" />
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* REJECT RESIDENT MODAL */}
+      {rejectTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
+          <div className="relative w-full max-w-md rounded-md bg-white border border-ink/15 shadow-2xl p-6 space-y-5 text-ink">
+            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
+              <div className="flex items-center gap-2 text-rose-700">
+                <XCircle className="h-5 w-5" />
+                <h3 className="text-lg font-bold text-ink">
+                  Reject Application
+                </h3>
+              </div>
+              <button
+                onClick={() => setRejectTarget(null)}
+                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-ink/70 leading-relaxed">
+              You are declining the registration of{" "}
+              <span className="font-semibold text-ink">
+                {rejectTarget.firstName} {rejectTarget.lastName}
+              </span>
+              . Please state the administrative reason for this rejection.
+            </p>
+
+            <form
+              onSubmit={handleConfirmReject}
+              className="space-y-4 text-xs sm:text-sm"
+            >
+              <div className="space-y-1.5">
+                <label className="font-semibold text-ink">
+                  Reason for Rejection *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="e.g. Incomplete verification documentation, facility at maximum capacity, or out of catchment area..."
+                  className="w-full rounded-md border border-ink/15 bg-cream/30 p-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-brand/40 shadow-xs"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRejectTarget(null)}
+                  className="px-4 py-2.5 rounded-md border border-ink/15 text-xs font-semibold hover:bg-cream transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={rejectMutation.isPending}
+                  className="px-5 py-2.5 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  <span>
+                    {rejectMutation.isPending
+                      ? "Declining..."
+                      : "Confirm Rejection"}
+                  </span>
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW DETAILS DRAWER / MODAL */}
+      {viewTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
+          <div className="relative w-full max-w-lg rounded-md bg-white border border-ink/15 shadow-2xl p-6 space-y-5 text-ink">
+            <div className="flex items-center justify-between border-b border-ink/10 pb-3">
+              <div className="flex items-center gap-2 text-teal-brand">
+                <UserCheck className="h-5 w-5" />
+                <h3 className="text-lg font-bold text-ink">
+                  Resident Application Profile
+                </h3>
+              </div>
+              <button
+                onClick={() => setViewTarget(null)}
+                className="p-1 rounded-md text-ink/40 hover:text-ink cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs sm:text-sm">
+              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-md bg-cream/50 border border-ink/10">
+                <div>
+                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
+                    First Name
+                  </span>
+                  <p className="font-bold text-ink">{viewTarget.firstName}</p>
+                </div>
+                <div>
+                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
+                    Last Name
+                  </span>
+                  <p className="font-bold text-ink">{viewTarget.lastName}</p>
+                </div>
+                {viewTarget.middleName && (
+                  <div>
+                    <span className="text-[11px] text-ink/60 uppercase font-semibold">
+                      Middle Name
+                    </span>
+                    <p className="font-bold text-ink">
+                      {viewTarget.middleName}
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
+                    Gender
+                  </span>
+                  <p className="font-bold text-ink">{viewTarget.gender}</p>
+                </div>
+                <div>
+                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
+                    Date of Birth
+                  </span>
+                  <p className="font-bold text-ink">{viewTarget.dateOfBirth}</p>
+                </div>
+                <div>
+                  <span className="text-[11px] text-ink/60 uppercase font-semibold">
+                    Onboarding Status
+                  </span>
+                  <p className="font-bold text-teal-deep">
+                    {viewTarget.onboardingStatus.replace(/_/g, " ")}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-teal-brand" />
+                  <span className="font-medium text-ink">
+                    {viewTarget.email}
                   </span>
                 </div>
-                {selectedAdmission.previousOrganisation && (
-                  <div className="flex items-center justify-between pt-1 border-t border-ink/5 dark:border-white/5">
-                    <span className="font-bold text-amber-800 dark:text-amber-400">
-                      Previous Organisation (Transfer):
+                {viewTarget.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-teal-brand" />
+                    <span className="font-medium text-ink">
+                      {viewTarget.phone}
                     </span>
-                    <span className="text-ink/80 dark:text-slate-300">
-                      {selectedAdmission.previousOrganisation} —{" "}
-                      {selectedAdmission.previousCareHome}
+                  </div>
+                )}
+                {viewTarget.address && (
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-teal-brand shrink-0 mt-0.5" />
+                    <span className="font-medium text-ink">
+                      {viewTarget.address}
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* Clinical Dossier */}
-              <div className="space-y-1.5">
-                <span className="font-bold text-ink dark:text-white">
-                  Clinical & Medical Summary:
-                </span>
-                <p className="p-3.5 rounded-md bg-white dark:bg-slate-800 border border-ink/10 dark:border-white/10 text-ink/80 dark:text-slate-300 leading-relaxed">
-                  {selectedAdmission.medicalNotes}
-                </p>
-              </div>
-
-              {/* Section 3 Consequence Note */}
-              <div className="p-3.5 rounded-md bg-mint/30 dark:bg-emerald-950/40 border border-teal-brand/20 dark:border-emerald-500/20 text-[11px] text-teal-deep dark:text-emerald-300 leading-relaxed">
-                <span className="font-bold">Administrative Consequence: </span>
-                {selectedAdmission.admissionType === "Transfer"
-                  ? "Approving this transfer officially migrates the resident's care record to your care home. If rejected, the resident remains officially placed with their previous care organisation."
-                  : "Approving confirms the resident as an official member of your care home, allocates room/bed, and grants full access to services."}
-              </div>
-            </div>
-
-            {/* Actions Bar (Section 3 Approve / Reject) */}
-            <div className="flex items-center justify-between pt-4 border-t border-ink/10 dark:border-white/10">
-              <button
-                onClick={() => setSelectedAdmission(null)}
-                className="px-4 py-2 rounded-md border border-ink/10 dark:border-white/10 text-xs font-semibold text-ink/70 dark:text-slate-400 hover:bg-cream dark:hover:bg-slate-800 cursor-pointer"
-              >
-                Close
-              </button>
-
-              {(selectedAdmission.status === "Pending Admission" ||
-                selectedAdmission.status === "Transfer Pending") && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleReject(selectedAdmission.id)}
-                    className="px-4 py-2 rounded-md bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30 text-xs font-semibold cursor-pointer"
-                  >
-                    Reject Admission
-                  </button>
-                  <button
-                    onClick={() => handleApprove(selectedAdmission.id)}
-                    className="px-5 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-md cursor-pointer"
-                  >
-                    Approve & Admit Resident
-                  </button>
+              {viewTarget.rejectionReason && (
+                <div className="p-3.5 rounded-md bg-rose-50 border border-rose-200 text-rose-800 space-y-1">
+                  <p className="font-bold text-xs">Rejection Justification:</p>
+                  <p className="text-xs leading-relaxed">
+                    {viewTarget.rejectionReason}
+                  </p>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Bed Allocation Modal for Approved New Admissions */}
-      {allocatingAdm && (
-        <div className="fixed inset-0 z-50 bg-ink/40 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-lg glass dark:bg-slate-900 rounded-md p-6 sm:p-8 shadow-2xl border border-white/80 dark:border-white/10 space-y-5 animate-in fade-in zoom-in-95">
-            <div className="border-b border-ink/10 dark:border-white/10 pb-4">
-              <span className="text-xs font-mono font-bold text-teal-deep dark:text-emerald-400">
-                {allocatingAdm.referenceNumber}
-              </span>
-              <h3 className="text-lg font-bold text-ink dark:text-white font-heading mt-1">
-                Allocate Bed Slot for {allocatingAdm.residentName}
-              </h3>
-              <p className="text-xs text-ink/60 dark:text-slate-400">
-                Facility: {allocatingAdm.destinationCareHome}
-              </p>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-ink dark:text-slate-200 block mb-1">
-                    Room / Suite
-                  </label>
-                  <select
-                    value={allocRoom}
-                    onChange={(e) => setAllocRoom(e.target.value)}
-                    className="w-full px-3 py-2 rounded-md border border-ink/10 dark:border-white/10 bg-cream/30 dark:bg-slate-800 text-ink dark:text-white font-medium"
-                  >
-                    <option value="Suite 104">
-                      Suite 104 (Ground floor, garden view)
-                    </option>
-                    <option value="Suite 106">
-                      Suite 106 (En-suite wet room)
-                    </option>
-                    <option value="Suite 203">
-                      Suite 203 (First floor lift access)
-                    </option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-semibold text-ink dark:text-slate-200 block mb-1">
-                    Bed Assignment
-                  </label>
-                  <select
-                    value={allocBed}
-                    onChange={(e) => setAllocBed(e.target.value)}
-                    className="w-full px-3 py-2 rounded-md border border-ink/10 dark:border-white/10 bg-cream/30 dark:bg-slate-800 text-ink dark:text-white font-medium"
-                  >
-                    <option value="Bed 1">Bed 1 (Window side)</option>
-                    <option value="Bed 2">Bed 2 (Door side)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs">
-                Confirming placement changes status to{" "}
-                <span className="font-bold">Placed</span> and issues full
-                resident services access.
+              <div className="pt-2 text-right">
+                <button
+                  onClick={() => setViewTarget(null)}
+                  className="px-5 py-2 rounded-md bg-teal-brand text-white font-semibold text-xs hover:bg-teal-deep transition-all"
+                >
+                  Close
+                </button>
               </div>
             </div>
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-ink/10 dark:border-white/10">
-              <button
-                onClick={() => setAllocatingAdm(null)}
-                className="px-4 py-2 rounded-md border border-ink/10 dark:border-white/10 text-xs font-semibold text-ink/70 dark:text-slate-400 hover:bg-cream dark:hover:bg-slate-800 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmBedAllocation}
-                className="px-5 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-md cursor-pointer"
-              >
-                Confirm Admission & Bed
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Section 2 "Invite Resident" Modal */}
-      {showInviteModal && (
-        <div className="fixed inset-0 z-50 bg-ink/40 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-lg glass dark:bg-slate-900 rounded-md p-6 sm:p-8 shadow-2xl border border-white/80 dark:border-white/10 space-y-5 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-ink/10 dark:border-white/10 pb-4">
-              <div>
-                <h3 className="text-lg font-bold text-ink dark:text-white font-heading">
-                  Invite Resident
-                </h3>
-                <p className="text-xs text-ink/60 dark:text-slate-400">
-                  Send a direct onboarding invitation to a prospective or
-                  transferring resident.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowInviteModal(false)}
-                className="text-xs p-1 text-ink/50 hover:text-ink dark:hover:text-white cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {inviteSuccess ? (
-              <div className="p-6 text-center space-y-3">
-                <CheckCircle2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto" />
-                <h4 className="font-bold text-base text-ink dark:text-white">
-                  Invitation Dispatched!
-                </h4>
-                <p className="text-xs text-ink/70 dark:text-slate-300">
-                  An onboarding email with secure token has been sent to{" "}
-                  {inviteEmail}.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleSendInvite} className="space-y-4 text-xs">
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-ink dark:text-slate-200">
-                    Resident Email Address{" "}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="resident@example.co.uk"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-md border border-ink/10 dark:border-white/10 bg-cream/30 dark:bg-slate-800 text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-ink dark:text-slate-200">
-                    Destination Care Organisation
-                  </label>
-                  <select
-                    value={inviteOrg}
-                    onChange={(e) => setInviteOrg(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-md border border-ink/10 dark:border-white/10 bg-cream/30 dark:bg-slate-800 text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="Apex Care Group">Apex Care Group</option>
-                    <option value="Kindred Care Living">
-                      Kindred Care Living
-                    </option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-ink dark:text-slate-200">
-                    Target Care Home
-                  </label>
-                  <select
-                    value={inviteHome}
-                    onChange={(e) => setInviteHome(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-md border border-ink/10 dark:border-white/10 bg-cream/30 dark:bg-slate-800 text-ink dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="St. Jude's Residential Home">
-                      St. Jude&apos;s Residential Home (Bristol)
-                    </option>
-                    <option value="Meadow View Lodge">
-                      Meadow View Lodge (Bath)
-                    </option>
-                    <option value="Oakridge Manor Care Centre">
-                      Oakridge Manor Care Centre (Gloucester)
-                    </option>
-                  </select>
-                </div>
-
-                <div className="p-3.5 rounded-md bg-mint/30 dark:bg-emerald-950/40 border border-teal-brand/20 dark:border-emerald-500/20 text-[11px] text-teal-deep dark:text-emerald-300 leading-relaxed">
-                  The recipient will receive an onboarding link. If they are
-                  new, they set their password; if they are transferring from
-                  another facility, they authenticate with their existing
-                  credentials.
-                </div>
-
-                <div className="flex items-center justify-end gap-3 pt-3 border-t border-ink/10 dark:border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => setShowInviteModal(false)}
-                    className="px-4 py-2 rounded-md border border-ink/10 dark:border-white/10 text-xs font-semibold text-ink/70 dark:text-slate-400 hover:bg-cream dark:hover:bg-slate-800 cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-md cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    Dispatch Resident Invitation
-                  </button>
-                </div>
-              </form>
-            )}
           </div>
         </div>
       )}
