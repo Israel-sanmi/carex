@@ -64,7 +64,7 @@ const AVAILABLE_ROLES: { label: string; value: InvitationRole }[] = [
   { label: "Organisation Admin", value: "ORGANISATION_ADMIN" },
   { label: "Organisation Support", value: "ORGANISATION_SUPPORT" },
   { label: "Resident", value: "RESIDENT" },
-  { label: "System Admin", value: "SYSTEM_ADMIN" },
+  // { label: "System Admin", value: "SYSTEM_ADMIN" },
   { label: "System Support", value: "SYSTEM_SUPPORT" },
   { label: "Super Admin", value: "SUPER_ADMIN" },
 ];
@@ -274,9 +274,9 @@ export default function InvitationsPage() {
             <h1 className="text-2xl font-bold tracking-tight text-ink font-heading">
               Invitations Management
             </h1>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
+            {/* <span className="text-xs px-2.5 py-0.5 rounded-full bg-mint text-teal-deep font-semibold">
               {isLoading ? "—" : totalElements} Dispatched
-            </span>
+            </span> */}
           </div>
           <p className="text-sm text-ink/70 mt-1">
             Dispatch, track, and manage role-assigned onboarding invitations
@@ -341,7 +341,7 @@ export default function InvitationsPage() {
       {/* Filters Bar */}
       <div className="space-y-3">
         {/* Status Tabs */}
-        <div className="flex items-center gap-2 border-b border-ink/10 overflow-x-auto pb-1">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink/[0.04] border border-ink/[0.07] overflow-x-auto scrollbar-none">
           {STATUS_FILTERS.map((st) => {
             const count = st.value
               ? rawInvitations.filter(
@@ -349,24 +349,7 @@ export default function InvitationsPage() {
                 ).length
               : rawInvitations.length;
 
-            if (!canInvite) {
-              return (
-                <div className="p-8 rounded-md bg-white border border-ink/10 text-center max-w-xl mx-auto space-y-4 my-12 shadow-xs">
-                  <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
-                    <AlertTriangle className="h-6 w-6" />
-                  </div>
-                  <h2 className="text-xl font-bold text-ink font-heading">
-                    Restricted Invitation Domain
-                  </h2>
-                  <p className="text-xs text-ink/70 leading-relaxed">
-                    The Invitation workflow is restricted strictly to Super
-                    Administrators, System Administrators, Organisation
-                    Administrators, Care Home Administrators, and Care Home
-                    Managers.
-                  </p>
-                </div>
-              );
-            }
+            const isActive = selectedStatus === st.value;
 
             return (
               <button
@@ -375,17 +358,17 @@ export default function InvitationsPage() {
                   setSelectedStatus(st.value);
                   setPage(0);
                 }}
-                className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-t-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-                  selectedStatus === st.value
+                className={`tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                  isActive
                     ? "bg-teal-brand text-white shadow-xs"
-                    : "text-ink/65 hover:text-ink hover:bg-cream/60"
+                    : "text-ink/65 hover:text-ink hover:bg-white/60"
                 }`}
               >
                 <span>{st.label}</span>
                 {!isLoading && rawInvitations.length > 0 && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                      selectedStatus === st.value
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      isActive
                         ? "bg-white/20 text-white"
                         : "bg-ink/10 text-ink/70"
                     }`}
@@ -935,7 +918,7 @@ export default function InvitationsPage() {
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-md bg-cream/40 border border-ink/10 space-y-1">
+              {/* <div className="p-3 rounded-md bg-cream/40 border border-ink/10 space-y-1">
                 <span className="text-[10px] uppercase font-bold text-ink/50">
                   Invitation Public ID
                 </span>
@@ -953,7 +936,7 @@ export default function InvitationsPage() {
                     <Copy className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              </div>
+              </div> */}
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="p-2.5 rounded-md bg-cream/30 border border-ink/10">

@@ -6,6 +6,7 @@ import Link from "next/link";
 import AuthCard from "@/components/auth/auth-card";
 import { useAcceptInvitationMutation } from "@/lib/hooks/use-invitations";
 import { AcceptInvitationResponse } from "@/lib/api-invitations";
+import { toast } from "@/components/ui/toast";
 import {
   CheckCircle2,
   Lock,
@@ -16,11 +17,17 @@ import {
   RefreshCw,
   ArrowRight,
   ShieldCheck,
+  KeyRound,
 } from "lucide-react";
 
 function AcceptInvitationContent() {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token") || "";
+
+  // Extract token from query parameters: ?token=... (e.g., http://155.117.41.131:3001/accept-invitation?token=...)
+  const urlToken = (searchParams.get("token") || searchParams.get("t") || "").trim();
+
+  const [manualToken, setManualToken] = useState("");
+  const token = urlToken || manualToken.trim();
 
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
@@ -28,6 +35,7 @@ function AcceptInvitationContent() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [result, setResult] = useState<AcceptInvitationResponse | null>(null);
 
@@ -38,13 +46,13 @@ function AcceptInvitationContent() {
     setValidationError("");
 
     if (!token) {
-      setValidationError("Invitation token is missing from the URL link.");
+      setValidationError("Invitation token is missing. Please use the link from your email or paste your token.");
       return;
     }
 
     if (!firstName.trim() || !lastName.trim()) {
       setValidationError(
-        "Please enter your full legal name (first and last name).",
+        "Please enter your full legal name (first and last name)."
       );
       return;
     }
@@ -73,53 +81,6 @@ function AcceptInvitationContent() {
     }
   };
 
-  // If no token is provided in the URL
-  if (!token) {
-    return (
-      <AuthCard
-        title="Invalid Invitation Link"
-        subtitle="This link is missing a valid verification token."
-        badge="Invitation Error"
-        footer={
-          <div className="text-center text-xs text-ink/70">
-            Have an account?{" "}
-            <Link
-              href="/login"
-              className="font-semibold text-teal-brand hover:underline"
-            >
-              Sign In
-            </Link>
-          </div>
-        }
-      >
-        <div className="py-6 text-center space-y-4">
-          <div className="w-14 h-14 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
-            <AlertTriangle className="h-7 w-7" />
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-base font-bold text-ink">
-              Missing Invitation Token
-            </h3>
-            <p className="text-xs text-ink/70 max-w-sm mx-auto leading-relaxed">
-              We could not find a verification token in the URL. Please verify
-              you clicked the complete link provided in your CarerLoop
-              invitation email.
-            </p>
-          </div>
-          <div className="pt-2">
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-teal-brand text-white text-xs font-semibold hover:bg-teal-deep transition-all shadow-sm"
-            >
-              <span>Return to Sign In</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-      </AuthCard>
-    );
-  }
-
   // If successfully accepted
   if (result) {
     return (
@@ -129,7 +90,7 @@ function AcceptInvitationContent() {
         badge="Account Activated"
         footer={
           <div className="text-center text-xs text-ink/70">
-            Need help? Contact your care home administrator or support.
+            Need help? Contact your care organisation administrator or support.
           </div>
         }
       >
@@ -156,7 +117,7 @@ function AcceptInvitationContent() {
               </div>
             )}
             {result.role && (
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-ink/60">Assigned Role:</span>
                 <span className="font-semibold text-teal-deep bg-mint px-2 py-0.5 rounded-md">
                   {result.role}
@@ -198,10 +159,16 @@ function AcceptInvitationContent() {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm">
-        {validationError && (
-          <div className="p-3 rounded-md bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2">
+      
+
+        {(validationError || acceptMutation.isError) && (
+          <div className="p-3 rounded-md bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2 animate-fade-in">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
-            <span>{validationError}</span>
+            <span>
+              {validationError ||
+                acceptMutation.error?.message ||
+                "Failed to accept invitation"}
+            </span>
           </div>
         )}
 
@@ -287,14 +254,25 @@ function AcceptInvitationContent() {
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
             <input
-              type={showPassword ? "text" : "password"}
+              type={showConfirmPassword ? "text" : "password"}
               required
               minLength={12}
               placeholder="••••••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30 text-ink"
+              className="w-full pl-9 pr-10 py-2 rounded-md border border-ink/15 bg-cream/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/30 text-ink"
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/40 hover:text-ink cursor-pointer"
+            >
+              {showConfirmPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
           </div>
         </div>
 

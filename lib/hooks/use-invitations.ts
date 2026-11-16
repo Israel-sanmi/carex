@@ -42,12 +42,15 @@ export function useSendInvitationMutation() {
       invitationsApi.createInvitation(payload),
     onSuccess: (data) => {
       toast.success(
-        data.message || `Invitation dispatched successfully to ${data.email}`
+        data?.message ||
+          (data?.email
+            ? `Invitation dispatched successfully to ${data.email}`
+            : "Invitation dispatched successfully")
       );
       queryClient.invalidateQueries({ queryKey: INVITATIONS_QUERY_KEY });
     },
     onError: (err: ApiError) => {
-      toast.error(err.message || "Failed to dispatch invitation");
+      toast.error(err?.message || "Failed to dispatch invitation");
     },
   });
 }
@@ -59,11 +62,11 @@ export function useRevokeInvitationMutation() {
     mutationFn: (invitationPublicId: string) =>
       invitationsApi.revokeInvitation(invitationPublicId),
     onSuccess: (data) => {
-      toast.info(data.message || "Invitation has been revoked");
+      toast.info(data?.message || "Invitation has been revoked");
       queryClient.invalidateQueries({ queryKey: INVITATIONS_QUERY_KEY });
     },
     onError: (err: ApiError) => {
-      toast.error(err.message || "Failed to revoke invitation");
+      toast.error(err?.message || "Failed to revoke invitation");
     },
   });
 }
@@ -73,10 +76,10 @@ export function useAcceptInvitationMutation() {
     mutationFn: (payload: AcceptInvitationPayload) =>
       invitationsApi.acceptInvitation(payload),
     onSuccess: (data) => {
-      toast.success(data.message || "Invitation accepted! Account activated.");
+      toast.success(data?.message || "Invitation accepted! Account activated.");
     },
     onError: (err: ApiError) => {
-      toast.error(err.message || "Failed to accept invitation");
+      toast.error(err?.message || "Failed to accept invitation");
     },
   });
 }

@@ -615,16 +615,16 @@
 }
 
 /* Primary buttons: lift + shine */
-.dash-main button.bg-teal-brand,
-.dash-main a.bg-teal-brand {
+.dash-main button.bg-teal-brand:not(.tab-btn),
+.dash-main a.bg-teal-brand:not(.tab-btn) {
   position: relative;
   overflow: hidden;
   box-shadow: 0 6px 16px -6px rgba(15, 118, 110, 0.5);
 }
-.dash-main button.bg-teal-brand:not(:disabled):hover,
-.dash-main a.bg-teal-brand:hover { transform: translateY(-1px); }
-.dash-main button.bg-teal-brand::after,
-.dash-main a.bg-teal-brand::after {
+.dash-main button.bg-teal-brand:not(.tab-btn):not(:disabled):hover,
+.dash-main a.bg-teal-brand:not(.tab-btn):hover { transform: translateY(-1px); }
+.dash-main button.bg-teal-brand:not(.tab-btn)::after,
+.dash-main a.bg-teal-brand:not(.tab-btn)::after {
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
@@ -633,9 +633,9 @@
   transform: translateX(-120%) skewX(-20deg);
   pointer-events: none;
 }
-.dash-main button.bg-teal-brand:not(:disabled):hover::after,
-.dash-main a.bg-teal-brand:hover::after { animation: shine 0.9s ease-out; }
-.dash-main button:not(:disabled):active { transform: scale(0.98); }
+.dash-main button.bg-teal-brand:not(.tab-btn):not(:disabled):hover::after,
+.dash-main a.bg-teal-brand:not(.tab-btn):hover::after { animation: shine 0.9s ease-out; }
+.dash-main button:not(.tab-btn):not(:disabled):active { transform: scale(0.98); }
 
 /* Tables */
 .dash-main table thead th { font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; }

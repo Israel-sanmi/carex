@@ -281,13 +281,15 @@ export default function OrganisationsPage() {
 
       {/* Filter Tabs & Search */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2 border-b border-ink/10 overflow-x-auto pb-1">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink/[0.04] border border-ink/[0.07] overflow-x-auto scrollbar-none">
           {STATUS_FILTERS.map((st) => {
             const count = st.value
               ? organisations.filter(
                   (o) => o.status?.toUpperCase() === st.value.toUpperCase(),
                 ).length
               : organisations.length;
+
+            const isActive = selectedStatus === st.value;
 
             return (
               <button
@@ -296,17 +298,17 @@ export default function OrganisationsPage() {
                   setSelectedStatus(st.value);
                   setPage(0);
                 }}
-                className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-t-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-                  selectedStatus === st.value
+                className={`tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                  isActive
                     ? "bg-teal-brand text-white shadow-xs"
-                    : "text-ink/65 hover:text-ink hover:bg-cream/60"
+                    : "text-ink/65 hover:text-ink hover:bg-white/60"
                 }`}
               >
                 <span>{st.label}</span>
                 {!isLoading && organisations.length > 0 && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                      selectedStatus === st.value
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      isActive
                         ? "bg-white/20 text-white"
                         : "bg-ink/10 text-ink/70"
                     }`}

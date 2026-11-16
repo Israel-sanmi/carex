@@ -181,7 +181,7 @@ export default function Topbar({ onOpenMobileNav }: TopbarProps) {
                   setRoleMenuOpen(!roleMenuOpen);
                   setFacilityMenuOpen(false);
                 }}
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-teal-brand/30 bg-mint text-teal-deep hover:bg-mint/80 text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-md border border-teal-brand/30 bg-mint text-teal-deep hover:bg-mint/80 text-xs font-semibold transition-all cursor-pointer shadow-xs"
               >
                 <ShieldCheck className="h-3.5 w-3.5 text-teal-brand" />
                 <span className="hidden md:inline text-teal-brand font-medium">

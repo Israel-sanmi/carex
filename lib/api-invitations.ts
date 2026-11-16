@@ -136,7 +136,7 @@ export const invitationsApi = {
       method: "POST",
       body: JSON.stringify(payload),
     });
-    return res?.data ?? res;
+    return res?.data ?? res ?? {};
   },
 
   /**
@@ -149,7 +149,7 @@ export const invitationsApi = {
       method: "POST",
       body: JSON.stringify(payload),
     });
-    return res?.data ?? res;
+    return res?.data ?? res ?? {};
   },
 
   /**
@@ -169,6 +169,6 @@ export const invitationsApi = {
     const res = await request<any>(`/api/v1/invitations/${invitationPublicId}`, {
       method: "DELETE",
     });
-    return res?.data ?? res;
+    return res?.data ?? res ?? {};
   },
 };
